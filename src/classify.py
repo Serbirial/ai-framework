@@ -189,7 +189,8 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
 def classify_social_tone(model, tokenizer, user_input):
     prompt = (
         "You are a sentiment and social tone classifier for a conversation with an AI assistant.\n"
-        "Classify the user's tone and attitude in the following message.\n"
+        "Classify the user's tone and attitude in the message.\n"
+        "If the input is meaningless, gibberish, or does not express any clear sentiment, choose NEUTRAL.\n"
         "Output the classification as a JSON dictionary with keys: "
         "\"intent\" (COMPLIMENT, INSULT, NEUTRAL), "
         "\"attitude\" (NICE, RUDE, NEUTRAL), "
@@ -245,7 +246,7 @@ def classify_social_tone(model, tokenizer, user_input):
         **inputs,
         max_new_tokens=50,
         do_sample=True, #BUG set sample to true to help ai recognize better, might make worse (already awful)
-        temperature=0.6,
+        temperature=0.7,
         pad_token_id=tokenizer.eos_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
