@@ -114,7 +114,7 @@ class ChatBot(discord.Client):
 
                         processed_input = processed_input.split("!stream", 1)[1]
 
-                        async def blocking_chat():
+                        def blocking_chat():
                             self.ai.chat(
                                 username=message.author.display_name,
                                 user_input=processed_input,
@@ -123,11 +123,11 @@ class ChatBot(discord.Client):
                                 debug=False,
                                 streamer=streamer
                             )
-                            await streamer.queue.put(None)
-
 
                         # Offload entire chat() call to thread to prevent blocking the event loop
                         await asyncio.to_thread(blocking_chat)
+
+                        await streamer.queue.put(None)
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
