@@ -23,7 +23,7 @@ def interpret_memory_instruction(self, user_input):
         f"<|system|>\n"
         f"You are an AI assistant that extracts structured memory from user input.\n"
         f"Given the user instruction below, output a JSON object with key-value pairs for memory.\n"
-        f"Only include relevant memory facts, and keep the output as short as possible outside of exact data.\n\n"
+        f"Only include relevant memory facts, and only output exact json data, no extras.\n\n"
         "Example JSON: {\"data\": \"Whenever you reference me from now on, call me by the name 'summer'\"}"
         f"User Input: \"{user_input}\"\n"
         f"Output:"
@@ -39,16 +39,17 @@ def interpret_memory_instruction(self, user_input):
         )
 
     raw_output = tokenizer.decode(output[0], skip_special_tokens=True)
-    json_str = raw_output[len(prompt):].strip()
+    json_start = raw_output.find("{")
+    json_end = raw_output.find("}", json_start) + 1
 
     try:
-        memory_data = json.loads(json_str)
+        memory_data = json.loads(raw_output[json_start:json_end])
         log("INTERPRET MEMORY", memory_data)
         return memory_data
     except json.JSONDecodeError:
         log("INTERPRET MEMORY", "NONE")
 
-        print("[WARN] Could not parse memory JSON:", json_str)
+        print("[WARN] Could not parse memory JSON:", raw_output[json_start:json_end])
         return None
     
 
