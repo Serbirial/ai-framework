@@ -223,7 +223,7 @@ def classify_social_tone(model, tokenizer, user_input):
         "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
         "User: \"Can you answer this question for me?\"\n"
         "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
-        "User: \"Just kidding, you're actually kind of cool.\"\n"
+        "User: \"You're actually kind of cool.\"\n"
         "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"JOKING\"}\n\n"
         "User: \"actually, fuck you idiot i lied get fucked cunt LMAAAO\"\n"
         "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
@@ -245,8 +245,7 @@ def classify_social_tone(model, tokenizer, user_input):
     outputs = model.generate(
         **inputs,
         max_new_tokens=50,
-        do_sample=True, #BUG set sample to true to help ai recognize better, might make worse (already awful)
-        temperature=0.7,
+        do_sample=False, #BUG set sample to true to help ai recognize better, might make worse (already awful)
         pad_token_id=tokenizer.eos_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
