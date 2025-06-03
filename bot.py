@@ -151,7 +151,7 @@ class ChatBot(discord.Client):
                 try:
                     if processed_input.lower().startswith("!stream"):
                         processed_input = processed_input.split("!stream", 1)[1]
-                        generate_and_stream(self, message, processed_input, processed_context)
+                        await generate_and_stream(self, message, processed_input, processed_context)
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
