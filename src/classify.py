@@ -229,4 +229,5 @@ def classify_social_tone(model, tokenizer, user_input):
             "tone": "NEUTRAL"
         }
 
+    log("SOCIAL INTENTS CLASSIFICATION", classification)
     return classification
