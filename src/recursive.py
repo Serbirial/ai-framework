@@ -1,8 +1,7 @@
-from .bot import tokenizer
 from . import classify
 from log import log
 from transformers import StoppingCriteriaList
-from .static import mood_instruction, StopOnSpeakerChange
+from .static import mood_instruction, StopOnSpeakerChange, tokenizer
 
 class RecursiveThinker:
     def __init__(self, bot, depth=3, streamer=None):

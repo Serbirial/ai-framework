@@ -10,13 +10,8 @@ from .recursive import RecursiveThinker
 from . import classify
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange
+from .static import mood_instruction, StopOnSpeakerChange, tokenizer, MODEL_NAME, TOKEN, MEMORY_FILE
 
-
-MODEL_NAME = "stabilityai/stablelm-2-1_6b-chat"
-TOKEN = ""
-MEMORY_FILE = "memory.json"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_auth_token=TOKEN, use_fast=True)
 #streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
 streamer = None
 

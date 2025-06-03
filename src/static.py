@@ -1,3 +1,6 @@
+from transformers import StoppingCriteria
+from transformers import AutoTokenizer
+
 mood_instruction = {
     "happy": "Express joy, warmth, and positivity in your thoughts.",
     "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence.",
@@ -5,6 +8,10 @@ mood_instruction = {
 
     "neutral": "Speak in a calm and balanced tone."
 }
+MODEL_NAME = "stabilityai/stablelm-2-1_6b-chat"
+TOKEN = ""
+MEMORY_FILE = "memory.json"
+
 
 class StopOnSpeakerChange(StoppingCriteria):
     def __init__(self, tokenizer, bot_name="ayokdaeno"):
@@ -24,3 +31,4 @@ class StopOnSpeakerChange(StoppingCriteria):
             return True
         return False
 
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_auth_token=TOKEN, use_fast=True)
