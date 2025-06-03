@@ -121,8 +121,7 @@ class ChatBot(discord.Client):
                 try:
                     if processed_input.lower().startswith("!stream"):
                         streammsg = await message.reply("Hmm...") 
-                        loop = asyncio.get_running_loop()
-                        streamer = DiscordStreamer(static.tokenizer, "", loop=loop)
+                        streamer = DiscordStreamer(static.tokenizer, "")
                         processed_input = processed_input.split("!stream", 1)[1]
 
                         response = await asyncio.to_thread(
@@ -135,7 +134,6 @@ class ChatBot(discord.Client):
                             streamer=streamer
                         )
 
-                        await streamer.wait_until_done()
                         await streammsg.edit(content=streamer.get_text())
                     else:
                         response = await asyncio.to_thread(

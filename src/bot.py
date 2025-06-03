@@ -180,11 +180,6 @@ class ChatBot:
             repetition_penalty=1.2,
             streamer=streamer,
         )
-        # Wait for updater_task to complete (synchronously)
-        loop = streamer.loop
-        if not streamer.updater_task.done():
-            loop.run_until_complete(streamer.updater_task)
-
         return streamer.buffer
 
 
