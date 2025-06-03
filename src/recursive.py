@@ -9,7 +9,7 @@ class RecursiveThinker:
         self.depth = depth
         self.streamer = streamer
 
-    def build_prompt(self, question, query_type, context=None, include_reflection=False, identifier=None):
+    def build_prompt(self, question, query_type, usertone, context=None, include_reflection=False, identifier=None):
         traits = ", ".join(self.bot.traits)
         goals = ", ".join(self.bot.goals)
         likes = ", ".join(self.bot.likes)
@@ -26,6 +26,12 @@ class RecursiveThinker:
             f"**Goals:** {goals}  \n"
             f"**Mood:** {mood}  \n"
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
+
+            f"# Social Context\n"
+            f"**User Intent:** {usertone['intent']}  \n"
+            f"**User Attitude:** {usertone['attitude']}  \n"
+            f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
+            f"Respond appropriately to this tone. For example, be sarcastic and rude if the user is rude, or be warm and expressive if they are nice or joking.\n"
         )
 
         if context:
@@ -48,7 +54,8 @@ class RecursiveThinker:
             f"### Reasoning Prompt\n"
             f"**Question:** {question}  \n"
             f"**Task:** As the assistant, consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits.  \n"
-            f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
+            f"_Adjust your tone and manner to reflect the user's attitude and intent._\n"
+            #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
             f"# Note: In the question, 'you' always refers to the assistant (AI persona), never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
         )
 
@@ -134,8 +141,8 @@ class RecursiveThinker:
 
         return base
 
-    def think(self, question, query_type, context="", include_reflection=False, identifier=None):
-        prompt = self.build_prompt(question, query_type, context, include_reflection, identifier)
+    def think(self, question, query_type, usertone, context="", include_reflection=False, identifier=None):
+        prompt = self.build_prompt(question, query_type, usertone, context, include_reflection, identifier)
         full = prompt
         log("DEBUG: RECURSIVE PROMPT",full)
 

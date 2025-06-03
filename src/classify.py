@@ -185,3 +185,48 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
         classification = "NEUTRAL"
     log("LIKE CLASSIFICATION", classification)
     return classification
+
+def classify_social_tone(model, tokenizer, user_input):
+    prompt = (
+        "You are a sentiment and social tone classifier for a conversation with an AI assistant.\n"
+        "Classify the user's tone and attitude in the following message.\n"
+        "Output the classification as a JSON dictionary with keys: "
+        "\"intent\" (COMPLIMENT, INSULT, NEUTRAL), "
+        "\"attitude\" (NICE, RUDE, NEUTRAL), "
+        "\"tone\" (POLITE, AGGRESSIVE, JOKING, NEUTRAL).\n\n"
+        "Examples:\n\n"
+        "User: \"You're so helpful and smart!\"\n"
+        "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"POLITE\"}\n\n"
+        "User: \"You're really dumb.\"\n"
+        "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
+        "User: \"Can you answer this question for me?\"\n"
+        "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
+        "User: \"Just kidding, you're actually kind of cool.\"\n"
+        "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"JOKING\"}\n\n"
+        f"User: \"{user_input}\"\n"
+        f"Classification:"
+    )
+
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=50,
+        do_sample=False,
+        pad_token_id=tokenizer.eos_token_id,
+        eos_token_id=tokenizer.eos_token_id,
+    )
+    result_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    json_start = result_text.find("{")
+    json_end = result_text.find("}", json_start) + 1
+
+    try:
+        import json
+        classification = json.loads(result_text[json_start:json_end])
+    except Exception:
+        classification = {
+            "intent": "NEUTRAL",
+            "attitude": "NEUTRAL",
+            "tone": "NEUTRAL"
+        }
+
+    return classification

@@ -93,7 +93,7 @@ class ChatBot:
         else:
             self.mood = "neutral"
 
-    def build_prompt(self, username, user_input, identifier):
+    def build_prompt(self, username, user_input, identifier, usertone):
         goals_text = " ".join(self.goals)
         traits_text = " ".join(self.traits)
         likes_text = ", ".join(self.likes)
@@ -116,6 +116,10 @@ class ChatBot:
             f"Likes: {likes_text}\n"
             f"Dislikes: {dislikes_text}\n"
             f"Your Goals: {goals_text}\n"
+            f"User's Intents: {usertone['intent']}\n"
+            f"User's Attitude: {usertone['attitude']}\n"
+            f"User's Tone: {usertone['tone']}\n"
+
             #f"You are guided by your Likes and Dislikes when responding."
 
             f"Your Current Mood: {self.mood}\n"
@@ -188,7 +192,9 @@ class ChatBot:
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
         self.update_mood(user_input)
         self.adjust_mood_based_on_input(user_input)
-        prompt = self.build_prompt(username, user_input, identifier)
+        usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
+
+        prompt = self.build_prompt(username, user_input, identifier, usertone)
 
         inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
 
