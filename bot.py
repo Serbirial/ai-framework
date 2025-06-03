@@ -54,6 +54,36 @@ class DiscordStreamer(TextStreamer):
         # Return full accumulated string (including buffered tokens)
         return self.buffer + self.token_buffer
 
+async def generate_and_stream(self, message, processed_input, processed_context):
+    streammsg = await message.reply("Generating...")
+
+    streamer = DiscordStreamer(static.tokenizer, "")
+    
+    # Run generation in thread
+    loop = asyncio.get_running_loop()
+    gen_task = loop.run_in_executor(
+        None,
+        lambda: self.ai.chat(
+            username=message.author.display_name,
+            user_input=processed_input,
+            identifier=message.guild.id,
+            context=processed_context,
+            debug=False,
+            streamer=streamer
+        )
+    )
+
+    # While the generation runs, keep updating the message with partial text
+    while not gen_task.done():
+        await asyncio.sleep(3)  # update every 3 seconds 
+        current_text = streamer.get_text()
+        if current_text:
+            await streammsg.edit(content=current_text)
+    
+    # When done, update message with full text
+    final_text = await gen_task
+    await streammsg.edit(content=final_text)
+
 
 AiChatBot = bot.ChatBot
 
@@ -121,20 +151,8 @@ class ChatBot(discord.Client):
                 try:
                     if processed_input.lower().startswith("!stream"):
                         streammsg = await message.reply("Hmm...") 
-                        streamer = DiscordStreamer(static.tokenizer, "")
                         processed_input = processed_input.split("!stream", 1)[1]
-
-                        response = await asyncio.to_thread(
-                            self.ai.chat,
-                            username=message.author.display_name,
-                            user_input=processed_input,
-                            identifier=message.guild.id,
-                            context=processed_context,
-                            debug=False,
-                            streamer=streamer
-                        )
-
-                        await streammsg.edit(content=streamer.get_text())
+                        generate_and_stream(self, streammsg, processed_input, processed_context)
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,

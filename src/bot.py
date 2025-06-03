@@ -169,7 +169,7 @@ class ChatBot:
         return response_raw.strip()
 
     def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
-        # Generate asynchronously, passing the streamer
+        # Run generate synchronously (calls streamer.on_text internally)
         self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
@@ -180,7 +180,9 @@ class ChatBot:
             repetition_penalty=1.2,
             streamer=streamer,
         )
-        return streamer.buffer
+        # When done, flush any remaining tokens
+        final_text = streamer.get_text()
+        return final_text
 
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
