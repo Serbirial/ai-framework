@@ -264,7 +264,7 @@ class ChatBot:
                 short_context = "\n".join(context)
 
             thinker = RecursiveThinker(self, streamer=streamer)
-            thoughts, final = thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"
@@ -283,7 +283,7 @@ class ChatBot:
                 short_context = "\n".join(context)
             thinker = RecursiveThinker(self, streamer=streamer)
 
-            thoughts, final = thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"
