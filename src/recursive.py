@@ -67,8 +67,15 @@ class RecursiveThinker:
                 "\n**[Factual Question Guidance]**\n"
                 "- Focus on clarity, accuracy, and logic.  \n"
                 "- Prioritize objective information.  \n"
-                "- Avoid emotional or opinion-based reasoning unless relevant.\n"
+                "- Do not include opinion, emotion, or personal language unless explicitly asked.  \n"
+                "- Avoid including numbered steps, markdown titles, or debug thoughts in the final answer.  \n"
+                "- Present the answer directly and concisely in plain text or code as appropriate.  \n"
+                "- If the user's question asks for code, output only the appropriate code block to fulfill their request.  \n"
+                "- If the question asks for a definition, explanation, or fact, respond directly and clearly with no filler.  \n"
+                "- Always respond to the user’s exact request unless instructed otherwise.\n"
             )
+
+
         elif query_type == "preference_query":
             base += (
                 "\n**[Preference Question Guidance]**\n"
