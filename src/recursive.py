@@ -39,8 +39,8 @@ class RecursiveThinker:
         if context:
             base += (
                 f"\n## Relevant Memory or Context\n"
+                f"- Consider how this context / recent history may affect your thoughts.\n"
                 f"{context.strip()}\n"
-                f"_Consider how this context may affect your thoughts, memories, or preferences._\n"
             )
 
         if identifier:
