@@ -81,13 +81,33 @@ class ChatBot(discord.Client):
     async def get_chat_context(self, message):
         channel: discord.TextChannel = self.get_channel(message.channel.id)
         context = []
-        async for msg in channel.history(limit=5, oldest_first=False, before=message.created_at):
-            if msg.id == message:
-                pass
+        last_author = None
+        last_lines = []
+
+        async for msg in channel.history(limit=10, oldest_first=False, before=message.created_at):
+            if msg.id == message.id:
+                continue
+
+            content = msg.content.strip()
+            if not content:
+                continue  # skip empty messages
+
+            if msg.author == last_author:
+                last_lines.insert(0, content)
             else:
-                context.append(f"{msg.author.display_name}: {msg.content}\n")
+                if last_lines:
+                    grouped = f"{last_author.display_name}: " + "\n".join(last_lines)
+                    context.append(grouped)
+                last_author = msg.author
+                last_lines = [content]
+
+        if last_lines:
+            grouped = f"{last_author.display_name}: " + "\n".join(last_lines)
+            context.append(grouped)
+
         context.reverse()
         return context
+
 
     async def on_ready(self) -> None:
         """ Initializes the GPT2 AI on bot startup """
