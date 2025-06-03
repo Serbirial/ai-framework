@@ -15,43 +15,15 @@ import asyncio
 import time
 from transformers import TextStreamer
 class DiscordStreamer(TextStreamer):
-    def __init__(self, tokenizer, initial_text="", name="ayokdaeno", **kwargs):
+    def __init__(self, tokenizer):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
-        self.buffer = initial_text  # Full accumulated string
-        self.token_buffer = ""
-        self.name = name
-        self.hallucinated = False
+        self.buffer = ""
 
     def on_text(self, text: str, **kwargs):
-        if self.hallucinated:
-            return
-
-        # Always accumulate text immediately
-        self.token_buffer += text
-
-        # Hallucination detection on lines in the token buffer
-        for line in self.token_buffer.splitlines():
-            stripped = line.strip()
-            if (
-                stripped.startswith("<|user|>") or
-                stripped.startswith("<|assistant|>") or
-                (stripped.endswith(":") and not stripped.startswith(self.name))
-            ):
-                self.hallucinated = True
-                break
-
-        # Append token_buffer to buffer and reset token_buffer when:
-        # either hallucination detected, or token_buffer length >=10 or text ends with punctuation
-        if self.hallucinated or len(self.token_buffer) >= 10 or text.endswith(('.', '!', '?')):
-            self.buffer += self.token_buffer
-            self.token_buffer = ""
-
-        # OPTIONAL: print streamed chunk to terminal for debug
-        print(text, end="", flush=True)
+        self.buffer += text
 
     def get_text(self):
-        # Return full accumulated string (including buffered tokens)
-        return self.buffer + self.token_buffer
+        return self.buffer
 
 
 async def generate_and_stream(self, message, processed_input, processed_context):
