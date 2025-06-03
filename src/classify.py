@@ -230,6 +230,12 @@ def classify_social_tone(model, tokenizer, user_input):
         "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"JOKING\"}\n\n"
         "User: \"get bent you trash robot\"\n"
         "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
+        "User: \"test\"\n"
+        "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
+        "User: \"asdfghjkl\"\n"
+        "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
+        "User: \"What time is it?\"\n"
+        "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
         f"User: \"{user_input}\"\n"
         f"Classification:"
     )
