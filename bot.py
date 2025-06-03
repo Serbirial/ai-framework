@@ -3,7 +3,43 @@ import discord
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 import aiohttp
-from src.bot import ChatBot as AiChatBot
+from src import bot
+
+from transformers import TextStreamer
+class DiscordStreamer(TextStreamer):
+    def __init__(self, tokenizer, message, initial_text="", delay=3, **kwargs):
+        super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
+        self.message = message
+        self.delay = delay
+        self.buffer = initial_text
+        self.queue = asyncio.Queue()
+        self.token_buffer = ""
+        self.updater_task = asyncio.create_task(self.update_loop())
+
+    async def update_loop(self):
+        while True:
+            token = await self.queue.get()
+            if token is None:  # End signal
+                break
+            self.token_buffer += token
+            if len(self.token_buffer) >= 10 or token.endswith(('.', '!', '?')):
+                self.buffer += self.token_buffer
+                self.token_buffer = ""
+                try:
+                    await self.message.edit(content=self.buffer)
+                except Exception:
+                    pass  # Message might be deleted or timeout; ignore for now
+                await asyncio.sleep(self.delay)
+        # Final flush
+        self.buffer += self.token_buffer
+        await self.message.edit(content=self.buffer)
+        
+def create_and_set_streamer(message):
+    temp = DiscordStreamer(bot.tokenizer, message, "Thinking...")
+    bot.streamer = temp
+    return temp
+
+AiChatBot = bot.ChatBot
 
 #intents = discord.Intents.all()
 import threading
@@ -67,6 +103,11 @@ class ChatBot(discord.Client):
 
             async with message.channel.typing():
                 try:
+                    if processed_input.lower().startswith("!stream"):
+                        streammsg = await message.reply("Thinking...") 
+                        create_and_set_streamer(streammsg)
+                        processed_input = processed_input.split("!stream", 1)
+                        
                     debug = False
                     if "debug" in message.content.lower():
                         debug = True

@@ -5,9 +5,10 @@ from transformers import StoppingCriteriaList
 
 
 class RecursiveThinker:
-    def __init__(self, bot, depth=3):
+    def __init__(self, bot, depth=3, streamer=None):
         self.bot = bot  # Reference to ChatBot
         self.depth = depth
+        self.streamer = streamer
 
     def build_prompt(self, question, query_type, context=None, include_reflection=False, identifier=None):
         traits = ", ".join(self.bot.traits)
@@ -151,7 +152,7 @@ class RecursiveThinker:
                 max_new_tokens=100,
                 temperature=0.7,
                 top_p=0.9,
-                streamer=None,
+                streamer=self.streamer,
                 stop_criteria=stop_criteria,
                 prompt=full
             )
@@ -175,7 +176,7 @@ class RecursiveThinker:
             max_new_tokens=100,
             temperature=0.7,
             top_p=0.9,
-            streamer=None,
+            streamer=self.streamer,
             stop_criteria=stop_criteria,
             prompt=final_prompt
         ).strip()

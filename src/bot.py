@@ -67,7 +67,7 @@ class ChatBot:
         self.likes = ["reading", "technology", "user being nice (e.g. saying kind words)", "user complimenting (e.g. saying compliments)"]     # e.g. ["rubber ducks", "sunshine", "reading"]
         self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs"]  # e.g. ["loud noises", "being ignored"]
         
-        self.thinker = RecursiveThinker(self)
+        self.thinker = RecursiveThinker(self, streamer=streamer)
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
             use_auth_token=TOKEN,
