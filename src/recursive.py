@@ -172,12 +172,13 @@ class RecursiveThinker:
             full
             + "<|user|>\n"
             + "### Final Answer\n"
-            + "_Speak directly and concisely in your own voice, and in the first-person. Do not include third-person analysis or disclaimers, speak as if you are responding to the question._\n"
-            + "_When referencing any previous steps / thoughts, clearly restate or summarize them explicitly in the answer._\n"
-            + "_Avoid vague phrases like 'the first category described earlier' or 'that group', or similar; instead, explain what you mean clearly so the reader understands without prior context or access to any thoughts._\n"
-
+            + "_Speak directly and concisely in your own voice, using first-person pronouns._\n"
+            + "_Do not include disclaimers, third-person analysis, or mention of internal thought steps._\n"
+            + "_When referencing something from your earlier thoughts, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
+            + "_Do not refer to 'the above', 'the previous step', or similar; instead, restate what you're referring to._\n"
             + "<|assistant|>\n"
         )
+
         log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
 
         inputs = tokenizer(final_prompt, return_tensors="pt").to(self.bot.model.device)
