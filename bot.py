@@ -81,7 +81,7 @@ class ChatBot(discord.Client):
     async def get_chat_context(self, message):
         channel: discord.TextChannel = self.get_channel(message.channel.id)
         context = []
-        async for msg in channel.history(limit=10, oldest_first=False, before=message.created_at):
+        async for msg in channel.history(limit=5, oldest_first=False, before=message.created_at):
             if msg.id == message:
                 pass
             else:
