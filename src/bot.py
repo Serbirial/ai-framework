@@ -135,6 +135,8 @@ class ChatBot:
 
 
     def _straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
+        if streamer != None:
+            return self._streaming_straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
         # Straightforward answer from model
         with torch.no_grad():
             output = self.model.generate(
@@ -166,6 +168,20 @@ class ChatBot:
                 return yield_line
         return response_raw.strip()
 
+    async def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
+        # Generate asynchronously, passing the streamer
+        self.model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            do_sample=True,
+            stopping_criteria=stop_criteria,
+            repetition_penalty=1.2,
+            streamer=streamer,
+        )
+        await streamer.updater_task
+        return streamer.buffer
 
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
