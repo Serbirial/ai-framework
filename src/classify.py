@@ -238,7 +238,8 @@ def classify_social_tone(model, tokenizer, user_input):
     outputs = model.generate(
         **inputs,
         max_new_tokens=50,
-        do_sample=False, #BUG set sample to true to help ai recognize better, might make worse (already awful)
+        do_sample=True, #BUG set sample to true to help ai recognize better, might make worse (already awful)
+        temperature=0.6,
         pad_token_id=tokenizer.eos_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
