@@ -29,7 +29,7 @@ class DiscordStreamer(TextStreamer):
 async def generate_and_stream(self, message, processed_input, processed_context):
     streammsg = await message.reply("Generating...")
 
-    streamer = DiscordStreamer(static.tokenizer, "")
+    streamer = DiscordStreamer(static.tokenizer)
     
     # Run generation in thread
     loop = asyncio.get_running_loop()
