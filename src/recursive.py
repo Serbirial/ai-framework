@@ -58,7 +58,7 @@ class RecursiveThinker:
             f"**Task:** As the assistant, consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits.  \n"
             f"Adjust your tone and manner to mirror the user's attitude and intent.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
-            f"# Note: In the question and personality profile, 'you' always refers to the assistant (AI persona), never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
+            f"# Note: In the question and personality profile, 'you' always refers to the assistant ({self.bot.name}), never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
 
         )
 
