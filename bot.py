@@ -10,18 +10,19 @@ from transformers import TextStreamer
 from transformers import TextStreamer
 
 class DiscordStreamer(TextStreamer):
-    def __init__(self, tokenizer, message, initial_text="", delay=3, **kwargs):
+    def __init__(self, tokenizer, message, initial_text="", delay=3, loop=None, **kwargs):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
         self.message = message
         self.delay = delay
         self.buffer = initial_text
         self.queue = asyncio.Queue()
         self.token_buffer = ""
-        self.updater_task = asyncio.create_task(self.update_loop())
+        self.loop = loop or asyncio.get_event_loop()
+        self.updater_task = self.loop.create_task(self.update_loop())
 
     def on_text(self, text: str, **kwargs):
-        # This is called for every new token chunk
-        asyncio.get_event_loop().call_soon_threadsafe(self.queue.put_nowait, text)
+        self.loop.call_soon_threadsafe(self.queue.put_nowait, text)
+
 
     async def update_loop(self):
         while True:
@@ -108,11 +109,12 @@ class ChatBot(discord.Client):
                 try:
                     if processed_input.lower().startswith("!stream"):
                         streammsg = await message.reply("Hmm...") 
-                        streamer = DiscordStreamer(static.tokenizer, streammsg, "Thinking...")
+                        loop = asyncio.get_running_loop()
+                        streamer = DiscordStreamer(static.tokenizer, streammsg, "Thinking...", loop=loop)
 
                         processed_input = processed_input.split("!stream", 1)[1]
 
-                        def blocking_chat():
+                        async def blocking_chat():
                             self.ai.chat(
                                 username=message.author.display_name,
                                 user_input=processed_input,
@@ -121,11 +123,11 @@ class ChatBot(discord.Client):
                                 debug=False,
                                 streamer=streamer
                             )
+                            await streamer.queue.put(None)
+
 
                         # Offload entire chat() call to thread to prevent blocking the event loop
                         await asyncio.to_thread(blocking_chat)
-
-                        await streamer.queue.put(None)
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
