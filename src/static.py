@@ -8,7 +8,7 @@ mood_instruction = {
 
     "neutral": "Speak in a calm and balanced tone."
 }
-MODEL_NAME = "stabilityai/stablelm-2-1_6b-chat"
+MODEL_NAME = "Salesforce/xgen-7b-8k-base"#"stabilityai/stablelm-2-1_6b-chat"
 TOKEN = ""
 MEMORY_FILE = "memory.json"
 
