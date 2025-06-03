@@ -19,6 +19,7 @@ class ChatBot:
     def __init__(self, name="ayokdaeno", memory_file=MEMORY_FILE):
         self.name = name
         self.mood = "neutral"
+        self.mood_sentence = "I feel neutral and composed at the moment."
         self.memory_file = memory_file
         self.memory = self.load_memory()
         self.goals = [
@@ -47,7 +48,7 @@ class ChatBot:
         self.model.config.pad_token_id = tokenizer.eos_token_id
 
 
-    def adjust_mood_based_on_input(self, question):
+    def get_mood_based_on_likes_or_dislikes_in_input(self, question):
         classification = classify.classify_likes_dislikes_user_input(
             model=self.model,
             tokenizer=tokenizer,
@@ -56,11 +57,12 @@ class ChatBot:
             dislikes=self.dislikes,
         )
         if classification == "LIKE":
-            self.mood = "happy"
+            mood = "happy"
         elif classification == "DISLIKE":
-            self.mood = "annoyed"
+            mood = "annoyed"
         else:
-            self.mood = "neutral"
+            mood = "neutral"
+        return mood
 
     def load_memory(self):
         if os.path.exists(self.memory_file):
@@ -82,16 +84,21 @@ class ChatBot:
         self.save_memory()
 
 
-    def update_mood(self, user_input):
+    def get_mood_primitive(self, user_input):
         lowered = user_input.lower()
         if any(word in lowered for word in ["thanks", "great", "awesome", "love", "square"]):
-            self.mood = "happy"
+            mood = "happy"
         elif any(word in lowered for word in ["stupid", "bad", "hate", "annoying", "circle"]):
-            self.mood = "annoyed"
+            mood = "annoyed"
         elif any(word in lowered for word in ["rubberducks"]):
-            self.mood = "angry"
+            mood = "angry"
         else:
-            self.mood = "neutral"
+            mood = "neutral"
+        return mood
+    
+    def get_moods_social(self, social_tone_classification: dict):
+        moods = classify.determine_moods_from_social_classification(social_tone_classification)
+        return moods
 
     def build_prompt(self, username, user_input, identifier, usertone):
         goals_text = " ".join(self.goals)
@@ -123,6 +130,7 @@ class ChatBot:
             #f"You are guided by your Likes and Dislikes when responding."
 
             f"Your Current Mood: {self.mood}\n"
+            f"Your Current Mood Sentence: {self.mood_sentence}\n"
             f"Your mood instructions: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}"
         )
 
@@ -190,9 +198,24 @@ class ChatBot:
 
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
-        self.update_mood(user_input)
-        self.adjust_mood_based_on_input(user_input)
         usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
+        moods = {
+            "has_like_or_dislike_mood": { 
+                "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
+                "mood": self.get_mood_primitive(user_input),
+                },
+            "input_mood": {
+                "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
+                "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input),
+                },
+            "social_moods": {
+                "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
+                "mood": self.get_moods_social(usertone)
+            }
+        } # TODO Set mood based on all moods
+        # Set the base mood based on highest score social mood
+        self.mood = moods["social_moods"]["mood"][0]
+        self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
 
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 

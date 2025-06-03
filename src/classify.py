@@ -231,3 +231,114 @@ def classify_social_tone(model, tokenizer, user_input):
 
     log("SOCIAL INTENTS CLASSIFICATION", classification)
     return classification
+
+def determine_moods_from_social_classification(classification, top_n=3):
+    """
+    Dynamically calculates and returns the top N moods based on user interaction.
+    """
+    mood_weights = {
+        "happy": 0,
+        "annoyed": 0,
+        "calm": 0,
+        "playful": 0,
+        "neutral": 0,
+        "amused": 0,
+        "hurt": 0,
+        "respected": 0
+    }
+
+    intent = classification.get("intent", "").upper()
+    attitude = classification.get("attitude", "").upper()
+    tone = classification.get("tone", "").upper()
+
+    # Intent-based scoring
+    if intent == "COMPLIMENT":
+        mood_weights["happy"] += 2
+        mood_weights["respected"] += 1
+    elif intent == "INSULT":
+        mood_weights["annoyed"] += 2
+        mood_weights["hurt"] += 2
+    elif intent == "NEUTRAL":
+        mood_weights["neutral"] += 1
+
+    # Attitude-based scoring
+    if attitude == "NICE":
+        mood_weights["happy"] += 1
+        mood_weights["calm"] += 1
+    elif attitude == "RUDE":
+        mood_weights["annoyed"] += 2
+    elif attitude == "NEUTRAL":
+        mood_weights["neutral"] += 1
+
+    # Tone-based scoring
+    if tone == "POLITE":
+        mood_weights["calm"] += 2
+        mood_weights["respected"] += 1
+    elif tone == "AGGRESSIVE":
+        mood_weights["annoyed"] += 2
+    elif tone == "JOKING":
+        mood_weights["playful"] += 2
+        mood_weights["amused"] += 1
+    elif tone == "NEUTRAL":
+        mood_weights["neutral"] += 1
+
+    sorted_moods = sorted(mood_weights.items(), key=lambda x: x[1], reverse=True)
+    top_moods = [mood for mood, weight in sorted_moods if weight > 0][:top_n]
+
+    log("MOOD WEIGHTS", mood_weights)
+    log("TOP MOODS", top_moods)
+
+    return top_moods
+
+def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
+    """
+    Uses an LLM to convert mood signals into a single sentence that represents the AI's current emotional state.
+
+    Args:
+        model: Hugging Face model instance (e.g., StableLM).
+        tokenizer: Corresponding tokenizer.
+        moods_dict (dict): Each key is a mood category. Each value is a dict with:
+                           - 'prompt': Explains what the category means
+                           - 'mood': A string or list of moods relevant to that category
+
+    Returns:
+        str: A single sentence summarizing the AI's current mood.
+    """
+
+    prompt = (
+        "You are a sentient AI reflecting on your emotional state.\n"
+        "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
+    )
+
+    for mood_key, data in moods_dict.items():
+        moodprompt = data.get("prompt", "")
+        mood = data.get("mood", "neutral")
+        if isinstance(mood, list):
+            mood = ", ".join(mood)
+        prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
+
+    prompt += (
+        "Now, summarize these signals into one expressive sentence that captures your current emotional state:\n"
+    )
+
+    # Tokenize and run model
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=50,
+        do_sample=True,
+        temperature=0.7,
+        top_p=0.95,
+        pad_token_id=tokenizer.eos_token_id,
+        eos_token_id=tokenizer.eos_token_id,
+    )
+
+    full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    mood_sentence = full_response[len(prompt):].strip()
+
+    # Optional: basic cleanup
+    if not mood_sentence or len(mood_sentence.split()) < 3:
+        mood_sentence = "I feel neutral and composed at the moment."
+
+    log("MOOD SENTENCE", mood_sentence)
+    return mood_sentence
