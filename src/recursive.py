@@ -25,7 +25,7 @@ class RecursiveThinker:
             f"**Dislikes:** {dislikes}  \n"
             f"**Goals:** {goals}  \n"
             f"**Mood:** {mood}  \n"
-            f"Current Mood Sentence: {self.bot.mood_sentence}\n"
+            f"**Mood Sentence**: {self.bot.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
 
