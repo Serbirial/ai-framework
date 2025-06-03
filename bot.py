@@ -118,20 +118,30 @@ class ChatBot(discord.Client):
                         debug = True
 
                     # Run the blocking call in a separate thread
-                    response = await asyncio.to_thread(
-                        self.ai.chat,
-                        username=message.author.display_name,
-                        user_input=processed_input,
-                        identifier=message.guild.id,
-                        context=processed_context,
-                        debug=debug,
-                        streamer=streamer
-                    )
-                    if streamer != None:
+                    if streamer == None:
+                        
+                        response = await asyncio.to_thread(
+                            self.ai.chat,
+                            username=message.author.display_name,
+                            user_input=processed_input,
+                            identifier=message.guild.id,
+                            context=processed_context,
+                            debug=debug,
+                            streamer=streamer
+                        )
+                        await message.reply(response)
+                    elif streamer!= None:
+                        self.ai.chat(
+                            username=message.author.display_name,
+                            user_input=processed_input,
+                            identifier=message.guild.id,
+                            context=processed_context,
+                            debug=debug,
+                            streamer=streamer
+                        )
                         await streamer.queue.put(None)
 
 
-                    await message.reply(response)
                 except aiohttp.client_exceptions.ClientConnectorError:
                     pass
     def process_input(self, message):
