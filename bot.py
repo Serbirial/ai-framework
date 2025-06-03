@@ -12,63 +12,48 @@ from transformers import TextStreamer
 from transformers import TextStreamer
 import asyncio
 
+import time
+from transformers import TextStreamer
+
 class DiscordStreamer(TextStreamer):
-    def __init__(self, tokenizer, initial_text="", delay=0.3, loop=None, name="ayokdaeno", **kwargs):
+    def __init__(self, tokenizer, initial_text="", name="ayokdaeno", **kwargs):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
-        self.delay = delay
         self.buffer = initial_text  # Full accumulated string
-        self.queue = asyncio.Queue()
         self.token_buffer = ""
-        self.loop = loop or asyncio.get_event_loop()
-        self.updater_task = self.loop.create_task(self.update_loop())
         self.name = name
         self.hallucinated = False
-        self.done_event = asyncio.Event()  # To signal completion
 
     def on_text(self, text: str, **kwargs):
-        if not self.hallucinated:
-            self.loop.call_soon_threadsafe(self.queue.put_nowait, text)
+        if self.hallucinated:
+            return
 
-    async def update_loop(self):
-        try:
-            while True:
-                token = await self.queue.get()
-                if token is None or self.hallucinated:
-                    break
-                self.token_buffer += token
+        self.token_buffer += text
 
-                # Hallucination detection on lines in the token buffer
-                for line in self.token_buffer.splitlines():
-                    stripped = line.strip()
-                    if (
-                        stripped.startswith("<|user|>") or
-                        stripped.startswith("<|assistant|>") or
-                        (stripped.endswith(":") and not stripped.startswith(self.name))
-                    ):
-                        self.hallucinated = True
-                        break
+        # Hallucination detection on lines in the token buffer
+        for line in self.token_buffer.splitlines():
+            stripped = line.strip()
+            if (
+                stripped.startswith("<|user|>") or
+                stripped.startswith("<|assistant|>") or
+                (stripped.endswith(":") and not stripped.startswith(self.name))
+            ):
+                self.hallucinated = True
+                break
 
-                if self.hallucinated:
-                    self.buffer += self.token_buffer
-                    break
+        if self.hallucinated:
+            self.buffer += self.token_buffer
+            self.token_buffer = ""
+            return
 
-                # Flush token_buffer to buffer based on length or punctuation
-                if len(self.token_buffer) >= 10 or token.endswith(('.', '!', '?')):
-                    self.buffer += self.token_buffer
-                    self.token_buffer = ""
-                    await asyncio.sleep(self.delay)
-
-            # Final flush if not hallucinated
-            if not self.hallucinated:
-                self.buffer += self.token_buffer
-        finally:
-            self.done_event.set()
-
-    async def wait_until_done(self):
-        await self.done_event.wait()
+        # Flush token_buffer to buffer based on length or punctuation
+        if len(self.token_buffer) >= 10 or text.endswith(('.', '!', '?')):
+            self.buffer += self.token_buffer
+            self.token_buffer = ""
 
     def get_text(self):
-        return self.buffer
+        # Return full accumulated string (including buffered tokens)
+        return self.buffer + self.token_buffer
+
 
 AiChatBot = bot.ChatBot
 
