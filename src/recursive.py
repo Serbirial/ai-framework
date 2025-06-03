@@ -172,10 +172,10 @@ class RecursiveThinker:
             full
             + "<|user|>\n"
             + "### Final Answer\n"
-            + "_Speak directly and concisely in your own voice, using first-person pronouns._\n"
+            + "_Now write your final answer for the user. Use your own voice, in the first person, make sure to include anything the user explicitly asked for from your internal steps._\n"
             + "_Do not include disclaimers, third-person analysis, or mention of internal thought steps._\n"
             + "_When referencing something from your earlier thoughts, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
-            + "_Do not refer to 'the above', 'the previous step', or similar; instead, restate what you're referring to._\n"
+            + "_Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to._\n"
             + "<|assistant|>\n"
         )
 
