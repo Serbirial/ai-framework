@@ -23,7 +23,8 @@ def interpret_memory_instruction(self, user_input):
         f"<|system|>\n"
         f"You are an AI assistant that extracts structured memory from user input.\n"
         f"Given the user instruction below, output a JSON object with key-value pairs for memory.\n"
-        f"Only include relevant memory facts.\n\n"
+        f"Only include relevant memory facts, and keep the output as short as possible outside of exact data.\n\n"
+        "Example JSON: {\"data\": \"Whenever you reference me from now on, call me by the name 'summer'\"}"
         f"User Input: \"{user_input}\"\n"
         f"Output:"
     )
@@ -33,9 +34,7 @@ def interpret_memory_instruction(self, user_input):
     with torch.no_grad():
         output = self.model.generate(
             **inputs,
-            max_new_tokens=120,
-            temperature=0.5,
-            top_p=0.9,
+            max_new_tokens=100,
             do_sample=False,
         )
 
