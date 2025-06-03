@@ -40,11 +40,13 @@ class ChatBot:
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
             use_auth_token=TOKEN,
+
             torch_dtype=torch.float32,  # Or float16
             low_cpu_mem_usage=True,
             device_map={"": "cpu"},
             trust_remote_code=True
         )
+        self.model.eval()
         self.model.config.pad_token_id = tokenizer.eos_token_id
 
 
