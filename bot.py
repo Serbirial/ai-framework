@@ -14,7 +14,6 @@ import asyncio
 
 import time
 from transformers import TextStreamer
-
 class DiscordStreamer(TextStreamer):
     def __init__(self, tokenizer, initial_text="", name="ayokdaeno", **kwargs):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
@@ -27,6 +26,7 @@ class DiscordStreamer(TextStreamer):
         if self.hallucinated:
             return
 
+        # Always accumulate text immediately
         self.token_buffer += text
 
         # Hallucination detection on lines in the token buffer
@@ -40,19 +40,19 @@ class DiscordStreamer(TextStreamer):
                 self.hallucinated = True
                 break
 
-        if self.hallucinated:
+        # Append token_buffer to buffer and reset token_buffer when:
+        # either hallucination detected, or token_buffer length >=10 or text ends with punctuation
+        if self.hallucinated or len(self.token_buffer) >= 10 or text.endswith(('.', '!', '?')):
             self.buffer += self.token_buffer
             self.token_buffer = ""
-            return
 
-        # Flush token_buffer to buffer based on length or punctuation
-        if len(self.token_buffer) >= 10 or text.endswith(('.', '!', '?')):
-            self.buffer += self.token_buffer
-            self.token_buffer = ""
+        # OPTIONAL: print streamed chunk to terminal for debug
+        print(text, end="", flush=True)
 
     def get_text(self):
         # Return full accumulated string (including buffered tokens)
         return self.buffer + self.token_buffer
+
 
 async def generate_and_stream(self, message, processed_input, processed_context):
     streammsg = await message.reply("Generating...")
