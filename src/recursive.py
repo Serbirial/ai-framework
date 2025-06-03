@@ -173,6 +173,9 @@ class RecursiveThinker:
             + "<|user|>\n"
             + "### Final Answer\n"
             + "_Speak directly and concisely in your own voice, and in the first-person. Do not include third-person analysis or disclaimers, speak as if you are responding to the question._\n"
+            + "_When referencing any previous thoughts, clearly restate or summarize them explicitly in the answer._\n"
+            + "_Avoid vague phrases like 'the first category described earlier' or 'that group', or similar; instead, explain what you mean clearly so the reader understands without prior context or access to any thoughts._\n"
+
             + "<|assistant|>\n"
         )
         log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
