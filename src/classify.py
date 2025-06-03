@@ -346,3 +346,51 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
 
     log("MOOD SENTENCE", mood_sentence)
     return mood_sentence
+
+def detect_web_search_cue(model, tokenizer, input_text: str, role: str = "user") -> bool:
+    """
+    Uses an LLM to determine whether a given text (user input or internal thought) contains cues
+    that suggest a web search is necessary to provide a better response.
+
+    Args:
+        model: Hugging Face model instance (e.g., StableLM).
+        tokenizer: Corresponding tokenizer.
+        input_text (str): The input to evaluate (user message or internal AI-generated thought).
+        role (str): One of "user" or "thought". Defaults to "user".
+
+    Returns:
+        bool: True if the model believes a web search is warranted, False otherwise.
+    """
+
+    prompt = (
+        "<|system|>\n"
+        "You are an intelligent assistant deciding whether the following input requires a live web search.\n"
+        "You should return 'yes' only if the input implies that up-to-date, external, or factual information is needed.\n\n"
+        "Examples:\n"
+        "Input: 'What’s the weather in Tokyo right now?'\nSearchNeeded: yes\n"
+        "Input: 'Who won the last Formula 1 race?'\nSearchNeeded: yes\n"
+        "Input: 'What is 2 + 2?'\nSearchNeeded: no\n"
+        "Input: 'I feel curious about new tech trends in 2025.'\nSearchNeeded: yes\n"
+        "Input: 'Tell me a fun fact about the moon.'\nSearchNeeded: no\n"
+        "Input: 'I think I should find some recent data about that.'\nSearchNeeded: yes\n"
+        f"<|{role}|>\n"
+        f"Input: \"{input_text}\"\n"
+        "<|assistant|>\n"
+        "SearchNeeded:"
+    )
+
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=3,
+        do_sample=False,
+        temperature=0.0,
+        pad_token_id=tokenizer.eos_token_id,
+        eos_token_id=tokenizer.eos_token_id,
+    )
+
+    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    result = result[len(prompt):].strip().lower()
+
+    log("WEB SEARCH CUE", result)
+    return result.startswith("yes")
