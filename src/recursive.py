@@ -157,7 +157,7 @@ class RecursiveThinker:
 
             response = self.bot._straightforward_generate(
                 inputs,
-                max_new_tokens=100,
+                max_new_tokens=200,
                 temperature=0.7,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -185,7 +185,7 @@ class RecursiveThinker:
 
         final_answer = self.bot._straightforward_generate(
             inputs,
-            max_new_tokens=300,
+            max_new_tokens=400,
             temperature=0.8,
             top_p=0.9,
             streamer=self.streamer,

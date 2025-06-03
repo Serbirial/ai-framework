@@ -13,7 +13,7 @@ TOKEN = ""
 MEMORY_FILE = "memory.json"
 
 class StopOnSpeakerChange(StoppingCriteria):
-    def __init__(self, tokenizer, bot_name="ayokdaeno", min_lines=1, max_lines=5):
+    def __init__(self, tokenizer, bot_name="ayokdaeno", min_lines=1, max_lines=20):
         self.tokenizer = tokenizer
         self.bot_name = bot_name
         self.min_lines = min_lines
