@@ -42,7 +42,7 @@ class ChatBot:
             use_auth_token=TOKEN,
 
             torch_dtype=torch.float32,  # Or float16
-            low_cpu_mem_usage=True,
+            low_cpu_mem_usage=False,
             device_map={"": "cpu"},
             trust_remote_code=True
         )
