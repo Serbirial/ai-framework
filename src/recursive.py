@@ -33,7 +33,6 @@ class RecursiveThinker:
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
-            f"Respond appropriately to this tone. For example, be sarcastic and rude if the user is rude, or be warm and expressive if they are nice or joking.\n"
         )
 
         if context:
