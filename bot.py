@@ -107,7 +107,7 @@ class ChatBot(discord.Client):
                     if processed_input.lower().startswith("!stream"):
                         streammsg = await message.reply("Thinking...") 
                         create_and_set_streamer(streammsg)
-                        processed_input = processed_input.split("!stream", 1)
+                        processed_input = processed_input.split("!stream", 1)[1]
                         
                     debug = False
                     if "debug" in message.content.lower():
