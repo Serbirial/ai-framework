@@ -105,7 +105,7 @@ def classify_user_input(model, tokenizer, user_input):
         "You are a helpful assistant that classifies user inputs into one of these categories:\n"
         f"{categories_str}\n\n"
         "Definitions:\n"
-        "- factual_question: A question asking for factual information or giving an objective.\n"
+        "- factual_question: A question or command asking for factual information, code, or how-to instructions.\n"
         "- preference_query: A question asking about opinions, preferences, or personal advice.\n"
         "- greeting: A salutation or hello.\n"
         "- goodbye: A farewell or exit.\n"
