@@ -150,9 +150,8 @@ class ChatBot(discord.Client):
             async with message.channel.typing():
                 try:
                     if processed_input.lower().startswith("!stream"):
-                        streammsg = await message.reply("Hmm...") 
                         processed_input = processed_input.split("!stream", 1)[1]
-                        generate_and_stream(self, streammsg, processed_input, processed_context)
+                        generate_and_stream(self, message, processed_input, processed_context)
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
