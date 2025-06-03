@@ -19,12 +19,12 @@ class RecursiveThinker:
         base = (
             f"<|system|>\n"
             f"# Personality Profile\n"
-            f"**Name:** {self.bot.name}  \n"
-            f"**Traits:** {traits}  \n"
-            f"**Likes:** {likes}  \n"
-            f"**Dislikes:** {dislikes}  \n"
-            f"**Goals:** {goals}  \n"
-            f"**Mood:** {mood}  \n"
+            f"**Your Name:** {self.bot.name}  \n"
+            f"**Your Traits:** {traits}  \n"
+            f"**Your Likes:** {likes}  \n"
+            f"**Your Dislikes:** {dislikes}  \n"
+            f"**Your Goals:** {goals}  \n"
+            f"**Your Mood:** {mood}  \n"
             f"**Mood Sentence**: {self.bot.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
@@ -58,7 +58,8 @@ class RecursiveThinker:
             f"**Task:** As the assistant, consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits.  \n"
             f"_Adjust your tone and manner to reflect the user's attitude and intent._\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
-            f"# Note: In the question, 'you' always refers to the assistant (AI persona), never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
+            f"# Note: In the question and personality profile, 'you' always refers to the assistant (AI persona), never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
+
         )
 
         # Add specific guidance based on query_type
