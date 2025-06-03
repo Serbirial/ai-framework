@@ -149,6 +149,7 @@ class ChatBot(discord.Client):
                             self.ai.chat,
                             username=message.author.display_name,
                             user_input=processed_input,
+                            temperature=0.8,
                             identifier=message.guild.id,
                             context=processed_context,
                             debug=False,
