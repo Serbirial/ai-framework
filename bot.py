@@ -21,6 +21,7 @@ class DiscordStreamer(TextStreamer):
         self.updater_task = self.loop.create_task(self.update_loop())
 
     def on_text(self, text: str, **kwargs):
+        print(f"on_text called: {text}")
         self.loop.call_soon_threadsafe(self.queue.put_nowait, text)
 
 
@@ -33,14 +34,17 @@ class DiscordStreamer(TextStreamer):
             if len(self.token_buffer) >= 10 or token.endswith(('.', '!', '?')):
                 self.buffer += self.token_buffer
                 self.token_buffer = ""
+                print(f"Editing message with buffer: {self.buffer!r}")  # Debug
                 try:
                     await self.message.edit(content=self.buffer)
-                except Exception:
-                    pass  # Might be deleted or fail; safe to ignore
+                except Exception as e:
+                    print(f"Failed to edit message: {e}")
                 await asyncio.sleep(self.delay)
         # Final flush
         self.buffer += self.token_buffer
+        print(f"Final edit with buffer: {self.buffer!r}")
         await self.message.edit(content=self.buffer)
+
 
 
 AiChatBot = bot.ChatBot
