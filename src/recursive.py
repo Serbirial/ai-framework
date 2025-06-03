@@ -149,7 +149,7 @@ class RecursiveThinker:
         log("DEBUG: RECURSIVE PROMPT",full)
 
         for step in range(self.depth):
-            full += f"<|assistant|>\n### Thought {step+1}:\n"
+            full += f"<|assistant|>\n### Step {step+1}:\n"
 
             inputs = tokenizer(full, return_tensors="pt").to(self.bot.model.device)
 
@@ -173,7 +173,7 @@ class RecursiveThinker:
             + "<|user|>\n"
             + "### Final Answer\n"
             + "_Speak directly and concisely in your own voice, and in the first-person. Do not include third-person analysis or disclaimers, speak as if you are responding to the question._\n"
-            + "_When referencing any previous thoughts, clearly restate or summarize them explicitly in the answer._\n"
+            + "_When referencing any previous steps / thoughts, clearly restate or summarize them explicitly in the answer._\n"
             + "_Avoid vague phrases like 'the first category described earlier' or 'that group', or similar; instead, explain what you mean clearly so the reader understands without prior context or access to any thoughts._\n"
 
             + "<|assistant|>\n"
@@ -184,7 +184,7 @@ class RecursiveThinker:
 
         final_answer = self.bot._straightforward_generate(
             inputs,
-            max_new_tokens=100,
+            max_new_tokens=300,
             temperature=0.8,
             top_p=0.9,
             streamer=self.streamer,

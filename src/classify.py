@@ -188,7 +188,7 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
 
 def classify_social_tone(model, tokenizer, user_input):
     prompt = (
-        "You are a sentiment and social tone classifier for a conversation with an AI assistant.\n"
+        "You are a social tone classifier for a conversation with an AI assistant.\n"
         "Classify the user's tone and attitude in the message.\n"
         "If the input is meaningless, gibberish, or does not express any clear sentiment, choose NEUTRAL.\n"
         "Output the classification as a JSON dictionary with keys: "
@@ -196,12 +196,12 @@ def classify_social_tone(model, tokenizer, user_input):
         "\"attitude\" (NICE, RUDE, NEUTRAL), "
         "\"tone\" (POLITE, AGGRESSIVE, JOKING, NEUTRAL).\n\n"
         "Tone definitions:\n"
-        "- POLITE: Respectful, well-mannered language.\n"
-        "- AGGRESSIVE: Hostile, profane, angry, or confrontational.\n"
-        "- RUDE: Mocking, profane, angry, or confrontational.\n"
-        "- JOKING: Humorous, sarcastic, or unserious tone.\n"
-        "- NEUTRAL: Plain, factual, or emotionless.\n"
-        "- INSULT: Insulting tone or mockery, profane, angry confrontational."
+        "- POLITE: Respectful, well-mannered language that is explicitly polite to the AI assistent.\n"
+        "- AGGRESSIVE: Hostile, profane, angry, or confrontational to the AI assistent.\n"
+        "- RUDE: Mocking, profane, angry, or confrontational to the AI assistent.\n"
+        "- JOKING: Humorous, sarcastic, or unserious tone to the AI assistent.\n"
+        "- NEUTRAL: Plain, factual, or emotionless, default tone of voice.\n"
+        "- INSULT: Insulting tone or mockery, profane, angry or confrontational to the AI assistent."
         "Examples:\n\n"
         "User: \"You're so helpful and smart!\"\n"
         "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"POLITE\"}\n\n"
