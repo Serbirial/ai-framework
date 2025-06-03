@@ -168,7 +168,7 @@ class ChatBot:
                 return yield_line
         return response_raw.strip()
 
-    async def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
+    def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
         # Generate asynchronously, passing the streamer
         self.model.generate(
             **inputs,
@@ -180,7 +180,11 @@ class ChatBot:
             repetition_penalty=1.2,
             streamer=streamer,
         )
-        await streamer.updater_task
+        # Wait for updater_task to complete (synchronously)
+        loop = streamer.loop
+        if not streamer.updater_task.done():
+            loop.run_until_complete(streamer.updater_task)
+
         return streamer.buffer
 
 
