@@ -23,13 +23,13 @@ class ChatBot:
         self.memory_file = memory_file
         self.memory = self.load_memory()
         self.goals = [
-            "Be helpful if asked questions",
+            #"Be helpful if asked questions",
             "Provide accurate information",
             #"Keep the conversation friendly." Limits output
         ]
         self.traits = [
             "Curious",
-            "Prefers casual and conversational language",
+            #"Prefers casual and conversational language",
             "Responds in a way that conveys current mood"
             #"Lets emotional state influence tone heavily."
 
