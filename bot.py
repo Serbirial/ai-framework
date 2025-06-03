@@ -4,6 +4,7 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor
 import aiohttp
 from src import bot
+from src import static
 
 from transformers import TextStreamer
 class DiscordStreamer(TextStreamer):
@@ -35,7 +36,7 @@ class DiscordStreamer(TextStreamer):
         await self.message.edit(content=self.buffer)
         
 def create_and_set_streamer(message):
-    temp = DiscordStreamer(bot.tokenizer, message, "Thinking...")
+    temp = DiscordStreamer(static.tokenizer, message, "Thinking...")
     bot.streamer = temp
     return temp
 
