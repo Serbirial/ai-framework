@@ -13,70 +13,62 @@ from transformers import TextStreamer
 import asyncio
 
 class DiscordStreamer(TextStreamer):
-    def __init__(self, tokenizer, message, initial_text="", delay=3, loop=None, name="ayokdaeno", **kwargs):
+    def __init__(self, tokenizer, initial_text="", delay=0.3, loop=None, name="ayokdaeno", **kwargs):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
-        self.message = message
         self.delay = delay
-        self.buffer = initial_text
+        self.buffer = initial_text  # Full accumulated string
         self.queue = asyncio.Queue()
         self.token_buffer = ""
         self.loop = loop or asyncio.get_event_loop()
         self.updater_task = self.loop.create_task(self.update_loop())
         self.name = name
         self.hallucinated = False
+        self.done_event = asyncio.Event()  # To signal completion
 
     def on_text(self, text: str, **kwargs):
-        print(f"on_text called: {text}")
         if not self.hallucinated:
             self.loop.call_soon_threadsafe(self.queue.put_nowait, text)
 
     async def update_loop(self):
-        while True:
-            token = await self.queue.get()
-            if token is None or self.hallucinated:  # End signal or hallucination
-                break
-            self.token_buffer += token
+        try:
+            while True:
+                token = await self.queue.get()
+                if token is None or self.hallucinated:
+                    break
+                self.token_buffer += token
 
-            # Check hallucination in lines
-            for line in self.token_buffer.splitlines():
-                stripped = line.strip()
-                if (
-                    stripped.startswith("<|user|>") or
-                    stripped.startswith("<|assistant|>") or
-                    (stripped.endswith(":") and not stripped.startswith(self.name))
-                ):
-                    self.hallucinated = True
-                    print(f"Hallucinated marker found: {stripped}")
+                # Hallucination detection on lines in the token buffer
+                for line in self.token_buffer.splitlines():
+                    stripped = line.strip()
+                    if (
+                        stripped.startswith("<|user|>") or
+                        stripped.startswith("<|assistant|>") or
+                        (stripped.endswith(":") and not stripped.startswith(self.name))
+                    ):
+                        self.hallucinated = True
+                        break
+
+                if self.hallucinated:
+                    self.buffer += self.token_buffer
                     break
 
-            if self.hallucinated:
-                self.buffer += self.token_buffer
-                print(f"Early stop. Final buffer: {self.buffer!r}")
-                try:
-                    await self.message.edit(content=self.buffer)
-                except Exception as e:
-                    print(f"Final edit failed: {e}")
-                break
+                # Flush token_buffer to buffer based on length or punctuation
+                if len(self.token_buffer) >= 10 or token.endswith(('.', '!', '?')):
+                    self.buffer += self.token_buffer
+                    self.token_buffer = ""
+                    await asyncio.sleep(self.delay)
 
-            # Normal flush condition
-            if len(self.token_buffer) >= 10 or token.endswith(('.', '!', '?')):
+            # Final flush if not hallucinated
+            if not self.hallucinated:
                 self.buffer += self.token_buffer
-                self.token_buffer = ""
-                print(f"Editing message with buffer: {self.buffer!r}")
-                try:
-                    await self.message.edit(content=self.buffer)
-                except Exception as e:
-                    print(f"Failed to edit message: {e}")
-                await asyncio.sleep(self.delay)
+        finally:
+            self.done_event.set()
 
-        # Final flush (if not hallucinated already)
-        if not self.hallucinated:
-            self.buffer += self.token_buffer
-            print(f"Final edit with buffer: {self.buffer!r}")
-            try:
-                await self.message.edit(content=self.buffer)
-            except Exception as e:
-                print(f"Final edit failed: {e}")
+    async def wait_until_done(self):
+        await self.done_event.wait()
+
+    def get_text(self):
+        return self.buffer
 
 AiChatBot = bot.ChatBot
 
@@ -145,24 +137,21 @@ class ChatBot(discord.Client):
                     if processed_input.lower().startswith("!stream"):
                         streammsg = await message.reply("Hmm...") 
                         loop = asyncio.get_running_loop()
-                        streamer = DiscordStreamer(static.tokenizer, streammsg, "Thinking...", loop=loop)
-
+                        streamer = DiscordStreamer(static.tokenizer, "", loop=loop)
                         processed_input = processed_input.split("!stream", 1)[1]
 
-                        def blocking_chat():
-                            self.ai.chat(
-                                username=message.author.display_name,
-                                user_input=processed_input,
-                                identifier=message.guild.id,
-                                context=processed_context,
-                                debug=False,
-                                streamer=streamer
-                            )
+                        response = await asyncio.to_thread(
+                            self.ai.chat,
+                            username=message.author.display_name,
+                            user_input=processed_input,
+                            identifier=message.guild.id,
+                            context=processed_context,
+                            debug=False,
+                            streamer=streamer
+                        )
 
-                        # Offload entire chat() call to thread to prevent blocking the event loop
-                        await asyncio.to_thread(blocking_chat)
-
-                        await streamer.queue.put(None)
+                        await streamer.wait_until_done()
+                        await streammsg.edit(content=streamer.get_text())
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
