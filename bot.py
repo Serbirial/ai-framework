@@ -7,6 +7,8 @@ from src import bot
 from src import static
 
 from transformers import TextStreamer
+from transformers import TextStreamer
+
 class DiscordStreamer(TextStreamer):
     def __init__(self, tokenizer, message, initial_text="", delay=3, **kwargs):
         super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
@@ -16,6 +18,10 @@ class DiscordStreamer(TextStreamer):
         self.queue = asyncio.Queue()
         self.token_buffer = ""
         self.updater_task = asyncio.create_task(self.update_loop())
+
+    def on_text(self, text: str, **kwargs):
+        # This is called for every new token chunk
+        asyncio.get_event_loop().call_soon_threadsafe(self.queue.put_nowait, text)
 
     async def update_loop(self):
         while True:
@@ -29,12 +35,12 @@ class DiscordStreamer(TextStreamer):
                 try:
                     await self.message.edit(content=self.buffer)
                 except Exception:
-                    pass  # Message might be deleted or timeout; ignore for now
+                    pass  # Might be deleted or fail; safe to ignore
                 await asyncio.sleep(self.delay)
         # Final flush
         self.buffer += self.token_buffer
         await self.message.edit(content=self.buffer)
-        
+
 
 AiChatBot = bot.ChatBot
 
@@ -121,6 +127,9 @@ class ChatBot(discord.Client):
                         debug=debug,
                         streamer=streamer
                     )
+                    if streamer != None:
+                        await streamer.queue.put(None)
+
 
                     await message.reply(response)
                 except aiohttp.client_exceptions.ClientConnectorError:
