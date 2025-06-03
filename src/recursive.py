@@ -173,7 +173,7 @@ class RecursiveThinker:
             full
             + "<|user|>\n"
             + "### Final Answer\n"
-            + "_Speak directly and concisely in your own voice. Do not include third-person analysis or disclaimers._\n"
+            + "_Speak directly and concisely in your own voice, and in the first-person. Do not include third-person analysis or disclaimers, speak as if you are responding to the question._\n"
             + "<|assistant|>\n"
         )
         log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
