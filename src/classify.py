@@ -10,7 +10,7 @@ def build_memory_confirmation_prompt(interpreted_data):
         "The user just told you some information to remember.\n"
         "Confirm back to the user that their information has been saved, and show them exactly what you saved.\n"
         f"Here is the saved information:\n"
-        f"{interpreted_data.strip()}\n"
+        f"{interpreted_data['data'].strip()}\n"
         "<|user|>\n"
         "Please write a friendly confirmation message to the user.\n"
         "<|assistant|>\n"
