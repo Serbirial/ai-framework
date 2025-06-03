@@ -35,10 +35,6 @@ class DiscordStreamer(TextStreamer):
         self.buffer += self.token_buffer
         await self.message.edit(content=self.buffer)
         
-def create_and_set_streamer(message):
-    temp = DiscordStreamer(static.tokenizer, message, "Thinking...")
-    bot.streamer = temp
-    return temp
 
 AiChatBot = bot.ChatBot
 
@@ -105,10 +101,12 @@ class ChatBot(discord.Client):
             async with message.channel.typing():
                 try:
                     if processed_input.lower().startswith("!stream"):
-                        streammsg = await message.reply("Thinking...") 
-                        create_and_set_streamer(streammsg)
+                        streammsg = await message.reply("Hmm...") 
+                        streamer = DiscordStreamer(static.tokenizer, streammsg, "Thinking...")
+
                         processed_input = processed_input.split("!stream", 1)[1]
-                        
+                    else:
+                        streamer = None
                     debug = False
                     if "debug" in message.content.lower():
                         debug = True
@@ -120,7 +118,8 @@ class ChatBot(discord.Client):
                         user_input=processed_input,
                         identifier=message.guild.id,
                         context=processed_context,
-                        debug=debug
+                        debug=debug,
+                        streamer=streamer
                     )
 
                     await message.reply(response)

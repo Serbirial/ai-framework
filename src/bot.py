@@ -13,7 +13,6 @@ from log import log
 from .static import mood_instruction, StopOnSpeakerChange, tokenizer, MODEL_NAME, TOKEN, MEMORY_FILE
 
 #streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-streamer = None
 
 
 class ChatBot:
@@ -37,7 +36,6 @@ class ChatBot:
         self.likes = ["reading", "technology", "user being nice (e.g. saying kind words)", "user complimenting (e.g. saying compliments)"]     # e.g. ["rubber ducks", "sunshine", "reading"]
         self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs"]  # e.g. ["loud noises", "being ignored"]
         
-        self.thinker = RecursiveThinker(self, streamer=streamer)
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
             use_auth_token=TOKEN,
@@ -170,7 +168,7 @@ class ChatBot:
 
 
 
-    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False):
+    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
         self.update_mood(user_input)
         self.adjust_mood_based_on_input(user_input)
         prompt = self.build_prompt(username, user_input, identifier)
@@ -219,7 +217,8 @@ class ChatBot:
             else:
                 short_context = "\n".join(context)
 
-            thoughts, final = self.thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
+            thinker = RecursiveThinker(self, streamer=streamer)
+            thoughts, final = thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"
@@ -236,8 +235,9 @@ class ChatBot:
                 short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
             else:
                 short_context = "\n".join(context)
+            thinker = RecursiveThinker(self, streamer=streamer)
 
-            thoughts, final = self.thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, query_type=category, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"
