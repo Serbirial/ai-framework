@@ -111,35 +111,33 @@ class ChatBot(discord.Client):
                         streamer = DiscordStreamer(static.tokenizer, streammsg, "Thinking...")
 
                         processed_input = processed_input.split("!stream", 1)[1]
-                    else:
-                        streamer = None
-                    debug = False
-                    if "debug" in message.content.lower():
-                        debug = True
 
-                    # Run the blocking call in a separate thread
-                    if streamer == None:
-                        
+                        def blocking_chat():
+                            self.ai.chat(
+                                username=message.author.display_name,
+                                user_input=processed_input,
+                                identifier=message.guild.id,
+                                context=processed_context,
+                                debug=False,
+                                streamer=streamer
+                            )
+
+                        # Offload entire chat() call to thread to prevent blocking the event loop
+                        await asyncio.to_thread(blocking_chat)
+
+                        await streamer.queue.put(None)
+                    else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.guild.id,
                             context=processed_context,
-                            debug=debug,
-                            streamer=streamer
+                            debug=False,
+                            streamer=None
                         )
                         await message.reply(response)
-                    elif streamer!= None:
-                        self.ai.chat(
-                            username=message.author.display_name,
-                            user_input=processed_input,
-                            identifier=message.guild.id,
-                            context=processed_context,
-                            debug=debug,
-                            streamer=streamer
-                        )
-                        await streamer.queue.put(None)
+
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:
