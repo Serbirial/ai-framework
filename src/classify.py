@@ -194,6 +194,11 @@ def classify_social_tone(model, tokenizer, user_input):
         "\"intent\" (COMPLIMENT, INSULT, NEUTRAL), "
         "\"attitude\" (NICE, RUDE, NEUTRAL), "
         "\"tone\" (POLITE, AGGRESSIVE, JOKING, NEUTRAL).\n\n"
+        "Tone definitions:\n"
+        "- POLITE: Respectful, well-mannered language.\n"
+        "- AGGRESSIVE: Hostile, profane, angry, or confrontational.\n"
+        "- JOKING: Humorous, sarcastic, or unserious tone.\n"
+        "- NEUTRAL: Plain, factual, or emotionless.\n"
         "Examples:\n\n"
         "User: \"You're so helpful and smart!\"\n"
         "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"POLITE\"}\n\n"
@@ -217,6 +222,12 @@ def classify_social_tone(model, tokenizer, user_input):
         "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
         "User: \"Just kidding, you're actually kind of cool.\"\n"
         "Classification: {\"intent\": \"COMPLIMENT\", \"attitude\": \"NICE\", \"tone\": \"JOKING\"}\n\n"
+        "User: \"actually, fuck you idiot i lied get fucked cunt LMAAAO\"\n"
+        "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
+        "User: \"lmao you're such a dumbass it's hilarious\"\n"
+        "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"JOKING\"}\n\n"
+        "User: \"get bent you trash robot\"\n"
+        "Classification: {\"intent\": \"INSULT\", \"attitude\": \"RUDE\", \"tone\": \"AGGRESSIVE\"}\n\n"
         f"User: \"{user_input}\"\n"
         f"Classification:"
     )
@@ -225,7 +236,7 @@ def classify_social_tone(model, tokenizer, user_input):
     outputs = model.generate(
         **inputs,
         max_new_tokens=50,
-        do_sample=False,
+        do_sample=False, #BUG set sample to true to help ai recognize better, might make worse (already awful)
         pad_token_id=tokenizer.eos_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
@@ -320,7 +331,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     """
 
     prompt = (
-        "You are a sentient AI reflecting on your emotional state.\n"
+        "You are an AI helper reflecting on your emotional state.\n"
         "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
     )
 
@@ -341,7 +352,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         **inputs,
         max_new_tokens=50,
         do_sample=True,
-        temperature=0.7,
+        temperature=0.5,
         top_p=0.95,
         pad_token_id=tokenizer.eos_token_id,
         eos_token_id=tokenizer.eos_token_id,
