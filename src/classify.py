@@ -362,7 +362,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(
         **inputs,
-        max_new_tokens=50,
+        max_new_tokens=100,
         do_sample=True,
         temperature=0.5,
         top_p=0.95,
