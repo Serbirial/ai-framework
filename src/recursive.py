@@ -18,7 +18,7 @@ class RecursiveThinker:
 
         base = (
             f"<|system|>\n"
-            f"# Personality Profile\n"
+            f"# {self.bot.name}'s Personality Profile\n"
             f"**Your Name:** {self.bot.name}  \n"
             f"**Your Traits:** {traits}  \n"
             f"**Your Likes:** {likes}  \n"
@@ -37,8 +37,8 @@ class RecursiveThinker:
 
         if context:
             base += (
-                f"\n## Relevant Memory or Context\n"
-                f"- Consider how this context / recent history may affect your thoughts.\n"
+                f"\n## Relevant Chat History / Context\n"
+                f"- This contains previous chat history, or the current context before the interaction.\n"
                 f"{context.strip()}\n"
             )
 
@@ -70,7 +70,7 @@ class RecursiveThinker:
                 "- Do not include opinion, emotion, or personal language unless explicitly asked.  \n"
                 "- Avoid including numbered steps, markdown titles, or debug thoughts in the final answer.  \n"
                 "- Present the answer directly and concisely in plain text or code as appropriate.  \n"
-                "- If the user's question asks for code, output only the appropriate code block to fulfill their request.  \n"
+                "- If the user's question asks for code, generate only the appropriate code to fulfill their request with no filler conversation.  \n"
                 "- If the question asks for a definition, explanation, or fact, respond directly and clearly with no filler.  \n"
                 "- Always respond to the user’s exact request unless instructed otherwise.\n"
             )
