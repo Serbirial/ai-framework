@@ -46,7 +46,7 @@ class RecursiveThinker:
             interpreted_facts = classify.interpret_to_remember(self.bot, identifier)
             if interpreted_facts:
                 base += (
-                    f"\n## Things You Were Told to Remember\n"
+                    f"\n## Things you were told to remember by the user:\n"
                     f"{interpreted_facts.strip()}\n"
                 )
 

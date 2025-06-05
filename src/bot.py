@@ -116,7 +116,7 @@ class ChatBot:
         if memory_lines:
             memory_text += "Recent conversation:\n" + "\n".join(memory_lines[-10:]) + "\n"
         if interpreted_facts:
-            memory_text += "## Memory Recall Section:\n" + "- " + interpreted_facts.replace("\n", "\n- ") + "\n"
+            memory_text += "## Things you were told to remember by the user:\n" + "- " + interpreted_facts.replace("\n", "\n- ") + "\n"
 
 
         system_prompt = (
