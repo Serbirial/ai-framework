@@ -180,9 +180,10 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question using your previous steps to guide your answer._\n"
+                + "_Now write your final answer to reply to the question using your previous steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
                 + "_Include only the explanation and the requested code or answer in your own voice, in the first person._\n"
-                + "_Do not include disclaimers, or references to internal thoughts._\n"
+                + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
+                + "_Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to._\n"
                 + "_Avoid repeating code, statements , answers or facts unless absolutely required._\n"
                 + "<|assistant|>\n"
             )
@@ -210,7 +211,7 @@ class RecursiveThinker:
 
         final_answer = self.bot._straightforward_generate(
             inputs,
-            max_new_tokens=400, # NOTE: double for debugging, should be 400
+            max_new_tokens=350, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,

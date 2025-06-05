@@ -12,7 +12,6 @@ MODEL_NAME = "stabilityai/stablelm-2-1_6b-chat"
 TOKEN = ""
 MEMORY_FILE = "memory.json"
 
-from transformers import StoppingCriteria
 class StopOnSpeakerChange(StoppingCriteria):
     def __init__(self, tokenizer, bot_name="ayokdaeno", min_lines=1, max_lines=20):
         self.tokenizer = tokenizer
