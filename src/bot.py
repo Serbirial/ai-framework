@@ -256,10 +256,10 @@ class ChatBot:
                 # Store raw memory data as JSON strings in to_remember (no flattening)
                 import json
                 # Wrap memory_data with timestamp for reference
-                entry = {"timestamp": timestamp, **memory_data}
+                entry = {"date": timestamp, **memory_data}
                 self.memory[identifier]["to_remember"].append(json.dumps(entry))
-
-            prompt = classify.build_memory_confirmation_prompt(memory_data)
+            memory_data_ai_readable = classify.interpret_to_remember(self, identifier, max_new_tokens=400)
+            prompt = classify.build_memory_confirmation_prompt(memory_data_ai_readable)
 
             # add data from helper function into prompt before responding
             response = self._straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
