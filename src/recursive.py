@@ -56,6 +56,7 @@ class RecursiveThinker:
             f"**Question:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits influencing your reasoning.  \n"
             f"Adjust your tone and manner to mirror the user's attitude and intent.\n"
+            f"**Rules:** Only generate content for the current step. Do not generate content for any future step numbers (e.g., Step 2, Step 3). You must stop after completing the current step.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
             f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
 
