@@ -68,7 +68,7 @@ def interpret_to_remember(bot, identifier, max_new_tokens=100):
     prompt = (
         "<|system|>\n"
         "You are an AI assistant that interprets raw user memory instructions into concise, easy to parse facts.\n"
-        "Given the raw text below, transform it into a short, clear list of facts or instructions for yourself:\n\n"
+        "Given the raw text and/or json below, transform it into a short, clear list of facts or instructions for yourself:\n\n"
         f"{raw_text}\n\n"
         "Interpretation:\n"
     )
