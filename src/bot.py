@@ -149,8 +149,11 @@ class ChatBot:
             "- Do not speak on your emotional state, goals, likes, dislikes, or similar unless the user explicitly instructed otherwise.\n"
 
         )
+        task_prompt = (
+            f"**Task:** As the personality named '{self.bot.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
+        )
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n"
+            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
             f"<|user|>\n{user_input}\n"
             f"<|assistant|>\n"
         )
