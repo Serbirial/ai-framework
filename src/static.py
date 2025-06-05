@@ -35,9 +35,13 @@ class StopOnSpeakerChange(StoppingCriteria):
         while True:
             if "\n" in self.buffer:
                 part, self.buffer = self.buffer.split("\n", 1)
-                lines.append(part.strip())
+                data = part.strip()
+                if data != "":
+                    lines.append(data)
+                # else: skip blank lines silently
             else:
                 break  # wait for more text before splitting
+
 
         assistant_lines = []
 
