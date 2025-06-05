@@ -115,21 +115,21 @@ class ChatBot:
         memory_lines = user_memory.get("memory", [])
         if memory_lines:
                 memory_text += f"\n## Relevant Chat History / Context\n"
-                memory_text += f"- This contains previous chat history, or the current context before the interaction.\n"
+                memory_text += f"- This contains previous chat history with the user.\n"
         if interpreted_facts:
             memory_text += "## Things you were told to remember by the user:\n" + "- " + interpreted_facts.replace("\n", "\n- ") + "\n"
 
 
         system_prompt = (
             f"<|system|>\n"
-            f"# {self.bot.name}'s Personality Profile\n"
-            f"**Your Name:** {self.bot.name}  \n"
+            f"# {self.name}'s Personality Profile\n"
+            f"**Your Name:** {self.name}  \n"
             f"**Your Traits:** {traits_text}  \n"
             f"**Your Likes:** {likes_text}  \n"
             f"**Your Dislikes:** {dislikes_text}  \n"
             f"**Your Goals:** {goals_text}  \n"
             f"**Your Mood:** {self.mood}  \n"
-            f"**Mood Sentence:** {self.bot.mood_sentence}\n"
+            f"**Mood Sentence:** {self.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
