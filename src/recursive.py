@@ -182,6 +182,7 @@ class RecursiveThinker:
                 + "### Final Answer\n"
                 + "_Now write your final answer to reply to the question using your previous steps to guide your answer._\n"
                 + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
+                + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
                 + "_Do not include disclaimers, or references to internal thoughts._\n"
                 + "<|assistant|>\n"
             )
