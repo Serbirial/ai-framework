@@ -54,10 +54,10 @@ class RecursiveThinker:
             f"\n<|user|>\n"
             f"### Reasoning Prompt\n"
             f"**Question:** {question}  \n"
-            f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits.  \n"
+            f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits influencing your reasoning.  \n"
             f"Adjust your tone and manner to mirror the user's attitude and intent.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
-            f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the assistant (AI Assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
+            f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
 
         )
 
@@ -68,11 +68,11 @@ class RecursiveThinker:
                 "- Focus on clarity, accuracy, and logic.  \n"
                 "- Prioritize objective information.  \n"
                 "- Do not include opinion, emotion, or personal language unless explicitly asked.  \n"
-                "- Avoid including numbered steps, markdown titles, or debug thoughts in the final answer.  \n"
-                "- Present the answer directly and concisely in plain text or code as appropriate.  \n"
-                "- If the user's question asks for code, generate only the appropriate code to fulfill their request with no filler conversation.  \n"
-                "- If the question asks for a definition, explanation, or fact, respond directly and clearly with no filler.  \n"
-                "- Always respond to the user’s exact request unless instructed otherwise.\n"
+                #"- Avoid including numbered steps, markdown titles, or debug thoughts in the final answer.  \n"
+                #"- Present the answer directly and concisely in plain text or code as appropriate.  \n" NOTE: moved to final step
+                "- If the user's question asks for code, generate only the appropriate code to fulfill their request.  \n"
+                "- If the user's question asks for a definition, explanation, or fact, respond directly and clearly with no filler.  \n"
+                "- Always respond to the user’s exact request / question unless instructed otherwise.\n"
             )
 
 
@@ -180,10 +180,11 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question using your previous steps to guide your answer._\n"
-                + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
+                + "_Now write your reply to the question using your previous steps to guide your answer._\n"
                 + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
                 + "_Do not include disclaimers, or references to internal thoughts._\n"
+                + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
+                + "_Present the answer directly and concisely in plain text or code as appropriate._\n"
                 + "<|assistant|>\n"
             )
         else:
