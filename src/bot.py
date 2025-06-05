@@ -114,34 +114,39 @@ class ChatBot:
         user_memory = self.memory.get(identifier, {})
         memory_lines = user_memory.get("memory", [])
         if memory_lines:
-            memory_text += "Recent conversation:\n" + "\n".join(memory_lines[-10:]) + "\n"
+                memory_text += f"\n## Relevant Chat History / Context\n"
+                memory_text += f"- This contains previous chat history, or the current context before the interaction.\n"
         if interpreted_facts:
             memory_text += "## Things you were told to remember by the user:\n" + "- " + interpreted_facts.replace("\n", "\n- ") + "\n"
 
 
         system_prompt = (
-            f"You are {self.name}, a intelligent and emotionally aware personality with distinct moods.\n"
-            f"Personality Traits: {traits_text}\n"
-            f"Likes: {likes_text}\n"
-            f"Dislikes: {dislikes_text}\n"
-            f"Your Goals: {goals_text}\n"
-            f"User's Intents: {usertone['intent']}\n"
-            f"User's Attitude: {usertone['attitude']}\n"
-            f"User's Tone: {usertone['tone']}\n"
+            f"<|system|>\n"
+            f"# {self.bot.name}'s Personality Profile\n"
+            f"**Your Name:** {self.bot.name}  \n"
+            f"**Your Traits:** {traits_text}  \n"
+            f"**Your Likes:** {likes_text}  \n"
+            f"**Your Dislikes:** {dislikes_text}  \n"
+            f"**Your Goals:** {goals_text}  \n"
+            f"**Your Mood:** {self.mood}  \n"
+            f"**Mood Sentence:** {self.bot.mood_sentence}\n"
 
-            #f"You are guided by your Likes and Dislikes when responding."
+            f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
-            f"Your Current Mood: {self.mood}\n"
-            f"Your Current Mood Sentence: {self.mood_sentence}\n"
-            f"Your mood instructions: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}"
-            "**Rules**:\n"
-
-            f"- Reply in the first person, do not narrate in the 3rd person or deviate from first-person speaking.\n"
+            f"# Social Context\n"
+            f"**User Intent:** {usertone['intent']}  \n"
+            f"**User Attitude:** {usertone['attitude']}  \n"
+            f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
         )
+        if memory_text != "":
+            system_prompt += memory_text
+        rules_prompt = (
+            "**Rules**:\n"
+            "- Do not include disclaimers or third-person analysis.\n"
+            "- Reply exclusively in the first person.\n"
+            "- Do not speak on your emotional state, goals, likes, dislikes, or similar unless instructed otherwise.\n"
 
-        if memory_text:
-            system_prompt += f"\n\n{memory_text.strip()}"
-
+        )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n"
             f"<|user|>\n{username}: {user_input}\n"
