@@ -157,7 +157,7 @@ class RecursiveThinker:
         log("DEBUG: RECURSIVE PROMPT",full)
 
         for step in range(self.depth):
-            full += f"<|assistant|>\n### Step {step+1}:\n"
+            full += f"<|assistant|>\n### Thought step {step+1}:\n"
 
             inputs = tokenizer(full, return_tensors="pt").to(self.bot.model.device)
 
@@ -181,11 +181,13 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your reply to the question using your previous steps to guide your answer._\n"
-                + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
-                + "_Do not include disclaimers, or references to internal thoughts._\n"
-                + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
-                + "_Present the answer directly and concisely in plain text or code as appropriate._\n"
+                + "_Now write your reply to the question using your previous thought steps to guide your answer._\n"
+                + "**Rules**:\n"
+                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
+                + "- Do not include disclaimers.\n"
+                + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
+                + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
+                + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
                 + "<|assistant|>\n"
             )
         else:
@@ -193,10 +195,12 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question using your previous steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
-                + "_Do not include disclaimers or third-person analysis._\n"
-                + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
-                + "_Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to._\n"
+                + "_Now write your final answer to reply to the question using your previous thought steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
+                + "**Rules**:\n"
+
+                + "- Do not include disclaimers or third-person analysis.\n"
+                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
+                + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
                 + "<|assistant|>\n"
             )
 

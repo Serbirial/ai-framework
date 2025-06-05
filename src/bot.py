@@ -134,6 +134,9 @@ class ChatBot:
             f"Your Current Mood: {self.mood}\n"
             f"Your Current Mood Sentence: {self.mood_sentence}\n"
             f"Your mood instructions: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}"
+            "**Rules**:\n"
+
+            f"- Reply in the first person, do not narrate in the 3rd person or deviate from first-person speaking.\n"
         )
 
         if memory_text:
