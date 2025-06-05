@@ -30,46 +30,40 @@ class StopOnSpeakerChange(StoppingCriteria):
         recording = False
 
         for line in lines:
-            line = line.strip()
+            stripped = line.strip()
 
             # Start recording after <|assistant|> marker
-            if line.startswith("<|assistant|>"):
+            if stripped.startswith("<|assistant|>"):
                 recording = True
                 assistant_lines = []
                 continue
-            elif line.startswith("<|user|>"):
+            elif stripped.startswith("<|user|>"):
                 recording = False
                 continue
 
-            # Only track assistant lines, ignore speaker markers or empty lines
-            if recording and line and not line.startswith("<|") and not line.startswith("```"):
-                assistant_lines.append(line)
+            if recording:
+                # Count any non-empty assistant lines (even indented code)
+                if stripped and not stripped.startswith("<|"):
+                    assistant_lines.append(stripped)
 
         self.line_count = len(assistant_lines)
 
-        # Check for double newline (used as a soft logical stopping point)
-        #double_newline = "\n\n" in decoded
-
-        # Enforce hard maximum
         if self.line_count >= self.max_lines:
             return True
 
-        # Look at last non-empty line to check for speaker switch
+        # Detect hallucinated user speaker line or speaker-like switch
         last_line = lines[-1].strip() if lines else ""
         speaker_change = (
+            last_line.startswith("<|user|>") or
             (last_line.endswith(":") and not last_line.lower().startswith(self.bot_name.lower()))
-            or last_line.startswith("<|user|>")
         )
 
-        # Stop if speaker change AND enough lines were generated
         if self.line_count >= self.min_lines and speaker_change:
             return True
 
-        # Optional: stop softly if double newline and enough content
-        if self.line_count >= self.min_lines:
-            return True
-
+        # Always allow more output if still under min_lines
         return False
+
 
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_auth_token=TOKEN, use_fast=True)
