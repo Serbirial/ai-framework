@@ -34,7 +34,7 @@ def interpret_memory_instruction(self, user_input):
     with torch.no_grad():
         output = self.model.generate(
             **inputs,
-            max_new_tokens=100,
+            max_new_tokens=250,
             do_sample=False,
         )
 

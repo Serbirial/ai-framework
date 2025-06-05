@@ -117,7 +117,8 @@ class ChatBot:
                 memory_text += f"\n## Relevant Chat History / Context\n"
                 memory_text += f"- This contains previous chat history with the user.\n"
         if interpreted_facts:
-            memory_text += "## Things you were told to remember by the user:\n" + "- " + interpreted_facts.replace("\n", "\n- ") + "\n"
+                memory_text += f"\n## Things you were told to remember by the user, you must abide by any and all things in here:\n"
+                memory_text += f"{interpreted_facts.strip()}\n"
 
 
         system_prompt = (
