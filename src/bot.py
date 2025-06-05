@@ -148,8 +148,8 @@ class ChatBot:
 
         )
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n"
-            f"<|user|>{rules_prompt}\n{username}: {user_input}\n"
+            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n"
+            f"<|user|>\n{username}: {user_input}\n"
             f"<|assistant|>\n{self.name}:"
         )
 
