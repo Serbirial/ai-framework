@@ -164,7 +164,7 @@ class RecursiveThinker:
 
             response = self.bot._straightforward_generate(
                 inputs,
-                max_new_tokens=100,
+                max_new_tokens=120,
                 temperature=0.8, # Higher creativity for internal thoughts
                 top_p=0.9,
                 streamer=self.streamer,
@@ -181,8 +181,9 @@ class RecursiveThinker:
                 + "<|user|>\n"
                 + "### Final Answer\n"
                 + "_Now write your final answer to reply to the question using your previous steps to guide your answer._\n"
-                + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
+                + "_Include only the explanation and the requested code or answer in your own voice, in the first person._\n"
                 + "_Do not include disclaimers, or references to internal thoughts._\n"
+                + "_Avoid repeating code, statements , answers or facts unless absolutely required._\n"
                 + "<|assistant|>\n"
             )
         else:
