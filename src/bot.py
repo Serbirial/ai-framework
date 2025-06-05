@@ -171,7 +171,8 @@ class ChatBot:
         else:
             response_raw = decoded_output  # fallback to full decoded output
 
-        #NOTE: this should be handled by the stop criteria
+        return response_raw
+        #NOTE: this should be handled by the stop
         # Stop early if the model hallucinates another user or assistant prompt
         #for line in response_raw.splitlines():
         #    if line.strip().startswith("<|user|>") or line.strip().startswith("<|assistant|>"):
