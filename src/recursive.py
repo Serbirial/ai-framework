@@ -198,8 +198,9 @@ class RecursiveThinker:
             )
 
         log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
-
         inputs = tokenizer(final_prompt, return_tensors="pt").to(self.bot.model.device)
+        log("DEBUG: PROMPT TOKENS", inputs.input_ids.size(1))
+
 
         final_answer = self.bot._straightforward_generate(
             inputs,

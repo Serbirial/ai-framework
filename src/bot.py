@@ -222,6 +222,7 @@ class ChatBot:
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 
         inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
+        log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
 
         category = classify.classify_user_input(self.model, tokenizer, user_input)
         
