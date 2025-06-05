@@ -134,6 +134,7 @@ class ChatBot:
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
             f"# Social Context\n"
+            f"**User Username:** {username}  \n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
@@ -278,7 +279,7 @@ class ChatBot:
                 short_context = "\n".join(context)
 
             thinker = RecursiveThinker(self, streamer=streamer)
-            thoughts, final = thinker.think(question=user_input, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"
@@ -297,7 +298,7 @@ class ChatBot:
                 short_context = "\n".join(context)
             thinker = RecursiveThinker(self, streamer=streamer)
 
-            thoughts, final = thinker.think(question=user_input, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                 final = f"{thoughts}\n{final}"

@@ -9,7 +9,7 @@ class RecursiveThinker:
         self.depth = depth
         self.streamer = streamer
 
-    def build_prompt(self, question, query_type, usertone, context=None, include_reflection=False, identifier=None):
+    def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None):
         traits = ", ".join(self.bot.traits)
         goals = ", ".join(self.bot.goals)
         likes = ", ".join(self.bot.likes)
@@ -30,6 +30,7 @@ class RecursiveThinker:
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
 
             f"# Social Context\n"
+            f"**User Username:** {username}  \n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
@@ -151,8 +152,8 @@ class RecursiveThinker:
 
         return base
 
-    def think(self, question, query_type, usertone, context="", include_reflection=False, identifier=None):
-        prompt = self.build_prompt(question, query_type, usertone, context, include_reflection, identifier)
+    def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
+        prompt = self.build_prompt(question, username, query_type, usertone, context, include_reflection, identifier)
         full = prompt
         log("DEBUG: RECURSIVE PROMPT",full)
 
