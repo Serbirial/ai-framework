@@ -198,6 +198,7 @@ class RecursiveThinker:
                 + "_Now write your final answer to reply to the question using your previous thought steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
                 + "**Rules**:\n"
 
+                + "- Avoid including numbered steps or markdown titles in the final answer.\n"
                 + "- Do not include disclaimers or third-person analysis.\n"
                 + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
                 + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
