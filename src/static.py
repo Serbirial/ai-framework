@@ -13,7 +13,6 @@ TOKEN = ""
 MEMORY_FILE = "memory.json"
 
 from transformers import StoppingCriteria
-
 class StopOnSpeakerChange(StoppingCriteria):
     def __init__(self, tokenizer, bot_name="ayokdaeno", min_lines=1, max_lines=20):
         self.tokenizer = tokenizer
@@ -21,50 +20,44 @@ class StopOnSpeakerChange(StoppingCriteria):
         self.min_lines = min_lines
         self.max_lines = max_lines
         self.line_count = 0
+        self.prev_len = 0
+        self.buffer = ""
 
     def __call__(self, input_ids, scores, **kwargs):
-        decoded = self.tokenizer.decode(input_ids[0], skip_special_tokens=False)
-        lines = decoded.splitlines()
+        current_len = input_ids.shape[1]
+        new_tokens = input_ids[0, self.prev_len:current_len]
+        decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=False)
+        self.prev_len = current_len
+
+        self.buffer += decoded
+
+        lines = []
+        while True:
+            # Only split on actual newlines
+            lines = []
+            while "\n" in self.buffer:
+                part, self.buffer = self.buffer.split("\n", 1)
+                lines.append(part.strip())
+
 
         assistant_lines = []
-        recording = False
 
         for line in lines:
-            line = line.strip()
-
-            if line.startswith("<|assistant|>"):
-                recording = True
-                assistant_lines = []
+            if line == "<|assistant|>":
                 continue
-            elif line.startswith("<|user|>"):
-                recording = False
-                continue
-
-            if recording and line and not line.startswith("<|") and not line.startswith("```"):
+            elif line.startswith("<|user|>") or line.startswith("<|system|>"):
+                return self.line_count >= self.min_lines
+            if line and not line.startswith("<|"):
                 assistant_lines.append(line)
 
-        self.line_count = len(assistant_lines)
+        self.line_count += len(assistant_lines)
 
         if self.line_count >= self.max_lines:
             return True
 
-        last_line = lines[-1].strip() if lines else ""
-        speaker_change = (
-            (last_line.endswith(":") and not last_line.lower().startswith(self.bot_name.lower()))
-            or last_line.startswith("<|user|>")
-        )
-
-        # 🛠 Prevent stopping if assistant has not said *anything meaningful* yet
-        if self.line_count == 0:
-            return False
-
-        if self.line_count >= self.min_lines and speaker_change:
-            return True
-
-        if self.line_count >= self.min_lines:
-            return True
-
         return False
+
+
 
 
 
