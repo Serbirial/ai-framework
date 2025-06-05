@@ -150,7 +150,7 @@ class ChatBot:
 
         )
         task_prompt = (
-            f"**Task:** As the personality named '{self.bot.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
+            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
         )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
