@@ -149,8 +149,8 @@ class ChatBot:
 
 
     def _straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
-        if streamer != None:
-            return self._streaming_straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+        #if streamer != None:
+        #    return self._streaming_straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
         # Straightforward answer from model
         with torch.no_grad():
             output = self.model.generate(
@@ -171,16 +171,18 @@ class ChatBot:
         else:
             response_raw = decoded_output  # fallback to full decoded output
 
+        #NOTE: this should be handled by the stop criteria
         # Stop early if the model hallucinates another user or assistant prompt
-        for line in response_raw.splitlines():
-            if line.strip().startswith("<|user|>") or line.strip().startswith("<|assistant|>"):
-                break
-            if line.strip().endswith(":") and not line.strip().startswith(self.name):
-                break
-            yield_line = line.strip()
-            if yield_line:
-                return yield_line
-        return response_raw.strip()
+        #for line in response_raw.splitlines():
+        #    if line.strip().startswith("<|user|>") or line.strip().startswith("<|assistant|>"):
+        #        break
+        #    if line.strip().endswith(":") and not line.strip().startswith(self.name):
+        #        break
+        #    yield_line = line.strip()
+        #    if yield_line:
+        #        return yield_line
+        #
+        #return response_raw.strip()
 
     def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
         # Run generate synchronously (calls streamer.on_text internally)
