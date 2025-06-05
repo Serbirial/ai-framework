@@ -164,7 +164,7 @@ class RecursiveThinker:
 
             response = self.bot._straightforward_generate(
                 inputs,
-                max_new_tokens=160,
+                max_new_tokens=100,
                 temperature=0.8, # Higher creativity for internal thoughts
                 top_p=0.9,
                 streamer=self.streamer,
@@ -198,13 +198,18 @@ class RecursiveThinker:
             )
 
         log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
-        inputs = tokenizer(final_prompt, return_tensors="pt").to(self.bot.model.device)
-        log("DEBUG: PROMPT TOKENS", inputs.input_ids.size(1))
+        log("DEBUG: Model device:", self.bot.model.device)
+        inputs = tokenizer(final_prompt, return_tensors="pt")
+        log("DEBUG: Input IDs tensor size:", inputs.input_ids.size())
+        log("DEBUG: Tensor device before .to():", inputs.input_ids.device)
+        inputs = inputs.to(self.bot.model.device)
+        log("DEBUG: Tensor device after .to():", inputs.input_ids.device)
+        log("DEBUG: Input IDs size after .to():", inputs.input_ids.size(1))
 
 
         final_answer = self.bot._straightforward_generate(
             inputs,
-            max_new_tokens=400,
+            max_new_tokens=400, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,
@@ -212,6 +217,7 @@ class RecursiveThinker:
             prompt=final_prompt
         ).strip()
         log("DEBUG: RECURSIVE GENERATION",final_answer)
+
 
         return full, final_answer
 
