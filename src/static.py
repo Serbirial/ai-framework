@@ -30,38 +30,40 @@ class StopOnSpeakerChange(StoppingCriteria):
         recording = False
 
         for line in lines:
-            stripped = line.strip()
+            line = line.strip()
 
-            # Start recording after <|assistant|> marker
-            if stripped.startswith("<|assistant|>"):
+            if line.startswith("<|assistant|>"):
                 recording = True
                 assistant_lines = []
                 continue
-            elif stripped.startswith("<|user|>"):
+            elif line.startswith("<|user|>"):
                 recording = False
                 continue
 
-            if recording:
-                # Count any non-empty assistant lines (even indented code)
-                if stripped and not stripped.startswith("<|"):
-                    assistant_lines.append(stripped)
+            if recording and line and not line.startswith("<|") and not line.startswith("```"):
+                assistant_lines.append(line)
 
         self.line_count = len(assistant_lines)
 
         if self.line_count >= self.max_lines:
             return True
 
-        # Detect hallucinated user speaker line or speaker-like switch
         last_line = lines[-1].strip() if lines else ""
         speaker_change = (
-            last_line.startswith("<|user|>") or
             (last_line.endswith(":") and not last_line.lower().startswith(self.bot_name.lower()))
+            or last_line.startswith("<|user|>")
         )
+
+        # 🛠 Prevent stopping if assistant has not said *anything meaningful* yet
+        if self.line_count == 0:
+            return False
 
         if self.line_count >= self.min_lines and speaker_change:
             return True
 
-        # Always allow more output if still under min_lines
+        if self.line_count >= self.min_lines:
+            return True
+
         return False
 
 
