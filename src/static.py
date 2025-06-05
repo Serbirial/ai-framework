@@ -48,7 +48,7 @@ class StopOnSpeakerChange(StoppingCriteria):
         self.line_count = len(assistant_lines)
 
         # Check for double newline (used as a soft logical stopping point)
-        double_newline = "\n\n" in decoded
+        #double_newline = "\n\n" in decoded
 
         # Enforce hard maximum
         if self.line_count >= self.max_lines:
@@ -66,7 +66,7 @@ class StopOnSpeakerChange(StoppingCriteria):
             return True
 
         # Optional: stop softly if double newline and enough content
-        if self.line_count >= self.min_lines and double_newline:
+        if self.line_count >= self.min_lines:
             return True
 
         return False

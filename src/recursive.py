@@ -25,7 +25,7 @@ class RecursiveThinker:
             f"**Your Dislikes:** {dislikes}  \n"
             f"**Your Goals:** {goals}  \n"
             f"**Your Mood:** {mood}  \n"
-            f"**Mood Sentence**: {self.bot.mood_sentence}\n"
+            f"**Mood Sentence:** {self.bot.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
 
@@ -180,6 +180,7 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
+                + "_Now write your final answer to reply to the question using your previous steps to guide your answer._\n"
                 + "_Provide only the direct answer or requested code snippet in your own voice, in the first person._\n"
                 + "_Do not include disclaimers, or references to internal thoughts._\n"
                 + "<|assistant|>\n"
@@ -189,7 +190,7 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question with using your previous steps. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
+                + "_Now write your final answer to reply to the question using your previous steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
                 + "_Do not include disclaimers or third-person analysis._\n"
                 + "_When referencing something from your earlier steps, clearly restate or rephrase it so the user can understand it without seeing your internal steps._\n"
                 + "_Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to._\n"
