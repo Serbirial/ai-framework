@@ -31,14 +31,14 @@ class StopOnSpeakerChange(StoppingCriteria):
 
         self.buffer += decoded
 
+        # Split only if newline suggests a line end
         lines = []
         while True:
-            # Only split on actual newlines
-            lines = []
-            while "\n" in self.buffer:
+            if "\n" in self.buffer:
                 part, self.buffer = self.buffer.split("\n", 1)
                 lines.append(part.strip())
-
+            else:
+                break  # wait for more text before splitting
 
         assistant_lines = []
 
