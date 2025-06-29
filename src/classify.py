@@ -31,13 +31,15 @@ def interpret_memory_instruction(self, user_input):
     output_text = ""
 
     # llama_cpp completion call, non-streaming, deterministic
-    for output in self.model.create_completion(
+    output = self.model.create_completion(
         prompt=prompt,
         max_tokens=250,
         temperature=0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+
+    output_text += output["text"]
+
 
     json_start = output_text.find("{")
     json_end = output_text.find("}", json_start) + 1
@@ -71,13 +73,14 @@ def interpret_to_remember(bot, identifier, max_new_tokens=100):
 
     output_text = ""
 
-    for output in bot.model.create_completion(
+    output = bot.model.create_completion(
         prompt=prompt,
         max_tokens=max_new_tokens,
         temperature=0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+
+    output_text += output["text"]
 
     # Strip off the prompt itself:
     interpreted = output_text[len(prompt):].strip()
@@ -133,13 +136,15 @@ def classify_user_input(model, tokenizer, user_input):
     )
     output_text = ""
 
-    for output in model.create_completion(
+    output = model.create_completion(
         prompt=prompt,
         max_tokens=10,
         temperature=0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+
+    output_text = output["text"]
+
 
     result = output_text[len(prompt):].strip().lower().split()[0]
     log("INPUT CLASSIFICATION", result)
@@ -173,13 +178,15 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
 
     output_text = ""
 
-    for output in model.create_completion(
+    response = model.create_completion(
         prompt=prompt,
         max_tokens=10,
         temperature=0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+
+    output_text = response["text"]
+
 
     classification = output_text[len(prompt):].strip().upper()
 
@@ -247,21 +254,20 @@ def classify_social_tone(model, tokenizer, user_input):
     )
     output_text = ""
 
-    for output in model.create_completion(
+    response = model.create_completion(
         prompt=user_input,
         max_tokens=30,
         temperature=0.0,      # deterministic output
         top_p=1.0,            # disable nucleus sampling for max focus
         stop=None,
         stream=False,
-    ):        # Debug print type for safety:
-        if isinstance(output, dict) and 'choices' in output:
-            output_text += output['choices'][0]['text']
-        else:
-            # Possibly a raw string chunk — just append
-            output_text += str(output)
-        json_start = output_text.find("{")
-        json_end = output_text.find("}", json_start) + 1
+    )
+
+    output_text = response["text"]
+
+    # Optional: extract JSON if response is structured
+    json_start = output_text.find("{")
+    json_end = output_text.find("}", json_start) + 1
 
     try:
         import json
@@ -366,14 +372,14 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     )
 
     output_text = ""
-    for output in model.create_completion(
+    output = model.create_completion(
         prompt=prompt,
         max_tokens=100,
         temperature=0.5,
         top_p=0.95,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+    output_text += output['text']
 
     mood_sentence = output_text[len(prompt):].strip()
 
@@ -415,13 +421,13 @@ def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> b
     )
 
     output_text = ""
-    for output in model.create_completion(
+    output = model.create_completion(
         prompt=prompt,
         max_tokens=10,
         temperature=0.0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+    output_text += output['text']
 
     # Remove prompt prefix
     answer = output_text[len(prompt):].strip().lower()
@@ -463,13 +469,15 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
     )
 
     output_text = ""
-    for output in model.create_completion(
+    output = model.create_completion(
         prompt=prompt,
         max_tokens=30,
         temperature=0.0,
         stream=False,
-    ):
-        output_text += output['choices'][0]['text']
+    )
+
+    output_text += output["text"]
+
 
     # Remove prompt prefix, strip whitespace
     query = output_text[len(prompt):].strip()
