@@ -2,6 +2,7 @@ from . import classify
 from log import log
 from transformers import StoppingCriteriaList
 from .static import mood_instruction, StopOnSpeakerChange, tokenizer, DummyTokenizer, trim_context_to_fit
+import json
 
 class RecursiveThinker:
     def __init__(self, bot, depth=3, streamer=None):
@@ -9,7 +10,7 @@ class RecursiveThinker:
         self.depth = depth
         self.streamer = streamer
 
-    def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None):
+    def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
         traits = ", ".join(self.bot.traits)
         goals = ", ".join(self.bot.goals)
         likes = ", ".join(self.bot.likes)
@@ -26,7 +27,6 @@ class RecursiveThinker:
             f"**Your Goals:** {goals}  \n"
             f"**Your Mood:** {mood}  \n"
             f"**Mood Sentence:** {self.bot.mood_sentence}\n"
-
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
 
             f"# Social Context\n"
@@ -60,9 +60,10 @@ class RecursiveThinker:
             f"**Rules:** Only generate content for the current thought step. Do not generate content for any future thought step numbers (e.g., Step 2, Step 3). You must stop after completing the current step.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
             f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
-
         )
-
+        if extra_context:
+            base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
+        
         # Add specific guidance based on query_type
         if query_type == "factual_question":
             base += (
@@ -166,10 +167,14 @@ class RecursiveThinker:
         prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
         log("DEBUG: RECURSIVE PROMPT",full)
+        extra_context = ""  # Holds results from previous actions
+
 
         for step in range(self.depth):
             full += f"<|assistant|>\n### Thought step {step+1}:\n"
-
+            if extra_context:
+                full += f"<ActionResult>{extra_context}</ActionResult>\n"
+                extra_context = ""
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name) 
 
             response = self.bot._straightforward_generate(
@@ -182,8 +187,15 @@ class RecursiveThinker:
                 _prompt_for_cut=full
             )
 
+            log("DEBUG: THOUGHT STEP", response.strip())
+            action = self.parse_action_from_response(response)
+            if action:
+                # Run action and get results
+                result = self.perform_action(action)
+                # Convert result to JSON string for next step context
+                extra_context = json.dumps(result)
+                log(f"DEBUG: Action result for step {step+1}: {extra_context}")
             full += f"{response.strip()}\n"
-            log("DEBUG: RECURSIVE THOUGHT", response.strip())
 
 
         if query_type == "factual_question":
@@ -191,7 +203,7 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your reply to the question using your previous thought steps to guide your answer._\n"
+                + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
                 + "**Rules**:\n"
                 + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
                 + "- Do not include disclaimers.\n"
@@ -205,7 +217,7 @@ class RecursiveThinker:
                 full
                 + "<|user|>\n"
                 + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question using your previous thought steps to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
+                + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
                 + "**Rules**:\n"
 
                 + "- Avoid including numbered steps or markdown titles in the final answer.\n"

@@ -62,9 +62,9 @@ class ChatBot:
         model_path = "./models/tinyllama.gguf"  # Adjust to your local path
         self.model = Llama(
             model_path=model_path,
-            n_ctx=1024,              # your existing ctx setter controls this
-            n_threads=2,             # tune per your Pi Zero2W cores
-            use_mlock=True,          # locks model in RAM to avoid swap on Pi
+            n_ctx=1024,              # TODO use CTX setter 
+            n_threads=2,             # tune to setup
+            use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
         )
