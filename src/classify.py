@@ -1,4 +1,3 @@
-from .static import tokenizer
 import torch
 import json
 from log import log
