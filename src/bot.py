@@ -16,6 +16,8 @@ from . import classify
 from log import log
 from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE
 
+tokenizer = None # FiXME
+
 class StringStreamer:
     def __init__(self):
         self.text = ""
@@ -67,8 +69,12 @@ class ChatBot:
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
-            use_mmap=False
+            use_mmap=False,
+            n_gpu_layers=0,
+            low_vram=True,
+            n_batch=8
         )
+
 
 
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
