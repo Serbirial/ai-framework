@@ -1,6 +1,7 @@
 from . import classify
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DummyTokenizer, trim_context_to_fit
+from .static import mood_instruction, StopOnSpeakerChange, trim_context_to_fit
+from .utils.helpers import DummyTokenizer
 import json
 
 class RecursiveThinker:
