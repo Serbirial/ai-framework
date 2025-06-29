@@ -247,16 +247,15 @@ def classify_social_tone(model, tokenizer, user_input):
     )
     output_text = ""
 
-    for output in model.create_completion(
-        prompt=prompt,
-        max_tokens=50,
-        temperature=0,  # do_sample=False equivalent
-        stream=False,
-    ):
-        output_text += output['choices'][0]['text']
-
-    json_start = output_text.find("{")
-    json_end = output_text.find("}", json_start) + 1
+    for output in model.create_completion(...):
+        # Debug print type for safety:
+        if isinstance(output, dict) and 'choices' in output:
+            output_text += output['choices'][0]['text']
+        else:
+            # Possibly a raw string chunk — just append
+            output_text += str(output)
+        json_start = output_text.find("{")
+        json_end = output_text.find("}", json_start) + 1
 
     try:
         import json
