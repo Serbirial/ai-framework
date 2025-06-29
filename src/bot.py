@@ -69,7 +69,7 @@ class ChatBot:
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
-            use_mmap=True,
+            use_mmap=False,
             n_gpu_layers=0,
             low_vram=True,
             n_batch=8,

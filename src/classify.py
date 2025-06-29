@@ -186,7 +186,7 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
         stream=False,
     )
 
-    output_text = response["text"]
+    output_text = openai.extract_generated_text(response)
 
 
     classification = output_text[len(prompt):].strip().upper()
@@ -518,5 +518,5 @@ def classify_summarize_input(model, input_text, max_tokens=200):
         stream=False,
     )
 
-    summary = output["choices"][0]["text"].strip()
+    summary = openai.extract_generated_text(output).strip()
     return summary if summary else "No useful content found."
