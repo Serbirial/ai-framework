@@ -1,7 +1,6 @@
 from . import classify
 from log import log
-from transformers import StoppingCriteriaList
-from .static import mood_instruction, StopOnSpeakerChange, tokenizer, DummyTokenizer, trim_context_to_fit
+from .static import mood_instruction, StopOnSpeakerChange, DummyTokenizer, trim_context_to_fit
 import json
 
 class RecursiveThinker:

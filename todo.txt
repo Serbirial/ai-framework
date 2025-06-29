@@ -1,0 +1,3 @@
+since im now running the framework on my Pi cluster (512m/512m/2gb)
+ill need to do:
+device 1 (social tone and intents) https://huggingface.co/j-hartmann/emotion-english-distilroberta-base classify_social_tone determine_moods_from_social_classification
