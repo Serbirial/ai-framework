@@ -380,7 +380,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         top_p=0.95,
         stream=False,
     )
-    output_text += output['text']
+    output_text += openai.extract_generated_text(output)
 
     mood_sentence = output_text[len(prompt):].strip()
 
@@ -428,7 +428,7 @@ def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> b
         temperature=0.0,
         stream=False,
     )
-    output_text += output['text']
+    output_text += openai.extract_generated_text(output)
 
     # Remove prompt prefix
     answer = output_text[len(prompt):].strip().lower()
