@@ -252,7 +252,6 @@ def classify_social_tone(model, tokenizer, user_input):
         max_tokens=30,
         temperature=0.0,      # deterministic output
         top_p=1.0,            # disable nucleus sampling for max focus
-        n=1,                  # one output only
         stop=None,
         stream=False,
     ):        # Debug print type for safety:
