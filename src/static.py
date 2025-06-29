@@ -9,7 +9,7 @@ mood_instruction = {
     "neutral": "Speak in a calm and balanced tone."
 }
 MODEL_NAME = ""
-MODEL_PATH = "~/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
+MODEL_PATH = "/home/summers/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
 llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 
 TOKEN = ""
