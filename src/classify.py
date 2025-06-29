@@ -247,8 +247,15 @@ def classify_social_tone(model, tokenizer, user_input):
     )
     output_text = ""
 
-    for output in model.create_completion(...):
-        # Debug print type for safety:
+    for output in model.create_completion(
+        prompt=user_input,
+        max_tokens=30,
+        temperature=0.0,      # deterministic output
+        top_p=1.0,            # disable nucleus sampling for max focus
+        n=1,                  # one output only
+        stop=None,
+        stream=False,
+    ):        # Debug print type for safety:
         if isinstance(output, dict) and 'choices' in output:
             output_text += output['choices'][0]['text']
         else:
