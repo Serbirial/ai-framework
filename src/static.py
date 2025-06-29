@@ -10,7 +10,8 @@ mood_instruction = {
 }
 MODEL_NAME = ""
 MODEL_PATH = "/home/summers/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
-llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
+#llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
+# If this uncomments itself ONE MORE TIME im gonna nuke somneone
 
 TOKEN = ""
 MEMORY_FILE = "memory.json"
