@@ -34,6 +34,11 @@ class RecursiveThinker:
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
+            f"# Info"
+            "You may optionally output ONE <Action> JSON block per step:\n"
+            '<Action>{"action":"action_name","parameters":{...}}</Action>\n'
+            "If no action needed, respond with reasoning only.\n"
+            "Results of actions will be given next step in <ActionResult> block.\n"
         )
 
         if context:
