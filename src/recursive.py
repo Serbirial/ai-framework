@@ -1,7 +1,7 @@
 from . import classify
 from log import log
 from transformers import StoppingCriteriaList
-from .static import mood_instruction, StopOnSpeakerChange, tokenizer
+from .static import mood_instruction, StopOnSpeakerChange, tokenizer, DummyTokenizer, trim_context_to_fit
 
 class RecursiveThinker:
     def __init__(self, bot, depth=3, streamer=None):
@@ -153,29 +153,38 @@ class RecursiveThinker:
         return base
 
     def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
-        prompt = self.build_prompt(question, username, query_type, usertone, context, include_reflection, identifier)
+        tokenizer = DummyTokenizer()
+
+        # Build base prompt first (before context)
+        base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+
+        # Token-safe context trimming
+        context_lines = context.split("\n") if isinstance(context, str) else context
+        trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx, reserved_for_output=400)
+
+        # Build full prompt using the trimmed context
+        prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
         log("DEBUG: RECURSIVE PROMPT",full)
 
         for step in range(self.depth):
             full += f"<|assistant|>\n### Thought step {step+1}:\n"
 
-            inputs = tokenizer(full, return_tensors="pt").to(self.bot.model.device)
-
-            stop_criteria = StoppingCriteriaList([StopOnSpeakerChange(tokenizer, bot_name=self.bot.name)])
+            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name) 
 
             response = self.bot._straightforward_generate(
-                inputs,
+                full,
                 max_new_tokens=120,
-                temperature=0.8, # Higher creativity for internal thoughts
+                temperature=0.8,
                 top_p=0.9,
                 streamer=self.streamer,
                 stop_criteria=stop_criteria,
-                prompt=full
+                _prompt_for_cut=full
             )
+
             full += f"{response.strip()}\n"
-            log("DEBUG: RECURSIVE THOUGHT",response.strip())
-            
+            log("DEBUG: RECURSIVE THOUGHT", response.strip())
+
 
         if query_type == "factual_question":
             final_prompt = (
@@ -206,18 +215,15 @@ class RecursiveThinker:
                 + "<|assistant|>\n"
             )
 
-        log("DEBUG: FINAL RECURSIVE PROMPT",final_prompt)
-        log("DEBUG: Model device:", self.bot.model.device)
-        inputs = tokenizer(final_prompt, return_tensors="pt")
-        log("DEBUG: Input IDs tensor size:", inputs.input_ids.size())
-        log("DEBUG: Tensor device before .to():", inputs.input_ids.device)
-        inputs = inputs.to(self.bot.model.device)
-        log("DEBUG: Tensor device after .to():", inputs.input_ids.device)
-        log("DEBUG: Input IDs size after .to():", inputs.input_ids.size(1))
+        tokenizer = DummyTokenizer()
+        prompt_tokens_used = tokenizer.count_tokens(final_prompt)
+
+        log(f"DEBUG: FINAL RECURSIVE PROMPT:\n",final_prompt)
+        log(f"\nDEBUG: FINAL PROMPT IS {prompt_tokens_used} TOKENS")
 
 
         final_answer = self.bot._straightforward_generate(
-            inputs,
+            final_prompt,
             max_new_tokens=400, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
@@ -226,6 +232,9 @@ class RecursiveThinker:
             prompt=final_prompt
         ).strip()
         log("DEBUG: RECURSIVE GENERATION",final_answer)
+        final_tokens_used = tokenizer.count_tokens(final_prompt)
+
+        log(f"DEBUG: FINAL TOKEN SIZE: {final_tokens_used}")
 
 
         return full, final_answer

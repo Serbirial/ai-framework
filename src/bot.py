@@ -1,7 +1,11 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
-from transformers import StoppingCriteria, StoppingCriteriaList
+#from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
+#from transformers import StoppingCriteria, StoppingCriteriaList
 
-import torch
+#import torch
+
+
+from llama_cpp import Llama
+
 import json
 import time
 import os
@@ -12,7 +16,12 @@ from . import classify
 from log import log
 from .static import mood_instruction, StopOnSpeakerChange, tokenizer, MODEL_NAME, TOKEN, MEMORY_FILE
 
-#streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+class StringStreamer:
+    def __init__(self):
+        self.text = ""
+
+    def on_text(self, new_text):
+        self.text += new_text
 
 
 class ChatBot:
@@ -37,17 +46,28 @@ class ChatBot:
         self.likes = ["reading", "technology", "user being nice (e.g. saying kind words)", "user complimenting (e.g. saying compliments)"]     # e.g. ["rubber ducks", "sunshine", "reading"]
         self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs"]  # e.g. ["loud noises", "being ignored"]
         
-        self.model = AutoModelForCausalLM.from_pretrained(
-            MODEL_NAME,
-            use_auth_token=TOKEN,
+        #self.model = AutoModelForCausalLM.from_pretrained(
+        #    MODEL_NAME,
+        #    use_auth_token=TOKEN,
 
-            torch_dtype=torch.float32,  # Or float16
-            low_cpu_mem_usage=False,
-            device_map={"": "cpu"},
-            trust_remote_code=True
+        #    torch_dtype=torch.float32,  # Or float16
+        #    low_cpu_mem_usage=False,
+        #    device_map={"": "cpu"},
+        #    trust_remote_code=True
+        #)
+        #self.model.eval()
+        #self.model.config.pad_token_id = tokenizer.eos_token_id
+        
+        # New TinyLlama model init
+        model_path = "./models/tinyllama.gguf"  # Adjust to your local path
+        self.model = Llama(
+            model_path=model_path,
+            n_ctx=1024,              # your existing ctx setter controls this
+            n_threads=2,             # tune per your Pi Zero2W cores
+            use_mlock=True,          # locks model in RAM to avoid swap on Pi
+            logits_all=False,
+            verbose=False,
         )
-        self.model.eval()
-        self.model.config.pad_token_id = tokenizer.eos_token_id
 
 
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
@@ -161,30 +181,40 @@ class ChatBot:
         return prompt
 
 
-    def _straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
-        #if streamer != None:
-        #    return self._streaming_straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
-        # Straightforward answer from model
-        with torch.no_grad():
-            output = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
-                do_sample=True,
-                stopping_criteria=stop_criteria,
-                repetition_penalty=1.2,
-                streamer=streamer,
-            )
-        decoded_output = tokenizer.decode(output[0], skip_special_tokens=True)
-        prompt_index = decoded_output.find(prompt)
+    def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
+        output_text = ""
+        stop_criteria.line_count = 0  # reset for this generation
+        stop_criteria.buffer = ""
 
+        for output in self.model.create_completion(
+            prompt=prompt,
+            max_tokens=max_new_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            stream=True
+        ):
+            text_chunk = output['choices'][0]['text']
+            output_text += text_chunk
+
+            if stop_criteria(text_chunk):
+                if streamer:
+                    streamer.on_text(text_chunk)
+                break
+
+            if streamer:
+                streamer.on_text(text_chunk)
+
+        prompt_index = output_text.find(_prompt_for_cut)
         if prompt_index != -1:
-            response_raw = decoded_output[prompt_index + len(prompt):]
+            response_raw = output_text[prompt_index + len(_prompt_for_cut):]
         else:
-            response_raw = decoded_output  # fallback to full decoded output
+            response_raw = output_text
 
         return response_raw
+
+
+
+        #return response_raw
         #NOTE: this should be handled by the stop
         # Stop early if the model hallucinates another user or assistant prompt
         #for line in response_raw.splitlines():
@@ -199,20 +229,25 @@ class ChatBot:
         #return response_raw.strip()
 
     def _streaming_straightforward_generate(self, inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt):
-        # Run generate synchronously (calls streamer.on_text internally)
-        self.model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
+        # Internal buffer to accumulate streamed text
+        output_text = ""
+
+        # llama_cpp streaming generator call
+        for chunk in self.llm(
+            prompt=prompt,
+            max_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            do_sample=True,
-            stopping_criteria=stop_criteria,
-            repetition_penalty=1.2,
-            streamer=streamer,
-        )
-        # When done, flush any remaining tokens
-        final_text = streamer.get_text()
-        return final_text
+            repeat_penalty=1.2,
+            stream=True
+        ):
+            text = chunk["choices"][0]["text"]
+            output_text += text
+            if streamer:
+                streamer.on_text(text)  # your streamer can update internal buffer or UI here
+
+        return output_text.strip()
+
 
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
@@ -237,12 +272,12 @@ class ChatBot:
 
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 
-        inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
-        log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
+        #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
+        #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
 
         category = classify.classify_user_input(self.model, tokenizer, user_input)
         
-        stop_criteria = StoppingCriteriaList([StopOnSpeakerChange(tokenizer, bot_name=self.name)])
+        stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
@@ -267,7 +302,7 @@ class ChatBot:
             prompt = classify.build_memory_confirmation_prompt(memory_data_ai_readable)
 
             # add data from helper function into prompt before responding
-            response = self._straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
 
 
         elif category == "factual_question":
@@ -309,9 +344,9 @@ class ChatBot:
             log("DEBUG: FINAL THOUGHTS",final)
             response = final
         elif category == "other":
-            response = self._straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
         else: #fallback 
-            response = self._straightforward_generate(inputs, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 

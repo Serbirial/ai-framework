@@ -6,30 +6,14 @@ import aiohttp
 from src import bot
 from src import static
 
-from transformers import TextStreamer
-from transformers import TextStreamer
-
-from transformers import TextStreamer
 import asyncio
 
 import time
-from transformers import TextStreamer
-class DiscordStreamer(TextStreamer):
-    def __init__(self, tokenizer):
-        super().__init__(tokenizer, skip_prompt=True, skip_special_tokens=True)
-        self.buffer = ""
-
-    def on_text(self, text: str, **kwargs):
-        self.buffer += text
-
-    def get_text(self):
-        return self.buffer
-
 
 async def generate_and_stream(self, message, processed_input, processed_context):
     streammsg = await message.reply("Generating...")
 
-    streamer = DiscordStreamer(static.tokenizer)
+    streamer = object()
     
     # Run generation in thread
     loop = asyncio.get_running_loop()

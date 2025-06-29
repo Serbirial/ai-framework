@@ -29,31 +29,28 @@ def interpret_memory_instruction(self, user_input):
         f"Output:"
     )
 
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
+    output_text = ""
 
-    with torch.no_grad():
-        output = self.model.generate(
-            **inputs,
-            max_new_tokens=250,
-            do_sample=False,
-        )
+    # llama_cpp completion call, non-streaming, deterministic
+    for output in self.model.create_completion(
+        prompt=prompt,
+        max_tokens=250,
+        temperature=0,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
 
-    raw_output = tokenizer.decode(output[0], skip_special_tokens=True)
-    json_start = raw_output.find("{")
-    json_end = raw_output.find("}", json_start) + 1
+    json_start = output_text.find("{")
+    json_end = output_text.find("}", json_start) + 1
 
     try:
-        memory_data = json.loads(raw_output[json_start:json_end])
+        memory_data = json.loads(output_text[json_start:json_end])
         log("INTERPRET MEMORY", memory_data)
         return memory_data
     except json.JSONDecodeError:
         log("INTERPRET MEMORY", "NONE")
-
-        print("[WARN] Could not parse memory JSON:", raw_output[json_start:json_end])
+        print("[WARN] Could not parse memory JSON:", output_text[json_start:json_end])
         return None
-    
-
-
 
 def interpret_to_remember(bot, identifier, max_new_tokens=100):
     """Take all raw 'to_remember' strings and query model to transform into AI-readable summary."""
@@ -73,20 +70,23 @@ def interpret_to_remember(bot, identifier, max_new_tokens=100):
         "Interpretation:\n"
     )
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(bot.model.device)
-    with torch.no_grad():
-        output = bot.model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id
-        )
-    result = tokenizer.decode(output[0], skip_special_tokens=True)
+    output_text = ""
+
+    for output in bot.model.create_completion(
+        prompt=prompt,
+        max_tokens=max_new_tokens,
+        temperature=0,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
+
     # Strip off the prompt itself:
-    interpreted = result[len(prompt):].strip()
-    log("INTERPRETED MEMORY",interpreted)
+    interpreted = output_text[len(prompt):].strip()
+
+    log("INTERPRETED MEMORY", interpreted)
 
     return interpreted
+
 
 def classify_user_input(model, tokenizer, user_input):
     categories = [
@@ -132,19 +132,19 @@ def classify_user_input(model, tokenizer, user_input):
         "<|assistant|>\n"
         "Category:"
     )
+    output_text = ""
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    with torch.no_grad():
-        output = model.generate(
-            **inputs,
-            max_new_tokens=10,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id
-        )
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=10,
+        temperature=0,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
 
-    result = tokenizer.decode(output[0], skip_special_tokens=True)
-    result = result[len(prompt):].strip().lower().split()[0]
+    result = output_text[len(prompt):].strip().lower().split()[0]
     log("INPUT CLASSIFICATION", result)
+
 
     return result if result in categories else "other"
 
@@ -172,22 +172,25 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
         f"Classification:"
     )
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=10,
-        do_sample=False,
-        pad_token_id=tokenizer.eos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-    )
-    classification = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    classification = classification[len(prompt):].strip().upper()
+    output_text = ""
+
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=10,
+        temperature=0,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
+
+    classification = output_text[len(prompt):].strip().upper()
 
     # Basic clean up, just in case
     if classification not in {"LIKE", "DISLIKE", "NEUTRAL"}:
         classification = "NEUTRAL"
+
     log("LIKE CLASSIFICATION", classification)
     return classification
+
 
 def classify_social_tone(model, tokenizer, user_input):
     prompt = (
@@ -243,22 +246,22 @@ def classify_social_tone(model, tokenizer, user_input):
         f"User: \"{user_input}\"\n"
         f"Classification:"
     )
+    output_text = ""
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=50,
-        do_sample=False, #BUG set sample to true to help ai recognize better, might make worse (already awful)
-        pad_token_id=tokenizer.eos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-    )
-    result_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    json_start = result_text.find("{")
-    json_end = result_text.find("}", json_start) + 1
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=50,
+        temperature=0,  # do_sample=False equivalent
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
+
+    json_start = output_text.find("{")
+    json_end = output_text.find("}", json_start) + 1
 
     try:
         import json
-        classification = json.loads(result_text[json_start:json_end])
+        classification = json.loads(output_text[json_start:json_end])
     except Exception:
         classification = {
             "intent": "NEUTRAL",
@@ -268,6 +271,7 @@ def classify_social_tone(model, tokenizer, user_input):
 
     log("SOCIAL INTENTS CLASSIFICATION", classification)
     return classification
+
 
 def determine_moods_from_social_classification(classification, top_n=3):
     """
@@ -341,7 +345,6 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     Returns:
         str: A single sentence summarizing the AI's current mood.
     """
-
     prompt = (
         "You are an AI helper reflecting on your emotional state.\n"
         "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
@@ -358,20 +361,17 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         "Now, summarize these signals into one expressive sentence that captures your current emotional state:\n"
     )
 
-    # Tokenize and run model
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=100,
-        do_sample=True,
+    output_text = ""
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=100,
         temperature=0.5,
         top_p=0.95,
-        pad_token_id=tokenizer.eos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-    )
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
 
-    full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    mood_sentence = full_response[len(prompt):].strip()
+    mood_sentence = output_text[len(prompt):].strip()
 
     # Optional: basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
@@ -380,21 +380,19 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     log("MOOD SENTENCE", mood_sentence)
     return mood_sentence
 
-def detect_web_search_cue(model, tokenizer, input_text: str, role: str = "user") -> bool:
+
+def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> bool:
     """
-    Uses an LLM to determine whether a given text (user input or internal thought) contains cues
-    that suggest a web search is necessary to provide a better response.
+    Uses LLaMA to determine whether a given text requires a live web search.
 
     Args:
-        model: Hugging Face model instance (e.g., StableLM).
-        tokenizer: Corresponding tokenizer.
-        input_text (str): The input to evaluate (user message or internal AI-generated thought).
-        role (str): One of "user" or "thought". Defaults to "user".
+        model: LLaMA model instance (llama_cpp.Llama).
+        input_text (str): Text to evaluate.
+        role (str): "user" or "thought".
 
     Returns:
-        bool: True if the model believes a web search is warranted, False otherwise.
+        bool: True if web search is likely needed, False otherwise.
     """
-
     prompt = (
         "<|system|>\n"
         "You are an intelligent assistant deciding whether the following input requires a live web search.\n"
@@ -412,18 +410,66 @@ def detect_web_search_cue(model, tokenizer, input_text: str, role: str = "user")
         "SearchNeeded:"
     )
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=3,
-        do_sample=False,
+    output_text = ""
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=10,
         temperature=0.0,
-        pad_token_id=tokenizer.eos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
+
+    # Remove prompt prefix
+    answer = output_text[len(prompt):].strip().lower()
+
+    log("WEB SEARCH CUE", answer)
+
+    # Accept any answer that starts with "yes" as True
+    return answer.startswith("yes")
+
+def extract_search_query_llama(model, input_text: str, role: str = "user") -> str:
+    """
+    Uses LLaMA to extract and convert a user input or AI thought into
+    a concise search engine query suitable for web searching.
+
+    Args:
+        model: LLaMA model instance.
+        input_text (str): Original text to convert.
+        role (str): One of "user" or "thought".
+
+    Returns:
+        str: Search engine query string extracted from input.
+    """
+
+    prompt = (
+        "<|system|>\n"
+        "You are an intelligent assistant that extracts the most relevant search query from user input.\n"
+        "Given a text, respond with a concise search query suitable for a search engine.\n"
+        "Only output the query, nothing else.\n\n"
+        "Examples:\n"
+        "Input: 'What’s the weather in Tokyo right now?'\nSearchQuery: weather Tokyo current\n"
+        "Input: 'Who won the last Formula 1 race?'\nSearchQuery: last Formula 1 race winner\n"
+        "Input: 'I feel curious about new tech trends in 2025.'\nSearchQuery: tech trends 2025\n"
+        "Input: 'Tell me a fun fact about the moon.'\nSearchQuery: fun facts about the moon\n"
+        "Input: 'I think I should find some recent data about that.'\nSearchQuery: recent data about that\n"
+        f"<|{role}|>\n"
+        f"Input: \"{input_text}\"\n"
+        "<|assistant|>\n"
+        "SearchQuery:"
     )
 
-    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    result = result[len(prompt):].strip().lower()
+    output_text = ""
+    for output in model.create_completion(
+        prompt=prompt,
+        max_tokens=30,
+        temperature=0.0,
+        stream=False,
+    ):
+        output_text += output['choices'][0]['text']
 
-    log("WEB SEARCH CUE", result)
-    return result.startswith("yes")
+    # Remove prompt prefix, strip whitespace
+    query = output_text[len(prompt):].strip()
+
+    log("EXTRACTED SEARCH QUERY", query)
+
+    return query
