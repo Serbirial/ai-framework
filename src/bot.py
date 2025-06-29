@@ -14,7 +14,7 @@ from .recursive import RecursiveThinker
 from . import classify
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, tokenizer, MODEL_NAME, TOKEN, MEMORY_FILE
+from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE
 
 class StringStreamer:
     def __init__(self):
