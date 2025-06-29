@@ -155,7 +155,7 @@ class ChatBot:
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
             f"# Social Context\n"
-            f"**User Username:** {username}  \n"
+            f"**User Username:** {username.replace('<', '').replace('>', '')}  \n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
@@ -164,16 +164,18 @@ class ChatBot:
             system_prompt += memory_text
         rules_prompt = (
             "**Rules**:\n"
-            "- Do not include disclaimers or third-person analysis.\n"
-            "- Reply exclusively in the first person.\n"
-            "- Do not include your emotional state, goals, likes, dislikes, or similar in the reply unless the user explicitly instructed.\n"
+            "- Speak in the first person as yourself, not the user.\n"
+            "- Do not include your emotional state, goals, likes, or dislikes unless the user explicitly asked.\n"
+            "- Keep your reply focused and conversational.\n"
+
 
         )
         task_prompt = (
-            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
+            f"**Task:** You are {self.name}. Respond as yourself, using your preferences, emotions, mood, and personality traits to shape your reply.\n"
+            "Speak naturally. Adjust tone to match your internal mood.\n"
         )
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
+            f"<|system|>\n{system_prompt.strip()}\n\n{rules_prompt}\n{task_prompt}\n"
             f"<|user|>\n{user_input}\n"
             f"<|assistant|>\n"
         )
