@@ -1,5 +1,6 @@
 import torch
 import json
+from utils import openai
 from log import log
 
 def build_memory_confirmation_prompt(interpreted_data):
@@ -38,7 +39,7 @@ def interpret_memory_instruction(self, user_input):
         stream=False,
     )
 
-    output_text += output["text"]
+    output_text += openai.extract_generated_text(output)
 
 
     json_start = output_text.find("{")
@@ -80,7 +81,7 @@ def interpret_to_remember(bot, identifier, max_new_tokens=100):
         stream=False,
     )
 
-    output_text += output["text"]
+    output_text += openai.extract_generated_text(output)
 
     # Strip off the prompt itself:
     interpreted = output_text[len(prompt):].strip()
@@ -143,7 +144,7 @@ def classify_user_input(model, tokenizer, user_input):
         stream=False,
     )
 
-    output_text = output["text"]
+    output_text = openai.extract_generated_text(output)
 
 
     result = output_text[len(prompt):].strip().lower().split()[0]
@@ -275,7 +276,7 @@ def classify_social_tone(model, tokenizer, user_input):
     except Exception:
         classification = {
             "intent": "NEUTRAL",
-            "attitude": "NEUTRAL",
+            "attitude": "NEUTRAL",  
             "tone": "NEUTRAL"
         }
 
@@ -476,7 +477,7 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
         stream=False,
     )
 
-    output_text += output["text"]
+    output_text += openai.extract_generated_text(output)
 
 
     # Remove prompt prefix, strip whitespace
@@ -485,3 +486,37 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
     log("EXTRACTED SEARCH QUERY", query)
 
     return query
+
+
+def classify_summarize_input(model, input_text, max_tokens=200):
+    """
+    Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)
+
+    Args:
+        model: LLaMA or HuggingFace-style model with `create_completion()`.
+        input_text (str): Raw or scraped input text (HTML, article, forum, etc).
+        max_tokens (int): Maximum summary length in tokens.
+
+    Returns:
+        str: Clean summary.
+    """
+    prompt = (
+        "You are an intelligent summarizer.\n"
+        "Your job is to read messy, long, or scraped web data and produce a clean, helpful summary.\n"
+        "Always ignore noise like headers, menus, ads, cookie warnings, and duplicate boilerplate.\n"
+        "If no meaningful content is present, say 'No useful content found.'\n\n"
+        "### Raw Data:\n"
+        f"{input_text.strip()}\n\n"
+        "### Summary:\n"
+    )
+
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=0.5,
+        top_p=0.9,
+        stream=False,
+    )
+
+    summary = output["choices"][0]["text"].strip()
+    return summary if summary else "No useful content found."

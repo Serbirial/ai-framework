@@ -172,16 +172,18 @@ class RecursiveThinker:
         prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
         log("DEBUG: RECURSIVE PROMPT",full)
-        extra_context = ""  # Holds results from previous actions
-
+        extra_context_lines = []  # Accumulates all action results
 
         for step in range(self.depth):
-            full += f"<|assistant|>\n### Thought step {step+1}:\n"
-            if extra_context:
-                full += f"<ActionResult>{extra_context}</ActionResult>\n"
-                extra_context = ""
-            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name) 
+            full += (
+                f"<|assistant|>\n### Thought step {step+1}:\n"
+            )
 
+            if extra_context_lines:
+                for result_line in extra_context_lines:
+                    full += f"{result_line}\n"
+
+            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name)
             response = self.bot._straightforward_generate(
                 full,
                 max_new_tokens=120,
@@ -193,14 +195,25 @@ class RecursiveThinker:
             )
 
             log("DEBUG: THOUGHT STEP", response.strip())
-            action = self.parse_action_from_response(response)
-            if action:
-                # Run action and get results
-                result = self.perform_action(action)
-                # Convert result to JSON string for next step context
-                extra_context = json.dumps(result)
-                log(f"DEBUG: Action result for step {step+1}: {extra_context}")
+
+            lines = response.strip().splitlines()
+            new_lines = []
+
+            for line in lines:
+                if line.strip().lower().startswith("action:"):
+                    action_key = line.split(":", 1)[1].strip().lower()
+                    result = self.perform_action(action_key)
+                    result_json = json.dumps(result)
+                    log(f"DEBUG: Action result for '{action_key}': {result_json}")
+                    action_result_str = f"<ActionResult>{result_json}</ActionResult>"
+                    extra_context_lines.append(action_result_str)
+                    new_lines.append(action_result_str)
+                else:
+                    new_lines.append(line)
+
+            response = "\n".join(new_lines)
             full += f"{response.strip()}\n"
+
 
 
         if query_type == "factual_question":

@@ -1,39 +1,22 @@
 from log import log
 import json
 
-def parse_action_from_response(self, text):
-    """Parse <Action> JSON block from AI response."""
-    match = re.search(r"<Action>(.*?)</Action>", text, re.DOTALL)
-    if not match:
-        return None
-    try:
-        action_json = match.group(1).strip()
-        return json.loads(action_json)
-    except Exception as e:
-        log(f"ERROR parsing action JSON: {e}")
-        return None
+def parse_action_from_response(self, response: str) -> Optional[str]:
+    for line in response.strip().splitlines():
+        if line.strip().lower().startswith("action:"):
+            action_key = line.split(":", 1)[1].strip().lower()
+            return action_key if action_key else None
+    return None
 
 
-def perform_action(self, action_dict):
-    """Perform the action requested by AI and return results as text or JSON."""
-    action = action_dict.get("action")
-    params = action_dict.get("parameters", {})
-
-    log(f"Performing action: {action} with params {params}")
-
-    if action == "get_time":
-        import datetime
-        tz = params.get("timezone", "UTC")
-        now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        return {"time": now, "timezone": tz}
-
-    elif action == "run_code":
-        # Example: safely run some limited code or command
-        code = params.get("code", "")
-        # WARNING: Only allow safe code or sandbox!
-        # Here just echo back for example
-        return {"output": f"Executed code: {code}"}
-
-    # Add more supported actions here...
-
-    return {"error": f"Unknown action '{action}'"}
+def perform_action(self, action_key: str) -> dict:
+    actions = {
+        "search_web": self.do_web_search,
+        "summarize_memory": self.summarize_memory,
+        "query_memory": self.query_memory_facts,
+        # Add more actions here
+    }
+    if action_key in actions:
+        return actions[action_key]() or {"result": "OK"}
+    else:
+        return {"error": f"Unknown action '{action_key}'"}
