@@ -14,7 +14,7 @@ from .recursive import RecursiveThinker
 from . import classify
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE
+from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE, MODEL_PATH
 
 tokenizer = None # FiXME
 
@@ -61,9 +61,8 @@ class ChatBot:
         #self.model.config.pad_token_id = tokenizer.eos_token_id
         
         # New TinyLlama model init
-        model_path = "./models/tinyllama.gguf"  # Adjust to your local path
         self.model = Llama(
-            model_path=model_path,
+            model_path=MODEL_PATH,
             n_ctx=1024,              # TODO use CTX setter 
             n_threads=4,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
