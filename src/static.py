@@ -9,7 +9,8 @@ mood_instruction = {
     "neutral": "Speak in a calm and balanced tone."
 }
 MODEL_NAME = ""
-llama = Llama(model_path="")
+MODEL_PATH = "~/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
+llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 
 TOKEN = ""
 MEMORY_FILE = "memory.json"
@@ -65,7 +66,7 @@ class ChatContext:
         reserved_tokens (int): Tokens reserved for prompt overhead and generation output.
 
     Example usage:
-        context = ChatContext(tokenizer, max_tokens=1024, reserved_tokens=600) # Leaving 600 tokens for the prompt AND generation, shared. 
+        context = ChatContext(tokenizer, max_tokens=1024, reserved_tokens=600) # Leaving 600 tokens for the prompt AND generation,. 
         context.add_line("[12:00] user: Hello!")
         context.add_line("[12:01] bot: Hi there!")
         prompt_context = context.get_context_text()
