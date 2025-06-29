@@ -1,2 +1,6 @@
+onnxruntime
 torch
+flask 
+bs4
+optimum[onnxruntime]
 transformers

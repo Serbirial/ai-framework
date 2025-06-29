@@ -12,6 +12,7 @@ import os
 
 from .recursive import RecursiveThinker
 from . import classify
+from utils import openai
 
 from log import log
 from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE, MODEL_PATH
@@ -202,12 +203,11 @@ class ChatBot:
             top_p=top_p,
             stream=True
         ):
-            text_chunk = output['choices'][0]['text']
+            text_chunk = openai.extract_generated_text(output)
             output_text += text_chunk
 
-            if stop_criteria(text_chunk):
-                if streamer:
-                    streamer.on_text(text_chunk)
+            # Call stop criteria with the new text chunk; stop if it returns True
+            if stop_criteria and stop_criteria(text_chunk):
                 break
 
             if streamer:
@@ -250,7 +250,11 @@ class ChatBot:
             repeat_penalty=1.2,
             stream=True
         ):
-            text = chunk["choices"][0]["text"]
+            text = openai.extract_generated_text(chunk)
+            # Call stop criteria with the new text chunk; stop if it returns True
+            if stop_criteria and stop_criteria(text):
+                break
+
             output_text += text
             if streamer:
                 streamer.on_text(text)  # your streamer can update internal buffer or UI here

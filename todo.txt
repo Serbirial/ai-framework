@@ -1,3 +1,8 @@
 since im now running the framework on my Pi cluster (512m/512m/2gb)
 ill need to do:
 device 1 (social tone and intents) https://huggingface.co/j-hartmann/emotion-english-distilroberta-base classify_social_tone determine_moods_from_social_classification
+device 2 (actions, etc, anything not social) NO MODEL YET ?? 
+
+i need to actuall do all the actions ActionResult
+
+USE THIS MODEL FOR SUMMARIZING WEB CONTENT: TinyT5 (e.g. t5-small, quantized)	

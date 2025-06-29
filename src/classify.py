@@ -258,13 +258,13 @@ def classify_social_tone(model, tokenizer, user_input):
     response = model.create_completion(
         prompt=user_input,
         max_tokens=30,
-        temperature=0.0,      # deterministic output
+        temperature=0.0,      # deterministic output FIXME might need bumped a TINY bit
         top_p=1.0,            # disable nucleus sampling for max focus
         stop=None,
         stream=False,
     )
 
-    output_text = response["text"]
+    output_text = openai.extract_generated_text(response)
 
     # Optional: extract JSON if response is structured
     json_start = output_text.find("{")
