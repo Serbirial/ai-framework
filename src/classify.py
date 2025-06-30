@@ -145,15 +145,12 @@ def classify_user_input(model, tokenizer, user_input):
         stream=False,
     )
 
-    output_text = openai.extract_generated_text(output)
-
-    match = re.search(r"Category:\s*(\w+)", output_text, re.IGNORECASE)
-    result = match.group(1).lower() if match else "other"
+    output_text = openai.extract_generated_text(output).strip()
 
     #result = output_text[len(prompt):].strip().lower()
-    log("INPUT CLASSIFICATION", result)
+    log("INPUT CLASSIFICATION", output_text)
 
-
+    result = output_text
     return result if result in categories else "other"
 
 def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
@@ -383,9 +380,10 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         top_p=0.95,
         stream=False,
     )
-    output_text += openai.extract_generated_text(output)
+    output_text = openai.extract_generated_text(output).strip()
 
-    mood_sentence = output_text[len(prompt):].strip()
+    # Use output directly
+    mood_sentence = output_text
 
     # Optional: basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
