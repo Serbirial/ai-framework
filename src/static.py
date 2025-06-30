@@ -10,7 +10,7 @@ mood_instruction = {
 }
 MODEL_NAME = ""
 mainLLM = "/home/summers/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
-classifyLLMName = "mrm8488/t5-small-finetuned-summarize-news"
+classifyLLMName = "mrm8488/t5-small-finetuned-summarize-news" # FIXME change to general tiny llm or atleast 2 models- one for genral classifying.
 #llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 # If this uncomments itself ONE MORE TIME im gonna nuke somneone
 

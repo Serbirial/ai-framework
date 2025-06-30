@@ -6,3 +6,7 @@ device 2 (actions, etc, anything not social) NO MODEL YET ??
 i need to actuall do all the actions ActionResult
 
 USE THIS MODEL FOR SUMMARIZING WEB CONTENT: TinyT5 (e.g. t5-small, quantized)	
+
+
+
+Offload code gen to something like: https://huggingface.co/Salesforce/codegen-350M-multi

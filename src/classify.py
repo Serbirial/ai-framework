@@ -1,6 +1,7 @@
 import torch
 import json
 from utils import openai
+import re
 from log import log
 
 def build_memory_confirmation_prompt(interpreted_data):
@@ -146,8 +147,10 @@ def classify_user_input(model, tokenizer, user_input):
 
     output_text = openai.extract_generated_text(output)
 
+    match = re.search(r"Category:\s*(\w+)", output_text, re.IGNORECASE)
+    result = match.group(1).lower() if match else "other"
 
-    result = output_text[len(prompt):].strip().lower()
+    #result = output_text[len(prompt):].strip().lower()
     log("INPUT CLASSIFICATION", result)
 
 
