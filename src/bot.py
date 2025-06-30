@@ -188,7 +188,7 @@ class ChatBot:
             f"<|assistant|>\n"
         )
 
-        return prompt
+        return openai.translate_llama_prompt_to_chatml(prompt)
 
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):

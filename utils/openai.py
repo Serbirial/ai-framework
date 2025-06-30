@@ -22,3 +22,34 @@ def extract_generated_text(response):
         return response["text"]
 
     return ""
+
+def translate_llama_prompt_to_chatml(prompt: str) -> str:
+    """
+    Converts a <|system|>, <|user|>, <|assistant|> formatted prompt into ChatML-style prompt.
+
+    Returns the translated prompt.
+    """
+    # Define replacements in order
+    replacements = [
+        ("<|system|>\n", "<|im_start|>system\n"),
+        ("<|user|>\n", "<|im_start|>user\n"),
+        ("<|assistant|>\n", "<|im_start|>assistant\n"),
+    ]
+
+    # Apply each replacement
+    for old, new in replacements:
+        prompt = prompt.replace(old, new)
+
+    # Add end tags
+    # Insert <|im_end|> after each <|im_start|>block until assistant block
+    parts = prompt.split("<|im_start|>")
+    final = []
+    for part in parts:
+        if not part.strip():
+            continue
+        if part.strip().startswith("assistant"):
+            final.append(f"<|im_start|>{part.strip()}")  # assistant gets no <|im_end|>
+        else:
+            final.append(f"<|im_start|>{part.strip()}\n<|im_end|>")
+
+    return "\n".join(final)

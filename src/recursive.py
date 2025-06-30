@@ -2,6 +2,7 @@ from . import classify
 from log import log
 from .static import mood_instruction, StopOnSpeakerChange
 from utils.helpers import DummyTokenizer, trim_context_to_fit
+from utils.openai import translate_llama_prompt_to_chatml
 import json
 
 class RecursiveThinker:
@@ -156,7 +157,7 @@ class RecursiveThinker:
             if mood_reflections:
                 base += "\n" + mood_reflections + "\n"
 
-        return base
+        return translate_llama_prompt_to_chatml(base)
 
     def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
         tokenizer = DummyTokenizer()
@@ -182,6 +183,8 @@ class RecursiveThinker:
             if extra_context_lines:
                 for result_line in extra_context_lines:
                     full += f"{result_line}\n"
+            # convert it over 
+            full = translate_llama_prompt_to_chatml(full)
 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name)
             response = self.bot._straightforward_generate(
@@ -245,6 +248,7 @@ class RecursiveThinker:
                 + "<|assistant|>\n"
             )
 
+        final_prompt = translate_llama_prompt_to_chatml(final_prompt)
         tokenizer = DummyTokenizer()
         prompt_tokens_used = tokenizer.count_tokens(final_prompt)
 
