@@ -27,24 +27,15 @@ class StopOnSpeakerChange:
 
     def __call__(self, new_text_chunk):
         self.buffer += new_text_chunk
-        lines = []
-        while "\n" in self.buffer:
-            line, self.buffer = self.buffer.split("\n", 1)
-            line = line.strip()
-            if line != "":
-                lines.append(line)
 
-        assistant_lines = []
-        for line in lines:
-            if line == "<|assistant|>":
-                continue
-            elif line.startswith("<|user|>") or line.startswith("<|system|>"):
-                if self.line_count >= self.min_lines:
-                    return True
-            if line and not line.startswith("<|"):
-                assistant_lines.append(line)
+        # If any speaker token appears and min_lines reached, stop
+        if any(token in self.buffer for token in ["<|user|>", "<|system|>"]) and self.line_count >= self.min_lines:
+            return True
 
-        self.line_count += len(assistant_lines)
+        # Count non-empty lines excluding speaker tokens
+        lines = [line.strip() for line in self.buffer.split("\n") if line.strip() and not line.strip().startswith("<|")]
+
+        self.line_count = len(lines)
 
         if self.line_count >= self.max_lines:
             return True
