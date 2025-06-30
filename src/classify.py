@@ -369,7 +369,8 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
 
     prompt += (
-        "Now, summarize these signals into one expressive sentence that captures your current emotional state:\n"
+    "Now, please respond with one brief, expressive sentence capturing your current emotional state.\n"
+    "Do not include explanations or additional information.\n"
     )
 
     output_text = ""
@@ -388,6 +389,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     # Optional: basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
         mood_sentence = "I feel neutral and composed at the moment."
+        log("MOOD SENTENCE SET TO DEFAULT")
 
     log("MOOD SENTENCE", mood_sentence)
     return mood_sentence
