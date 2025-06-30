@@ -147,7 +147,7 @@ def classify_user_input(model, tokenizer, user_input):
     output_text = openai.extract_generated_text(output)
 
 
-    result = output_text[len(prompt):].strip().lower().split()[0]
+    result = output_text[len(prompt):].strip().lower()
     log("INPUT CLASSIFICATION", result)
 
 
@@ -488,7 +488,7 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
     return query
 
 
-def classify_summarize_input(model, input_text, max_tokens=200):
+def summarize_raw_scraped_data(model, input_text, max_tokens=200):
     """
     Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)
 

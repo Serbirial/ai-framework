@@ -7,13 +7,12 @@ from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 import torch
 import src.classify as classify  # import the whole classify.py file as a module
-
+from src.static import classifyLLMName
 
 
 # Load TinyT5 model + tokenizer
-model_name = "mrm8488/t5-small-finetuned-summarize-news"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = ORTModelForSeq2SeqLM.from_pretrained(model_name, export=False)
+tokenizer = AutoTokenizer.from_pretrained(classifyLLMName)
+model = ORTModelForSeq2SeqLM.from_pretrained(classifyLLMName, export=False)
 
 
 app = Flask(__name__)
@@ -79,14 +78,14 @@ def extract_search_query():
     return jsonify({"search_query": query})
 
 
-@app.route('/classify_summarize_input', methods=['POST'])
+@app.route('/summarize_detailed', methods=['POST'])
 def classify_summarize_input():
     data = request.get_json()
-    input_text = data.get('input_text', '')
+    input_text = data.get('text', '')
     max_tokens = data.get('max_tokens', 200)
     model = classify.model
 
-    summary = classify.classify_summarize_input(model, input_text, max_tokens=max_tokens)
+    summary = classify.summarize_raw_scraped_data(model, input_text, max_tokens=max_tokens)
     return jsonify({"summary": summary})
 
 @app.route("/summarize", methods=["POST"])
@@ -97,7 +96,7 @@ def summarize():
     if not input_text:
         return jsonify({"error": "Missing 'text' field"}), 400
 
-    inputs = tokenizer(web_prompt + input_text, return_tensors="pt", max_length=512, truncation=True)
+    inputs = tokenizer(web_prompt + input_text, return_tensors="pt", max_length=300, truncation=True)
     
     with torch.no_grad():
         outputs = model.generate(

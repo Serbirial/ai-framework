@@ -9,7 +9,8 @@ mood_instruction = {
     "neutral": "Speak in a calm and balanced tone."
 }
 MODEL_NAME = ""
-MODEL_PATH = "/home/summers/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
+mainLLM = "/home/summers/models/mistral/mistral-nemo-3b-unhealed-q3_k_m.gguf" # new
+classifyLLMName = "mrm8488/t5-small-finetuned-summarize-news"
 #llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 # If this uncomments itself ONE MORE TIME im gonna nuke somneone
 
