@@ -78,21 +78,32 @@ class ChatBot:
 
 
 
+
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
-        classification = classify.classify_likes_dislikes_user_input(
-            model=self.model,
-            tokenizer=tokenizer,
-            user_input=question,
-            likes=self.likes,
-            dislikes=self.dislikes,
-        )
+        try:
+            response = requests.post(
+                "http://localhost:5000/classify_likes_dislikes",  # change if hosted elsewhere
+                json={
+                    "user_input": question,
+                    "likes": self.likes,
+                    "dislikes": self.dislikes
+                },
+                timeout=5  # optional, prevents hanging forever
+            )
+            if response.status_code == 200:
+                classification = response.json().get("classification", "NEUTRAL")
+            else:
+                classification = "NEUTRAL"
+        except Exception as e:
+            print(f"[WARN] Failed to classify likes/dislikes via API: {e}")
+            classification = "NEUTRAL"
+
         if classification == "LIKE":
-            mood = "happy"
+            return "happy"
         elif classification == "DISLIKE":
-            mood = "annoyed"
+            return "annoyed"
         else:
-            mood = "neutral"
-        return mood
+            return "neutral"
 
     def load_memory(self):
         if os.path.exists(self.memory_file):
@@ -126,10 +137,26 @@ class ChatBot:
             mood = "neutral"
         return mood
     
-    def get_moods_social(self, social_tone_classification: dict):
-        moods = classify.determine_moods_from_social_classification(social_tone_classification)
-        return moods
 
+    def get_moods_social(self, social_tone_classification: dict):
+        try:
+            response = requests.post(
+                "http://localhost:5007/determine_moods_social",
+                json={
+                    "classification": social_tone_classification,
+                    "top_n": 3
+                },
+                timeout=5
+            )
+            if response.status_code == 200:
+                moods = response.json().get("top_moods", [])
+            else:
+                moods = []
+        except Exception as e:
+            print(f"[WARN] Failed to determine moods via API: {e}")
+            moods = []
+
+        return moods
     def build_prompt(self, username, user_input, identifier, usertone):
         goals_text = " ".join(self.goals)
         traits_text = " ".join(self.traits)
@@ -264,7 +291,31 @@ class ChatBot:
 
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
-        usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
+        try:
+            response = requests.post(
+                "http://localhost:5007/classify_social_tone",
+                json={"user_input": user_input},
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json().get("classification", {
+                    "intent": "NEUTRAL",
+                    "attitude": "NEUTRAL",
+                    "tone": "NEUTRAL"
+                })
+            else:
+                return {
+                    "intent": "NEUTRAL",
+                    "attitude": "NEUTRAL",
+                    "tone": "NEUTRAL"
+                }
+        except Exception as e:
+            print(f"[WARN] classify_social_tone API failed: {e}")
+            return {
+                "intent": "NEUTRAL",
+                "attitude": "NEUTRAL",
+                "tone": "NEUTRAL"
+            }
         moods = {
             "has_like_or_dislike_mood": { 
                 "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
@@ -281,15 +332,37 @@ class ChatBot:
         } # TODO Set mood based on all moods
         # Set the base mood based on highest score social mood
         self.mood = moods["social_moods"]["mood"][0]
-        self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
-
+        try:
+            response = requests.post(
+                "http://localhost:5007/classify_moods_into_sentence",
+                json={"moods_dict": moods},
+                timeout=10
+            )
+            if response.status_code == 200:
+                self.mood_sentence = response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
+            else:
+                self.mood_sentence = "I feel neutral and composed at the moment."
+        except Exception as e:
+            print(f"[WARN] Failed to classify mood sentence via API: {e}")
+            self.mood_sentence = "I feel neutral and composed at the moment."
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
 
-        category = classify.classify_user_input(self.model, tokenizer, user_input)
-        
+        try:
+            response = requests.post(
+                "http://localhost:5007/classify_user_input",
+                json={"user_input": user_input},
+                timeout=10
+            )
+            if response.status_code == 200:
+                return response.json().get("category", "other")
+            else:
+                return "other"
+        except Exception as e:
+            print(f"[WARN] classify_user_input API failed: {e}")
+            return "other"        
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
         response = "This is the default blank response, you should never see this."

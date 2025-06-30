@@ -46,7 +46,7 @@ def classify_social_tone():
     return jsonify({"classification": classification})
 
 
-@app.route('/determine_moods', methods=['POST'])
+@app.route('/determine_moods_social', methods=['POST'])
 def determine_moods():
     data = request.get_json()
     classification = data.get('classification', {})
