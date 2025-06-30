@@ -14,7 +14,6 @@ from src.static import classifyLLMName
 tokenizer = AutoTokenizer.from_pretrained(classifyLLMName)
 model = ORTModelForSeq2SeqLM.from_pretrained(classifyLLMName, export=False)
 
-
 app = Flask(__name__)
 
 @app.route('/classify_user_input', methods=['POST'])
