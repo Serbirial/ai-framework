@@ -7,12 +7,12 @@ from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 import torch
 import src.classify as classify  # import the whole classify.py file as a module
-from src.static import classifyLLMName
+from src.static import baseclassifyLLMName
 
 
 # Load TinyT5 model + tokenizer
-tokenizer = AutoTokenizer.from_pretrained(classifyLLMName, use_fast=True)
-model = ORTModelForSeq2SeqLM.from_pretrained(classifyLLMName, export=False)
+tokenizer = AutoTokenizer.from_pretrained(baseclassifyLLMName, use_fast=True)
+model = ORTModelForSeq2SeqLM.from_pretrained(baseclassifyLLMName, export=False)
 
 
 app = Flask(__name__)

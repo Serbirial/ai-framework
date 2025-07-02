@@ -6,6 +6,7 @@
 
 from llama_cpp import Llama
 
+import requests
 import json
 import time
 import os
@@ -83,13 +84,13 @@ class ChatBot:
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
         try:
             response = requests.post(
-                "http://localhost:5000/classify_likes_dislikes",  # change if hosted elsewhere
+                "http://localhost:5006/classify_likes_dislikes",  # change if hosted elsewhere
                 json={
                     "user_input": question,
                     "likes": self.likes,
                     "dislikes": self.dislikes
                 },
-                timeout=5  # optional, prevents hanging forever
+                timeout=15  # optional, prevents hanging forever
             )
             if response.status_code == 200:
                 classification = response.json().get("classification", "NEUTRAL")
@@ -142,12 +143,12 @@ class ChatBot:
     def get_moods_social(self, social_tone_classification: dict):
         try:
             response = requests.post(
-                "http://localhost:5007/determine_moods_social",
+                "http://localhost:5006/determine_moods_social",
                 json={
                     "classification": social_tone_classification,
                     "top_n": 3
                 },
-                timeout=5
+                timeout=15
             )
             if response.status_code == 200:
                 moods = response.json().get("top_moods", [])
@@ -294,25 +295,25 @@ class ChatBot:
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
         try:
             response = requests.post(
-                "http://localhost:5007/classify_social_tone",
+                "http://localhost:5006/classify_social_tone",
                 json={"user_input": user_input},
-                timeout=10
+                timeout=15
             )
             if response.status_code == 200:
-                return response.json().get("classification", {
+                usertone = response.json().get("classification", {
                     "intent": "NEUTRAL",
                     "attitude": "NEUTRAL",
                     "tone": "NEUTRAL"
                 })
             else:
-                return {
+                usertone = {
                     "intent": "NEUTRAL",
                     "attitude": "NEUTRAL",
                     "tone": "NEUTRAL"
                 }
         except Exception as e:
             print(f"[WARN] classify_social_tone API failed: {e}")
-            return {
+            usertone = {
                 "intent": "NEUTRAL",
                 "attitude": "NEUTRAL",
                 "tone": "NEUTRAL"
@@ -335,9 +336,9 @@ class ChatBot:
         self.mood = moods["social_moods"]["mood"][0]
         try:
             response = requests.post(
-                "http://localhost:5007/classify_moods_into_sentence",
+                "http://localhost:5006/classify_moods_into_sentence",
                 json={"moods_dict": moods},
-                timeout=10
+                timeout=15
             )
             if response.status_code == 200:
                 self.mood_sentence = response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
@@ -355,15 +356,15 @@ class ChatBot:
             response = requests.post(
                 "http://localhost:5007/classify_user_input",
                 json={"user_input": user_input},
-                timeout=10
+                timeout=15
             )
             if response.status_code == 200:
-                return response.json().get("category", "other")
+                category = response.json().get("category", "other")
             else:
-                return "other"
+                category = "other"
         except Exception as e:
             print(f"[WARN] classify_user_input API failed: {e}")
-            return "other"        
+            category = "other"        
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
         response = "This is the default blank response, you should never see this."
