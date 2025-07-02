@@ -6,8 +6,14 @@ from src.static import baseclassifyLLMName
 model = Llama(
     model_path=baseclassifyLLMName,
     n_ctx=512,
-    n_threads=3,  # tune per device
-    verbose=False
+    n_threads=4,  # tune per device
+    verbose=False,
+    logits_all=False,
+    use_mmap=False,
+    n_gpu_layers=0,
+    low_vram=True,
+    n_batch=4,
+    numa=False
 )
 
 web_prompt = "Summarize the following content in plain language, including key facts, values, and structure: "

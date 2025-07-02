@@ -3,7 +3,17 @@ from llama_cpp import Llama
 import src.classify as classify
 from src.static import emotionalLLMName, baseclassifyLLMName
 
-base_model = Llama(model_path=baseclassifyLLMName, n_ctx=512, n_threads=2)
+base_model = Llama(
+    model_path=baseclassifyLLMName,
+    n_ctx=512,
+    n_threads=4,
+    logits_all=False,
+    use_mmap=False,
+    n_gpu_layers=0,
+    low_vram=True,
+    n_batch=4,
+    numa=False
+    )
 
 app = Flask(__name__)
 
