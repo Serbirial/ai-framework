@@ -84,7 +84,7 @@ class ChatBot:
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
         try:
             response = requests.post(
-                "http://localhost:5006/classify_likes_dislikes",  # change if hosted elsewhere
+                "http://192.168.0.8:5007/classify_likes_dislikes",  # change if hosted elsewhere
                 json={
                     "user_input": question,
                     "likes": self.likes,
@@ -143,7 +143,7 @@ class ChatBot:
     def get_moods_social(self, social_tone_classification: dict):
         try:
             response = requests.post(
-                "http://localhost:5006/determine_moods_social",
+                "http://192.168.0.8:5007/determine_moods_social",
                 json={
                     "classification": social_tone_classification,
                     "top_n": 3
@@ -295,7 +295,7 @@ class ChatBot:
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
         try:
             response = requests.post(
-                "http://localhost:5006/classify_social_tone",
+                "http://192.168.0.8:5007/classify_social_tone",
                 json={"user_input": user_input},
                 timeout=15
             )
@@ -336,7 +336,7 @@ class ChatBot:
         self.mood = moods["social_moods"]["mood"][0]
         try:
             response = requests.post(
-                "http://localhost:5006/classify_moods_into_sentence",
+                "http://192.168.0.8:5007/classify_moods_into_sentence",
                 json={"moods_dict": moods},
                 timeout=15
             )
@@ -354,7 +354,7 @@ class ChatBot:
 
         try:
             response = requests.post(
-                "http://localhost:5007/classify_user_input",
+                "http://192.168.0.7:5007/classify_user_input",
                 json={"user_input": user_input},
                 timeout=15
             )

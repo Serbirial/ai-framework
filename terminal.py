@@ -2,8 +2,6 @@ from src import bot, static
 import psutil
 import os
 
-tokenizer = static  # placeholder if needed
-context = static.ChatContext()
 
 def print_memory_usage():
     process = psutil.Process(os.getpid())
