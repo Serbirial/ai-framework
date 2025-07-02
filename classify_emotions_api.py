@@ -1,18 +1,17 @@
-
-
-web_prompt = "Summarize the following content in plain language, including key facts, values, and structure:"
-
 from flask import Flask, request, jsonify
 from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
-import torch
-import src.classify as classify  # import the whole classify.py file as a module
-from src.static import emotionalLLMName
+import src.classify as classify  
+from src.static import emotionalLLMName, baseclassifyLLMName
 
 
-# Load TinyT5 model + tokenizer
-tokenizer = AutoTokenizer.from_pretrained(emotionalLLMName, use_fast=True)
-model = ORTModelForSeq2SeqLM.from_pretrained(emotionalLLMName, export=False)
+# Load Emotional Classifier model and tokenizer
+emotional_tokenizer = AutoTokenizer.from_pretrained(emotionalLLMName, use_fast=True)
+emotional_model = ORTModelForSeq2SeqLM.from_pretrained(emotionalLLMName, export=False)
+
+# Load Base classifier (flan-t5-small or similar) model and tokenizer
+base_tokenizer = AutoTokenizer.from_pretrained(baseclassifyLLMName, use_fast=True)
+base_model = ORTModelForSeq2SeqLM.from_pretrained(baseclassifyLLMName, export=False)
 
 
 app = Flask(__name__)
@@ -25,7 +24,7 @@ def classify_likes_dislikes():
     likes = data.get('likes', [])
     dislikes = data.get('dislikes', [])
 
-    classification = classify.classify_likes_dislikes_user_input(model, None, user_input, likes, dislikes)
+    classification = classify.classify_likes_dislikes_user_input(emotional_model, None, user_input, likes, dislikes)
     return jsonify({"classification": classification})
 
 
@@ -34,7 +33,7 @@ def classify_social_tone():
     data = request.get_json()
     user_input = data.get('user_input', '')
 
-    classification = classify.classify_social_tone(model, tokenizer, user_input)
+    classification = classify.classify_social_tone(emotional_model, emotional_tokenizer, user_input)
     return jsonify({"classification": classification})
 
 
@@ -52,12 +51,10 @@ def determine_moods():
 def classify_moods_into_sentence():
     data = request.get_json()
     moods_dict = data.get('moods_dict', {})
-    model = classify.model
-    tokenizer = classify.tokenizer
 
-    mood_sentence = classify.classify_moods_into_sentence(model, tokenizer, moods_dict)
+    # Use the base_model and base_tokenizer here for generation
+    mood_sentence = classify.classify_moods_into_sentence(base_model, base_tokenizer, moods_dict)
     return jsonify({"mood_sentence": mood_sentence})
-
 
 
 if __name__ == "__main__":

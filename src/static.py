@@ -11,7 +11,7 @@ MODEL_NAME = ""
 mainLLM = "/home/summers/models/llama/tinydolphin-2.8-1.1b.Q5_K_S.gguf" # new
 webclassifyLLMName = "mrm8488/t5-small-finetuned-summarize-news"
 baseclassifyLLMName = "google/flan-t5-small" 
-emotionalLLMName = "./distilbert-emotions" 
+emotionalLLMName = "./distilbert-base-uncased-emotion" 
 
 #llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 # If this uncomments itself ONE MORE TIME im gonna nuke somneone
