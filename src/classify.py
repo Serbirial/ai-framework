@@ -256,7 +256,7 @@ def classify_social_tone(model, tokenizer, user_input):
     output_text = ""
 
     response = model.create_completion(
-        prompt=user_input,
+        prompt=prompt,
         max_tokens=30,
         temperature=0.0,      # deterministic output FIXME might need bumped a TINY bit
         top_p=1.0,            # disable nucleus sampling for max focus
@@ -268,7 +268,7 @@ def classify_social_tone(model, tokenizer, user_input):
 
     # Optional: extract JSON if response is structured
     json_start = output_text.find("{")
-    json_end = output_text.find("}", json_start) + 1
+    json_end  = output_text.find("}", json_start) + 1
 
     try:
         import json

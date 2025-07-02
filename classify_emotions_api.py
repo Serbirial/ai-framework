@@ -1,14 +1,19 @@
 from flask import Flask, request, jsonify
+from llama_cpp import Llama
 import src.classify as classify
-from src.static import emotionalLLMName, baseclassifyLLMName, Seq2SeqCompatWrapper
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from src.static import emotionalLLMName, baseclassifyLLMName
 
-# Load T5 model (could be Transformers, ORTModelForSeq2Seq, etc.)
-tokenizer = AutoTokenizer.from_pretrained(baseclassifyLLMName)
-raw_model = AutoModelForSeq2SeqLM.from_pretrained(baseclassifyLLMName)
-
-base_model = Seq2SeqCompatWrapper(raw_model, tokenizer)
-
+base_model = Llama(
+    model_path=baseclassifyLLMName,
+    n_ctx=512,
+    n_threads=4,
+    logits_all=False,
+    use_mmap=False,
+    n_gpu_layers=0,
+    low_vram=True,
+    n_batch=4,
+    numa=False
+    )
 
 app = Flask(__name__)
 
@@ -20,7 +25,7 @@ def classify_likes_dislikes():
     likes = data.get('likes', [])
     dislikes = data.get('dislikes', [])
 
-    classification = classify.classify_likes_dislikes_user_input(base_model, tokenizer, user_input, likes, dislikes)
+    classification = classify.classify_likes_dislikes_user_input(base_model, None, user_input, likes, dislikes)
     return jsonify({"classification": classification})
 
 
@@ -29,7 +34,7 @@ def classify_social_tone():
     data = request.get_json()
     user_input = data.get('user_input', '')
 
-    classification = classify.classify_social_tone(base_model, tokenizer, user_input)
+    classification = classify.classify_social_tone(base_model, None, user_input)
     return jsonify({"classification": classification})
 
 
@@ -48,7 +53,7 @@ def classify_moods_into_sentence():
     data = request.get_json()
     moods_dict = data.get('moods_dict', {})
 
-    mood_sentence = classify.classify_moods_into_sentence(base_model, tokenizer, moods_dict)
+    mood_sentence = classify.classify_moods_into_sentence(base_model, moods_dict)
     return jsonify({"mood_sentence": mood_sentence})
 
 
