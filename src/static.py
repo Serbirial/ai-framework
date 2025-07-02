@@ -139,3 +139,21 @@ class ChatContext:
 
 
 #tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_auth_token=TOKEN, use_fast=True)
+class Seq2SeqCompatWrapper:
+    def __init__(self, model, tokenizer):
+        self.model = model
+        self.tokenizer = tokenizer
+
+    def create_completion(self, prompt, max_tokens=64, temperature=0.0, top_p=1.0, stop=None, stream=False):
+        inputs = self.tokenizer(prompt, return_tensors="pt")
+        output_ids = self.model.generate(
+            **inputs,
+            max_new_tokens=max_tokens,
+            do_sample=False if temperature == 0 else True,
+            temperature=temperature,
+            top_p=top_p
+        )
+        decoded = self.tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        return {
+            "choices": [{"text": decoded}]
+        }
