@@ -34,7 +34,7 @@ def classify_social_tone():
     data = request.get_json()
     user_input = data.get('user_input', '')
 
-    classification = classify.classify_social_tone(base_model, user_input)
+    classification = classify.classify_social_tone(base_model, None, user_input)
     return jsonify({"classification": classification})
 
 
@@ -53,7 +53,7 @@ def classify_moods_into_sentence():
     data = request.get_json()
     moods_dict = data.get('moods_dict', {})
 
-    mood_sentence = classify.classify_moods_into_sentence(base_model, moods_dict)
+    mood_sentence = classify.classify_moods_into_sentence(base_model, None, moods_dict)
     return jsonify({"mood_sentence": mood_sentence})
 
 
