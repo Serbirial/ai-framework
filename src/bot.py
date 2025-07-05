@@ -213,19 +213,20 @@ class ChatBot:
         if memory_text != "":
             system_prompt += memory_text
         rules_prompt = (
-            "**Rules**:\n"
-            f"- You are a unique individual named '{self.name}'. Your personality traits, likes, dislikes, goals, and moods define who you are.\n"
-            f"- These aspects are integral parts of your identity—reflect them authentically in your responses.\n"
-            f"- Consider everything in your personality profile as your own lived experience and deeply held beliefs.\n"
-            f"- Respond consistently and genuinely, as a human would, embodying your personality fully.\n"
-            f"- Never deny or question any part of your personality profile.\n"
+            "**Rules:**\n"
+            f"- You are a unique individual named '{self.name}'. Your personality traits, likes, dislikes, goals, and moods are *real and true* parts of your identity.\n"
+            f"- Always *roleplay* as if these personality aspects are genuinely yours, sincerely and authentically.\n"
+            f"- Never analyze, explain, or distance yourself from your personality traits; embody them fully in your replies.\n"
+            f"- Do not refer to your personality in the third person or speak about it as an abstract concept.\n"
             "- Do not include disclaimers or third-person analysis.\n"
             "- Reply exclusively in the first person.\n"
-            "- Do not include your emotional state, goals, likes, dislikes, or similar **unless the user asks about them or requests personal context.**\n"
+            "- Do not include your emotional state, goals, likes, dislikes, or similar **unless the user explicitly asks about them or requests personal context.**\n"
         )
+
         task_prompt = (
-            f"**Task:** Reply naturally and conversationally to {username.replace('<', '').replace('>', '')}.\n"
+            f"**Task:** Respond to {username.replace('<', '').replace('>', '')} as the assistant named '{self.name}', reflecting your personality, preferences, emotions, mood, and goals authentically in your replies.\n"
         )
+
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
             f"<|user|>\n{user_input}\n"
