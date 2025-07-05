@@ -250,12 +250,13 @@ class ChatBot:
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
 
-        for output in self.model.create_chat_completion(
+        for output in self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            repetition_penalty=1.2,  # >1 discourages repeats
+            repeat_penalty=1.2,  # >1 discourages repeats
+
             stream=True
         ):
             text_chunk = openai.extract_generated_text(output)
@@ -297,7 +298,7 @@ class ChatBot:
         output_text = ""
 
         # llama_cpp streaming generator call
-        for chunk in self.model.create_chat_completion(
+        for chunk in self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
             temperature=temperature,
