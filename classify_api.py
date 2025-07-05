@@ -47,7 +47,7 @@ def determine_moods():
     classification = data.get('classification', {})
     top_n = data.get('top_n', 3)
 
-    moods = classify.determine_moods_from_social_classification(model, top_n=top_n)
+    moods = classify.determine_moods_from_social_classification(classification, model, top_n=top_n)
     return jsonify({"top_moods": moods})
 
 
