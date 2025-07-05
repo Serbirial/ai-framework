@@ -173,7 +173,7 @@ class ChatBot:
 
         return moods
     
-    def build_prompt(self, username, user_input, identifier, usertone):
+    def build_prompt(self, username, user_input, identifier, usertone, context):
         goals_text = " ".join(self.goals)
         traits_text = " ".join(self.traits)
         likes_text = ", ".join(self.likes)
@@ -182,11 +182,10 @@ class ChatBot:
         # Get interpreted to_remember facts for the user
         interpreted_facts = classify.interpret_to_remember(self, identifier)
         memory_text = ""
-        user_memory = self.memory.get(identifier, {})
-        memory_lines = user_memory.get("memory", [])
-        if memory_lines:
+        if context:
                 memory_text += f"\n## Relevant Chat History / Context\n"
                 memory_text += f"- This contains previous chat history with the user.\n"
+                memory_text += context
         if interpreted_facts:
                 memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
                 memory_text += f"{interpreted_facts.strip()}\n"
@@ -373,7 +372,7 @@ class ChatBot:
             print(f"[WARN] Failed to classify mood sentence via API: {e}")
             print("[WARN] Falling back to local model.")
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
-        prompt = self.build_prompt(username, user_input, identifier, usertone)
+        prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else "\n".join(memory[-10:]))
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
