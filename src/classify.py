@@ -104,18 +104,26 @@ def classify_user_input(model, tokenizer, user_input):
 
     prompt = (
         "<|system|>\n"
-        "You are a classifier. Classify the user's message into one of these categories:\n"
-        "- greeting\n"
-        "- goodbye\n"
-        "- factual_question\n"
-        "- preference_query\n"
-        "- statement\n"
-        "- instruction_memory\n"
-        "- other\n\n"
-        "Reply with the category name only.\n\n"
-        f"User message: {user_input.strip()}\n"
-        "Category:"
+        "You are a classifier that assigns one of the following categories to the user's message:\n"
+        "- greeting: A simple hello or salutation\n"
+        "- goodbye: A farewell or parting phrase\n"
+        "- factual_question: A request for information, instructions, or code\n"
+        "- preference_query: A question about opinions, likes/dislikes, or personality\n"
+        "- statement: A factual or emotional declaration that is not a question\n"
+        "- instruction_memory: A request to remember or store information\n"
+        "- other: Anything that doesn't clearly fit\n\n"
+        "Reply with just the category name.\n\n"
+        "Examples:\n"
+        "Input: Hello there!\nCategory: greeting\n"
+        "Input: Please remember that I live in X.\nCategory: instruction_memory\n"
+        "Input: What's the capital of Germany?\nCategory: factual_question\n"
+        "Input: Do you like X?\nCategory: preference_query\n"
+        "Input: What are your likes / dislikes?\nCategory: preference_query\n"
+        "Input: I love rainy days.\nCategory: statement\n"
+        "Input: Goodbye!\nCategory: goodbye\n\n"
+        f"Input: {user_input.strip()}\nCategory:"
     )
+
 
     output = model.create_completion(
         prompt=prompt,
