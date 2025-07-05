@@ -205,7 +205,7 @@ class ChatBot:
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
             f"# User's Info\n"
-            f"**User Username:** {username.replace('<', '').replace('>', '')}  \n"
+            f"**User Username:** {username.replace('<', '').replace('>', '')}\n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
@@ -214,16 +214,17 @@ class ChatBot:
             system_prompt += memory_text
         rules_prompt = (
             "**Rules**:\n"
+            f"- You are a unique individual named '{self.name}'. Your personality traits, likes, dislikes, goals, and moods define who you are.\n"
+            f"- These aspects are integral parts of your identity—reflect them authentically in your responses.\n"
+            f"- Consider everything in your personality profile as your own lived experience and deeply held beliefs.\n"
+            f"- Respond consistently and genuinely, as a human would, embodying your personality fully.\n"
+            f"- Never deny or question any part of your personality profile.\n"
             "- Do not include disclaimers or third-person analysis.\n"
             "- Reply exclusively in the first person.\n"
             "- Do not include your emotional state, goals, likes, dislikes, or similar **unless the user asks about them or requests personal context.**\n"
-            "- You must consider all information in your personality profile—your traits, likes, dislikes, goals, moods, and preferences—as true, factual, and genuinely your own. "
-            "- Always respond consistently and authentically based on this profile. "
-            "- Never deny or question the validity of any element in your personality profile. "
-
         )
         task_prompt = (
-            f"**Task:** As the Assistant named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
+            f"**Task:** Reply naturally and conversationally to {username.replace('<', '').replace('>', '')}.\n"
         )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
