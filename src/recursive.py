@@ -167,7 +167,7 @@ class RecursiveThinker:
 
         # Token-safe context trimming
         context_lines = context.split("\n") if isinstance(context, str) else context
-        trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx, reserved_for_output=400)
+        trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx(), reserved_for_output=400)
 
         # Build full prompt using the trimmed context
         prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
