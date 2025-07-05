@@ -432,7 +432,7 @@ class ChatBot:
             else:
                 short_context = "\n".join(context)
 
-            thinker = RecursiveThinker(self, streamer=streamer)
+            thinker = RecursiveThinker(self, depth=4, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
@@ -450,7 +450,7 @@ class ChatBot:
                 short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
             else:
                 short_context = "\n".join(context)
-            thinker = RecursiveThinker(self, streamer=streamer)
+            thinker = RecursiveThinker(self, depth=5, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -459,7 +459,22 @@ class ChatBot:
             log("DEBUG: FINAL THOUGHTS",final)
             response = final
         elif category == "other":
-            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            # Use recursive thinker for more elaborate introspection
+            # Extract just memory lines for context
+            memory = self.memory.get(identifier, {}).get("memory", [])
+
+            # Join last 5 pairs (user + bot responses) into context
+            if not context:
+                short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+            else:
+                short_context = "\n".join(context)
+            thinker = RecursiveThinker(self, depth=3, streamer=streamer)
+
+            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            log("DEBUG: GENERATED THOUGHTS",thoughts)
+            if debug:
+                final = f"{thoughts}\n{final}"
+            log("DEBUG: FINAL THOUGHTS",final)
         else: #fallback 
             response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
 
