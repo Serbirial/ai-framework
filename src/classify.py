@@ -109,7 +109,7 @@ def classify_user_input(model, tokenizer, user_input):
         "- goodbye: A farewell or parting phrase\n"
         "- factual_question: A request for information, instructions, or code\n"
         "- preference_query: A question about opinions, likes/dislikes, or personality\n"
-        "- statement: A factual or emotional declaration that is not a question\n"
+        "- statement: A declaration.\n"
         "- instruction_memory: A request to remember or store information\n"
         "- other: Anything that doesn't clearly fit\n\n"
         "Reply with just the category name.\n\n"
@@ -382,7 +382,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     output_text += openai.extract_generated_text(output)
 
     mood_sentence = output_text[len(prompt):].strip()
-
+    log("RAW MOOD SENTENCE", output_text)
     # Optional: basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
         mood_sentence = "I feel neutral and composed at the moment."
