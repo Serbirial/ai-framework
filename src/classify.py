@@ -314,9 +314,7 @@ def determine_moods_from_social_classification(classification, model, top_n=3):
         stream=False,
     )
     
-    response = openai.extract_generated_text(response)
-
-    output_text = response['choices'][0]['text'].strip()
+    output_text = openai.extract_generated_text(response)
 
     # Parse output moods: split by commas, clean up whitespace
     moods = [m.strip().lower() for m in output_text.split(",") if m.strip()]
