@@ -147,12 +147,16 @@ def classify_user_input(model, tokenizer, user_input):
     )
 
     output_text = openai.extract_generated_text(output).strip()
+    # Remove prompt prefix, if present
+    if output_text.startswith(prompt):
+        output_text = output_text[len(prompt):].strip()
 
-    #result = output_text[len(prompt):].strip().lower()
-    log("INPUT CLASSIFICATION", output_text)
+    # Lowercase and take the first word to match the original logic
+    result = output_text.lower().split()[0] if output_text else None
 
-    result = output_text
+    log("INPUT CLASSIFICATION", result)
     return result if result in categories else "other"
+
 
 def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
     likes_str = ", ".join(likes)
