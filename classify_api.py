@@ -5,7 +5,7 @@ from src.static import baseclassifyLLMName
 
 model = Llama(
     model_path=baseclassifyLLMName,
-    n_ctx=800,
+    n_ctx=1024,
     n_threads=4,  # tune per device
     verbose=False,
     logits_all=False,
