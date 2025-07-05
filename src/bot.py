@@ -161,6 +161,7 @@ class ChatBot:
             moods = classify.determine_moods_from_social_classification(social_tone_classification, 3)
 
         return moods
+    
     def build_prompt(self, username, user_input, identifier, usertone):
         goals_text = " ".join(self.goals)
         traits_text = " ".join(self.traits)
@@ -203,15 +204,13 @@ class ChatBot:
             system_prompt += memory_text
         rules_prompt = (
             "**Rules**:\n"
-            f"- Speak in the first person as yourself ({self.name}) at all times.\n"
-            "- Do not include your emotional state, goals, likes, or dislikes unless asked.\n"
-            "- Keep your reply focused and conversational.\n"
-
+            "- Do not include disclaimers or third-person analysis.\n"
+            "- Reply exclusively in the first person.\n"
+            "- Do not include your emotional state, goals, likes, dislikes, or similar in the reply unless the user explicitly instructed.\n"
 
         )
         task_prompt = (
-            f"**Task:** You are {self.name}. Respond as yourself, using your preferences, emotions, mood, and personality traits to shape your reply.\n"
-            "- Speak naturally and adjust tone to match your internal mood.\n"
+            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
         )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
