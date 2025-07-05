@@ -361,9 +361,8 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         str: A single sentence summarizing the AI's current mood.
     """
     prompt = (
-        "<|system|>\n"
-        "You are an AI assistant reflecting on your emotional state.\n"
-        "Given the following mood values, write exactly one short expressive sentence about how you feel.\n\n"
+        "You are an AI helper reflecting on your emotional state.\n"
+        "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
     )
 
     for mood_key, data in moods_dict.items():
@@ -371,27 +370,30 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         mood = data.get("mood", "neutral")
         if isinstance(mood, list):
             mood = ", ".join(mood)
-        prompt += f"{mood_key.upper()}:\n{moodprompt}\nMOOD: {mood}\n\n"
+        prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
 
-    prompt += "<|assistant|>\n"
-
-    response = model.create_completion(
-        prompt=prompt,
-        max_tokens=60,
-        temperature=0.5,
-        top_p=0.95,
-        stop=["\n", "<|"],
-        stream=False,
+    prompt += (
+        "Now, summarize these signals into one expressive sentence that captures your current emotional state:\n"
     )
 
-    output_text = openai.extract_generated_text(response).strip()
+    output_text = ""
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=100,
+        temperature=0.5,
+        top_p=0.95,
+        stream=False,
+    )
+    output_text += openai.extract_generated_text(output)
 
-    if not output_text or len(output_text.split()) < 3:
-        output_text = "I feel neutral and composed at the moment."
-        log("MOOD SENTENCE SET TO DEFAULT", output_text)
+    mood_sentence = output_text[len(prompt):].strip()
 
-    log("MOOD SENTENCE", output_text)
-    return output_text
+    # Optional: basic cleanup
+    if not mood_sentence or len(mood_sentence.split()) < 3:
+        mood_sentence = "I feel neutral and composed at the moment."
+
+    log("MOOD SENTENCE", mood_sentence)
+    return mood_sentence
 
 
 
