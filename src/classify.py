@@ -361,8 +361,9 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         str: A single sentence summarizing the AI's current mood.
     """
     prompt = (
-        "You are an AI helper reflecting on your emotional state.\n"
-        "Given the mood categories and their values, write exactly one short, expressive sentence describing how you feel.\n\n"
+        "<|system|>\n"
+        "You are an AI assistant reflecting on your emotional state.\n"
+        "Given the following mood values, write exactly one short expressive sentence about how you feel.\n\n"
     )
 
     for mood_key, data in moods_dict.items():
@@ -372,30 +373,26 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
             mood = ", ".join(mood)
         prompt += f"{mood_key.upper()}:\n{moodprompt}\nMOOD: {mood}\n\n"
 
-    prompt += "Mood Sentence:"
+    prompt += "<|assistant|>\n"
 
-    log("MOOD SENTENCE PROMPT", prompt)
-    output_text = ""
-    output = model.create_completion(
+    response = model.create_completion(
         prompt=prompt,
-        max_tokens=100,
+        max_tokens=60,
         temperature=0.5,
         top_p=0.95,
-        stop=["\n"],
+        stop=["\n", "<|"],
         stream=False,
     )
-    output_text = openai.extract_generated_text(output).strip()
 
-    # Use output directly
-    mood_sentence = output_text
+    output_text = openai.extract_generated_text(response).strip()
 
-    # basic cleanup
-    if not mood_sentence or len(mood_sentence.split()) < 3:
-        mood_sentence = "I feel neutral and composed at the moment."
-        log("MOOD SENTENCE SET TO DEFAULT", mood_sentence)
+    if not output_text or len(output_text.split()) < 3:
+        output_text = "I feel neutral and composed at the moment."
+        log("MOOD SENTENCE SET TO DEFAULT", output_text)
 
-    log("MOOD SENTENCE", mood_sentence)
-    return mood_sentence
+    log("MOOD SENTENCE", output_text)
+    return output_text
+
 
 
 def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> bool:
