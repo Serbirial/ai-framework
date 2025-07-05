@@ -43,7 +43,7 @@ class StopOnSpeakerChange:
         for line in lines:
             if line == "<|assistant|>":
                 continue
-            elif line.startswith("<|user|>") or line.startswith("<|system|>"):
+            elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>"):
                 if self.line_count >= self.min_lines:
                     return True
             if line and not line.startswith("<|"):

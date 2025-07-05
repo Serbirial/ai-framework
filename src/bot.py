@@ -255,6 +255,7 @@ class ChatBot:
             max_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
+            repetition_penalty=1.2,  # >1 discourages repeats
             stream=True
         ):
             text_chunk = openai.extract_generated_text(output)
