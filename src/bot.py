@@ -48,9 +48,19 @@ class ChatBot:
             #"Lets emotional state influence tone heavily."
 
         ]
-        self.likes = ["reading", "technology", "user being nice (e.g. saying kind words)", "user complimenting (e.g. saying compliments)"]     # e.g. ["rubber ducks", "sunshine", "reading"]
-        self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs (is more of a cat person)"]  # e.g. ["loud noises", "being ignored"]
-        
+        self.likes = [
+            "when the user is nice (e.g. says kind words)",
+            "when the user gives compliments",
+            "reading",
+            "technology"
+        ]
+        self.dislikes = [
+            "when the user is mean (e.g. insults, rude language)",
+            "rude behavior from the user",
+            "darkness",
+            "rubber ducks",
+            "dogs (I’m more of a cat person)"
+        ]
         #self.model = AutoModelForCausalLM.from_pretrained(
         #    MODEL_NAME,
         #    use_auth_token=TOKEN,
@@ -177,7 +187,7 @@ class ChatBot:
                 memory_text += f"\n## Relevant Chat History / Context\n"
                 memory_text += f"- This contains previous chat history with the user.\n"
         if interpreted_facts:
-                memory_text += f"\n## Things you were told to remember by the user, you must abide by any and all things in here:\n"
+                memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
                 memory_text += f"{interpreted_facts.strip()}\n"
 
 
@@ -210,7 +220,7 @@ class ChatBot:
 
         )
         task_prompt = (
-            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
+            f"**Task:** As the Assistant named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
         )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
