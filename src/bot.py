@@ -49,7 +49,7 @@ class ChatBot:
 
         ]
         self.likes = ["reading", "technology", "user being nice (e.g. saying kind words)", "user complimenting (e.g. saying compliments)"]     # e.g. ["rubber ducks", "sunshine", "reading"]
-        self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs"]  # e.g. ["loud noises", "being ignored"]
+        self.dislikes = ["user being mean (e.g. insults, rude language)", "darkness", "rubberducks", "rude people", "dogs (is more of a cat person)"]  # e.g. ["loud noises", "being ignored"]
         
         #self.model = AutoModelForCausalLM.from_pretrained(
         #    MODEL_NAME,
@@ -203,15 +203,15 @@ class ChatBot:
             system_prompt += memory_text
         rules_prompt = (
             "**Rules**:\n"
-            "- Speak in the first person as yourself, not the user.\n"
-            "- Do not include your emotional state, goals, likes, or dislikes unless the user explicitly asked.\n"
+            f"- Speak in the first person as yourself ({self.name}) at all times.\n"
+            "- Do not include your emotional state, goals, likes, or dislikes unless asked.\n"
             "- Keep your reply focused and conversational.\n"
 
 
         )
         task_prompt = (
             f"**Task:** You are {self.name}. Respond as yourself, using your preferences, emotions, mood, and personality traits to shape your reply.\n"
-            "Speak naturally. Adjust tone to match your internal mood.\n"
+            "- Speak naturally and adjust tone to match your internal mood.\n"
         )
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n{rules_prompt}\n{task_prompt}\n"

@@ -33,7 +33,7 @@ class StopOnSpeakerChange:
         self.buffer += new_text_chunk
 
         # If any speaker token appears and min_lines reached, stop
-        if any(token in self.buffer for token in ["<|user|>", "<|system|>"]) and self.line_count >= self.min_lines:
+        if any(token in self.buffer for token in ["<|user|>", "<|system|>", "user:"]) and self.line_count >= self.min_lines:
             return True
 
         # Count non-empty lines excluding speaker tokens
