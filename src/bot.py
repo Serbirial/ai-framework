@@ -242,12 +242,13 @@ class ChatBot:
             if streamer:
                 streamer.on_text(text_chunk)
 
+        print(output_text)
         prompt_index = output_text.find(_prompt_for_cut)
         if prompt_index != -1:
             response_raw = output_text[prompt_index + len(_prompt_for_cut):]
         else:
             response_raw = output_text
-
+        print(f"\n\n{response_raw}\n")
         return response_raw
 
 
