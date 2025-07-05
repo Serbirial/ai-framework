@@ -343,23 +343,42 @@ def determine_moods_from_social_classification(classification, top_n=3):
 
 def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     """
-    Uses an LLM to convert mood signals into a single sentence that represents the AI's current emotional state.
+    Converts mood signal dictionary into a single expressive sentence reflecting the AI's current emotional state.
 
     Args:
-        model: Hugging Face model instance (e.g., StableLM).
-        tokenizer: Corresponding tokenizer.
-        moods_dict (dict): Each key is a mood category. Each value is a dict with:
-                           - 'prompt': Explains what the category means
-                           - 'mood': A string or list of moods relevant to that category
+        model: LLM with `create_completion()` method.
+        tokenizer: Optional tokenizer (not used here).
+        moods_dict (dict): {
+            "Like/Dislike Mood Factor": {
+                "prompt": "...",
+                "mood": "neutral" or list of mood tags
+            },
+            ...
+        }
 
     Returns:
-        str: A single sentence summarizing the AI's current mood.
+        str: Mood summary sentence.
     """
+
+    # Base instruction
     prompt = (
-        "You are an AI helper reflecting on your emotional state.\n"
-        "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
+        "You are an AI reflecting on your emotional state.\n"
+        "Given the mood factors below, write a single expressive sentence that describes your current feelings.\n\n"
     )
 
+    # Example
+    prompt += (
+        "Example:\n"
+        "Like/Dislike Mood Factor - This is the mood based on whether your likes or dislikes were mentioned.\n"
+        "Mood: pleased\n"
+        "General Input Mood Factor - This is based on whether the input is liked overall.\n"
+        "Mood: amused\n"
+        "Social Intents Mood Factor - Based on user's tone and attitude.\n"
+        "Mood: friendly, open\n\n"
+        "Result: I'm feeling amused and pleased, enjoying this friendly interaction.\n\n"
+    )
+
+    # Add real mood signals
     for mood_key, data in moods_dict.items():
         moodprompt = data.get("prompt", "")
         mood = data.get("mood", "neutral")
@@ -367,24 +386,27 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
             mood = ", ".join(mood)
         prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
 
-    prompt += (
-        "Now, summarize these signals into one expressive sentence that captures your current emotional state:\n"
-    )
+    # Final instruction
+    prompt += "Result:"
 
-    output_text = ""
+    # Completion call
     output = model.create_completion(
         prompt=prompt,
-        max_tokens=100,
+        max_tokens=60,
         temperature=0.5,
         top_p=0.95,
+        stop=["\n"],
         stream=False,
     )
-    output_text += openai.extract_generated_text(output)
 
+    # Extract output
+    output_text = openai.extract_generated_text(output)
     mood_sentence = output_text[len(prompt):].strip()
+
     log("RAW MOOD SENTENCE", output_text)
-    # Optional: basic cleanup
+
     if not mood_sentence or len(mood_sentence.split()) < 3:
+        log("MOOD SENTENCE FALLBACK TRIGGERED", mood_sentence)
         mood_sentence = "I feel neutral and composed at the moment."
 
     log("MOOD SENTENCE", mood_sentence)
