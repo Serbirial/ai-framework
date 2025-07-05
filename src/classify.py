@@ -91,7 +91,6 @@ def interpret_to_remember(bot, identifier, max_new_tokens=100):
 
     return interpreted
 
-
 def classify_user_input(model, tokenizer, user_input):
     categories = [
         "greeting",
@@ -103,64 +102,43 @@ def classify_user_input(model, tokenizer, user_input):
         "other"
     ]
 
-    categories_str = ", ".join(categories)
     prompt = (
         "<|system|>\n"
-        "You are a helpful assistant that classifies user inputs into one of these categories:\n"
-        f"{categories_str}\n\n"
-        "Definitions:\n"
-        "- factual_question: A question or command asking for factual information, code, or how-to instructions.\n"
-        "- preference_query: A question asking about opinions, preferences, or personal advice.\n"
-        "- greeting: A salutation or hello.\n"
-        "- goodbye: A farewell or exit.\n"
-        "- statement: A declarative sentence or comment.\n"
-        "- instruction_memory: A request or instruction to store or remember user-specific information, such as names, preferences, or facts.\n"
-        "- other: Anything that does not fit the above.\n\n"
-        "Examples:\n"
-        "Input: \"Give me code to loop through a list.\"\nCategory: factual_question\n\n"
-        "Input: \"Write a Python function that adds two numbers.\"\nCategory: factual_question\n\n"
-        "Input: \"Can you do X for me?\"\nCategory: factual_question\n\n"
-        "Input: \"What is the capital of France?\"\nCategory: factual_question\n\n"
-        "Input: \"Do you like coffee or tea?\"\nCategory: preference_query\n\n"
-        "Input: \"What do you think of gaming?\"\nCategory: preference_query\n\n"
-        "Input: \"What are your likes and dislikes?\"\nCategory: preference_query\n\n"
-        "Input: \"Tell me what you like and dislike.\"\nCategory: preference_query\n\n"
-        "Input: \"Do you have any preferences?\"\nCategory: preference_query\n\n"
-        "Input: \"Is there anything you dislike?\"\nCategory: preference_query\n\n"
-        "Input: \"Hello there!\"\nCategory: greeting\n\n"
-        "Input: \"Goodbye, see you later.\"\nCategory: goodbye\n\n"
-        "Input: \"I think it's going to rain today.\"\nCategory: statement\n\n"
-        "Input: \"Blah blah random text.\"\nCategory: other\n\n"
-        "Input: \"It would be meaningful if you can X, Y. Get back to Z.\"\nCategory: other\n\n" # control input 1 TODO: add json file full of examples for helpers
-        "Input: \"Please remember my name is Alex.\"\nCategory: instruction_memory\n\n"
-        "Input: \"Hey, always refer to me as Commander.\"\nCategory: instruction_memory\n\n"
-        "<|user|>\n"
-        f"Input: \"{user_input}\"\n"
-        "What category does this input belong to? If the input does not clearly match a category based on *intent and phrasing*, you should classify it as 'other'.\n"
-        "<|assistant|>\n"
+        "You are a classifier. Classify the user's message into one of these categories:\n"
+        "- greeting\n"
+        "- goodbye\n"
+        "- factual_question\n"
+        "- preference_query\n"
+        "- statement\n"
+        "- instruction_memory\n"
+        "- other\n\n"
+        "Reply with the category name only.\n\n"
+        f"User message: {user_input.strip()}\n"
         "Category:"
     )
-    output_text = ""
 
     output = model.create_completion(
         prompt=prompt,
         max_tokens=10,
         temperature=0,
+        top_p=1.0,
         stop=["\n"],
         stream=False,
     )
+
     log("RAW CATEGORY OUTPUT", output)
 
-    output_text = openai.extract_generated_text(output).strip()
-    # Remove prompt prefix, if present
-    if output_text.startswith(prompt):
-        output_text = output_text[len(prompt):].strip()
+    text = openai.extract_generated_text(output).strip().lower()
 
-    # Lowercase and take the first word to match the original logic
-    result = output_text.lower().split()[0] if output_text else None
+    # Strip non-category words (e.g. "category: X")
+    for cat in categories:
+        if cat in text:
+            log("INPUT CLASSIFICATION", cat)
+            return cat
 
-    log("INPUT CLASSIFICATION", result)
-    return result if result in categories else "other"
+    log("INPUT CLASSIFICATION", "other")
+    return "other"
+
 
 
 def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
