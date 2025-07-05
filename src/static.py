@@ -16,6 +16,8 @@ emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classifica
 #llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
 # If this uncomments itself ONE MORE TIME im gonna nuke somneone
 
+WORKER_IP_PORT = "localhost:5007"
+
 TOKEN = ""
 MEMORY_FILE = "memory.json"
 
