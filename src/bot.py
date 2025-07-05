@@ -244,7 +244,6 @@ class ChatBot:
             if streamer:
                 streamer.on_text(text_chunk)
 
-        print(output_text)
         prompt_index = output_text.find(_prompt_for_cut)
         if prompt_index != -1:
             response_raw = output_text[prompt_index + len(_prompt_for_cut):]
@@ -319,15 +318,15 @@ class ChatBot:
             print("[WARN] Falling back to local model.")
             usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
         moods = {
-            "has_like_or_dislike_mood": { 
+            "Like/Dislike Mood Factor": { 
                 "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
                 "mood": self.get_mood_primitive(user_input),
                 },
-            "input_mood": {
+            "General Input Mood Factor": {
                 "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
                 "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input),
                 },
-            "social_moods": {
+            "Social Intents Mood Factor": {
                 "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
                 "mood": self.get_moods_social(usertone)
             }

@@ -362,7 +362,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     """
     prompt = (
         "You are an AI helper reflecting on your emotional state.\n"
-        "Based on the following mood categories and their values, write a single sentence describing your current mood.\n\n"
+        "Given the mood categories and their values, write exactly one short, expressive sentence describing how you feel.\n\n"
     )
 
     for mood_key, data in moods_dict.items():
@@ -370,12 +370,10 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         mood = data.get("mood", "neutral")
         if isinstance(mood, list):
             mood = ", ".join(mood)
-        prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
+        prompt += f"{mood_key.upper()}:\n{moodprompt}\nMOOD: {mood}\n\n"
 
-    prompt += (
-    "Now, please respond with one brief, expressive sentence capturing your current emotional state.\n"
-    "Do not include explanations or additional information.\n"
-    )
+    prompt += "Mood Sentence:"
+
     log("MOOD SENTENCE PROMPT", prompt)
     output_text = ""
     output = model.create_completion(
