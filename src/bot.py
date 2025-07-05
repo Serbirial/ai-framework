@@ -322,20 +322,19 @@ class ChatBot:
             "has_like_or_dislike_mood": { 
                 "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
                 "mood": self.get_mood_primitive(user_input),
-            },
+                },
             "input_mood": {
                 "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
                 "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input),
-            },
+                },
             "social_moods": {
                 "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
-                "mood": {
-                    "top_moods": self.get_moods_social(usertone)
-                }
+                "mood": self.get_moods_social(usertone)
             }
         } # TODO Set mood based on all moods
         # Set the base mood based on highest score social mood
-        self.mood = moods["social_moods"]["mood"]["top_moods"][0]
+        social_moods = moods["social_moods"]["mood"]
+        self.mood = social_moods[0] if social_moods else "uncertain (api error)"
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
