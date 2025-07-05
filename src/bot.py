@@ -333,7 +333,7 @@ class ChatBot:
             }
         } # TODO Set mood based on all moods
         # Set the base mood based on highest score social mood
-        self.mood = moods["social_moods"]["mood"][0]
+        self.mood = moods["social_moods"]["mood"]["top_moods"][0]
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
