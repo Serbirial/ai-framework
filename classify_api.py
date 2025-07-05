@@ -59,11 +59,6 @@ def classify_moods_into_sentence():
     mood_sentence = classify.classify_moods_into_sentence(model, None, moods_dict)
     return jsonify({"mood_sentence": mood_sentence})
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5007, threaded=False)
-
-
 @app.route('/classify_user_input', methods=['POST'])
 def classify_user_input():
     data = request.get_json()

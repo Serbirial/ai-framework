@@ -98,7 +98,7 @@ class ChatBot:
                 classification = "NEUTRAL"
         except Exception as e:
             print(f"[WARN] Failed to classify likes/dislikes via API: {e}")
-            classification = "NEUTRAL"
+            classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, self.likes, self.dislikes)
 
         if classification == "LIKE":
             return "happy"
@@ -156,7 +156,7 @@ class ChatBot:
                 moods = []
         except Exception as e:
             print(f"[WARN] Failed to determine moods via API: {e}")
-            moods = []
+            moods = classify.determine_moods_from_social_classification(social_tone_classification, self.model, 3)
 
         return moods
     def build_prompt(self, username, user_input, identifier, usertone):
@@ -314,11 +314,7 @@ class ChatBot:
                 }
         except Exception as e:
             print(f"[WARN] classify_social_tone API failed: {e}")
-            usertone = {
-                "intent": "NEUTRAL",
-                "attitude": "NEUTRAL",
-                "tone": "NEUTRAL"
-            }
+            usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
         moods = {
             "has_like_or_dislike_mood": { 
                 "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
@@ -348,7 +344,7 @@ class ChatBot:
                 self.mood_sentence = "I feel neutral and composed at the moment."
         except Exception as e:
             print(f"[WARN] Failed to classify mood sentence via API: {e}")
-            self.mood_sentence = "I feel neutral and composed at the moment."
+            self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
@@ -366,7 +362,7 @@ class ChatBot:
                 category = "other"
         except Exception as e:
             print(f"[WARN] classify_user_input API failed: {e}")
-            category = "other"        
+            category = classify.classify_user_input(self.model, tokenizer, user_input)
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
         response = "This is the default blank response, you should never see this."

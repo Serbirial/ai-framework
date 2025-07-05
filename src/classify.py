@@ -313,6 +313,8 @@ def determine_moods_from_social_classification(classification, model, top_n=3):
         stop=["\n"],
         stream=False,
     )
+    
+    response = openai.extract_generated_text(response)
 
     output_text = response['choices'][0]['text'].strip()
 
@@ -354,7 +356,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     "Now, please respond with one brief, expressive sentence capturing your current emotional state.\n"
     "Do not include explanations or additional information.\n"
     )
-
+    log("MOOD SENTENCE PROMPT", prompt)
     output_text = ""
     output = model.create_completion(
         prompt=prompt,
@@ -368,7 +370,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     # Use output directly
     mood_sentence = output_text
 
-    # Optional: basic cleanup
+    # basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
         mood_sentence = "I feel neutral and composed at the moment."
         log("MOOD SENTENCE SET TO DEFAULT")

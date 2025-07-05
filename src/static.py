@@ -8,7 +8,7 @@ mood_instruction = {
     "neutral": "Speak in a calm and balanced tone."
 }
 MODEL_NAME = ""
-mainLLM = "/home/summers/models/llama/tinydolphin-2.8-1.1b.Q5_K_S.gguf" # new
+mainLLM = "/home/summers/models/llama/tinyllama-1.1b-chat-v1.0.Q4_K_S.gguf" # new
 webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-news.gguf"
 baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
