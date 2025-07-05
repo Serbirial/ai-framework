@@ -214,7 +214,7 @@ class ChatBot:
             "- Speak naturally and adjust tone to match your internal mood.\n"
         )
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n\n{rules_prompt}\n{task_prompt}\n"
+            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
             f"<|user|>\n{user_input}\n"
             f"<|assistant|>\n"
         )
