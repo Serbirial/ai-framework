@@ -98,6 +98,7 @@ class ChatBot:
                 classification = "NEUTRAL"
         except Exception as e:
             print(f"[WARN] Failed to classify likes/dislikes via API: {e}")
+            print("[WARN] Falling back to local model.")
             classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, self.likes, self.dislikes)
 
         if classification == "LIKE":
@@ -156,6 +157,7 @@ class ChatBot:
                 moods = []
         except Exception as e:
             print(f"[WARN] Failed to determine moods via API: {e}")
+            print("[WARN] Falling back to local model.")
             moods = classify.determine_moods_from_social_classification(social_tone_classification, self.model, 3)
 
         return moods
@@ -314,6 +316,7 @@ class ChatBot:
                 }
         except Exception as e:
             print(f"[WARN] classify_social_tone API failed: {e}")
+            print("[WARN] Falling back to local model.")
             usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
         moods = {
             "has_like_or_dislike_mood": { 
@@ -344,6 +347,7 @@ class ChatBot:
                 self.mood_sentence = "I feel neutral and composed at the moment."
         except Exception as e:
             print(f"[WARN] Failed to classify mood sentence via API: {e}")
+            print("[WARN] Falling back to local model.")
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
         prompt = self.build_prompt(username, user_input, identifier, usertone)
 
@@ -362,6 +366,7 @@ class ChatBot:
                 category = "other"
         except Exception as e:
             print(f"[WARN] classify_user_input API failed: {e}")
+            print("[WARN] Falling back to local model.")
             category = classify.classify_user_input(self.model, tokenizer, user_input)
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
