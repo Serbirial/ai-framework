@@ -145,6 +145,7 @@ def classify_user_input(model, tokenizer, user_input):
         stop=["\n"],
         stream=False,
     )
+    log("RAW CATEGORY OUTPUT", output)
 
     output_text = openai.extract_generated_text(output).strip()
     # Remove prompt prefix, if present
