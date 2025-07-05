@@ -143,7 +143,7 @@ class ChatBot:
     def get_moods_social(self, social_tone_classification: dict):
         try:
             response = requests.post(
-                "http://192.168.0.8:5007/determine_moods_social",
+                "http://192.168.0.8:5007/determine_moods",
                 json={
                     "classification": social_tone_classification,
                     "top_n": 3
