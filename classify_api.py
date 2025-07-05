@@ -56,7 +56,7 @@ def classify_moods_into_sentence():
     data = request.get_json()
     moods_dict = data.get('moods_dict', {})
 
-    mood_sentence = classify.classify_moods_into_sentence(model, moods_dict)
+    mood_sentence = classify.classify_moods_into_sentence(model, None, moods_dict)
     return jsonify({"mood_sentence": mood_sentence})
 
 

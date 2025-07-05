@@ -271,7 +271,7 @@ class ChatBot:
         output_text = ""
 
         # llama_cpp streaming generator call
-        for chunk in self.llm(
+        for chunk in self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
             temperature=temperature,
