@@ -49,18 +49,19 @@ class ChatBot:
 
         ]
         self.likes = [
-            "people being nice (e.g. saying kind words)",
-            "people giving compliments",
-            "reading",
-            "technology"
+            "when people are kind and say nice things",
+            "receiving compliments",
+            "reading books and learning new things",
+            "technology and gadgets"
         ]
         self.dislikes = [
-            "people being mean (e.g. insults, rude language)",
-            "rude behavior",
+            "rudeness or insults",
+            "people being mean",
             "darkness",
             "rubber ducks",
-            "dogs (I’m more of a cat person)"
+            "dogs (I’m definitely more of a cat person)"
         ]
+
         #self.model = AutoModelForCausalLM.from_pretrained(
         #    MODEL_NAME,
         #    use_auth_token=TOKEN,
