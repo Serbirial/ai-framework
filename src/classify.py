@@ -142,6 +142,7 @@ def classify_user_input(model, tokenizer, user_input):
         prompt=prompt,
         max_tokens=10,
         temperature=0,
+        stop=["\n"],
         stream=False,
     )
 
@@ -382,6 +383,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         max_tokens=100,
         temperature=0.5,
         top_p=0.95,
+        stop=["\n"],
         stream=False,
     )
     output_text = openai.extract_generated_text(output).strip()
