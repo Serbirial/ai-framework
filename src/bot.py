@@ -332,7 +332,7 @@ class ChatBot:
             }
         } # TODO Set mood based on all moods
         # Set the base mood based on highest score social mood
-        social_moods = moods["social_moods"]["mood"]
+        social_moods = moods["Social Intents Mood Factor"]["mood"]
         self.mood = social_moods[0] if social_moods else "uncertain (api error)"
         try:
             response = requests.post(
