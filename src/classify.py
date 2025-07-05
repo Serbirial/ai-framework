@@ -284,43 +284,64 @@ def classify_social_tone(model, tokenizer, user_input):
     return classification
 
 
-def determine_moods_from_social_classification(classification, model, top_n=3):
+
+def determine_moods_from_social_classification(classification, top_n=3):
     """
-    Uses a LLaMA (llama-cpp-python) model to generate the top N moods from social classification.
-
-    Args:
-        classification (dict): with keys 'intent', 'attitude', 'tone'
-        model: Llama instance from llama_cpp
-        top_n (int): number of top moods to return (used as a hint in prompt)
-
-    Returns:
-        List[str]: top mood labels extracted from model output
+    Dynamically calculates and returns the top N moods based on user interaction.
     """
+    mood_weights = {
+        "happy": 0,
+        "annoyed": 0,
+        "calm": 0,
+        "playful": 0,
+        "neutral": 0,
+        "amused": 0,
+        "hurt": 0,
+        "respected": 0
+    }
 
-    prompt = (
-        "You are an AI that interprets social cues and classifies the user's mood.\n"
-        f"Intent: {classification.get('intent', 'neutral')}\n"
-        f"Attitude: {classification.get('attitude', 'neutral')}\n"
-        f"Tone: {classification.get('tone', 'neutral')}\n\n"
-        f"List the top {top_n} moods that best describe this interaction, separated by commas:\n"
-    )
+    intent = classification.get("intent", "").upper()
+    attitude = classification.get("attitude", "").upper()
+    tone = classification.get("tone", "").upper()
 
-    response = model.create_completion(
-        prompt=prompt,
-        max_tokens=50,
-        temperature=0.3,
-        top_p=0.9,
-        stop=["\n"],
-        stream=False,
-    )
-    
-    output_text = openai.extract_generated_text(response)
+    # Intent-based scoring
+    if intent == "COMPLIMENT":
+        mood_weights["happy"] += 2
+        mood_weights["respected"] += 1
+    elif intent == "INSULT":
+        mood_weights["annoyed"] += 2
+        mood_weights["hurt"] += 2
+    elif intent == "NEUTRAL":
+        mood_weights["neutral"] += 1
 
-    # Parse output moods: split by commas, clean up whitespace
-    moods = [m.strip().lower() for m in output_text.split(",") if m.strip()]
+    # Attitude-based scoring
+    if attitude == "NICE":
+        mood_weights["happy"] += 1
+        mood_weights["calm"] += 1
+    elif attitude == "RUDE":
+        mood_weights["annoyed"] += 2
+    elif attitude == "NEUTRAL":
+        mood_weights["neutral"] += 1
 
-    # Return only top_n moods if more were returned
-    return moods[:top_n]
+    # Tone-based scoring
+    if tone == "POLITE":
+        mood_weights["calm"] += 2
+        mood_weights["respected"] += 1
+    elif tone == "AGGRESSIVE":
+        mood_weights["annoyed"] += 2
+    elif tone == "JOKING":
+        mood_weights["playful"] += 2
+        mood_weights["amused"] += 1
+    elif tone == "NEUTRAL":
+        mood_weights["neutral"] += 1
+
+    sorted_moods = sorted(mood_weights.items(), key=lambda x: x[1], reverse=True)
+    top_moods = [mood for mood, weight in sorted_moods if weight > 0][:top_n]
+
+    log("MOOD WEIGHTS", mood_weights)
+    log("TOP MOODS", top_moods)
+
+    return top_moods
 
 
 

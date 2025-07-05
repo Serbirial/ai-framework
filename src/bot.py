@@ -158,7 +158,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] Failed to determine moods via API: {e}")
             print("[WARN] Falling back to local model.")
-            moods = classify.determine_moods_from_social_classification(social_tone_classification, self.model, 3)
+            moods = classify.determine_moods_from_social_classification(social_tone_classification, 3)
 
         return moods
     def build_prompt(self, username, user_input, identifier, usertone):
