@@ -196,10 +196,18 @@ class ChatBot:
             f"<|system|>\n"
             f"# Assistant's Personality Profile\n"
             f"**Name:** {self.name}  \n"
-            f"**Traits:** {traits_text}  \n"
-            f"**Likes:** {likes_text}  \n"
-            f"**Dislikes:** {dislikes_text}  \n"
-            f"**Goals:** {goals_text}  \n"
+            f"**Traits:**\n"
+            f"- " + "\n- ".join(self.traits) + "\n\n"
+
+            f"**Likes:**\n"
+            f"- " + "\n- ".join(self.likes) + "\n\n"
+
+            f"**Dislikes:**\n"
+            f"- " + "\n- ".join(self.dislikes) + "\n\n"
+
+            f"**Goals:**\n"
+            f"- " + "\n- ".join(self.goals) + "\n\n"
+
             f"**Mood:** {self.mood}  \n"
             f"**Mood Sentence:** {self.mood_sentence}\n"
 
