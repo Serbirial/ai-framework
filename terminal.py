@@ -10,7 +10,7 @@ def print_memory_usage():
 
 if __name__ == "__main__":
     chatbot = bot.ChatBot("console-AI", "console.json")
-    username = input("Your Username? > ")
+    username = "serbirial" # temp name 
     history = []
 
     print("\nType 'exit' to quit.\n")
