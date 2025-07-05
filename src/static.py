@@ -9,8 +9,8 @@ mood_instruction = {
 }
 MODEL_NAME = ""
 mainLLM = "/home/summers/models/llama/tinydolphin-2.8-1.1b.Q5_K_S.gguf" # new
-webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-news"
-baseclassifyLLMName = "/home/summers/models/using/flan-t5-small.Q4_K_S.gguf" 
+webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-news.gguf"
+baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
 
 #llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)

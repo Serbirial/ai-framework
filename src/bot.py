@@ -354,7 +354,7 @@ class ChatBot:
 
         try:
             response = requests.post(
-                "http://192.168.0.7:5007/classify_user_input",
+                "http://192.168.0.8:5007/classify_user_input",
                 json={"user_input": user_input},
                 timeout=15
             )
