@@ -157,7 +157,7 @@ class RecursiveThinker:
             if mood_reflections:
                 base += "\n" + mood_reflections + "\n"
 
-        return translate_llama_prompt_to_chatml(base)
+        return base
 
     def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
         tokenizer = DummyTokenizer()
@@ -184,7 +184,7 @@ class RecursiveThinker:
                 for result_line in extra_context_lines:
                     full += f"{result_line}\n"
             # convert it over 
-            full = translate_llama_prompt_to_chatml(full)
+            #full = translate_llama_prompt_to_chatml(full)
 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name)
             response = self.bot._straightforward_generate(
@@ -200,21 +200,21 @@ class RecursiveThinker:
             log("DEBUG: THOUGHT STEP", response.strip())
 
             lines = response.strip().splitlines()
-            new_lines = []
+            #new_lines = []
 
-            for line in lines:
-                if line.strip().lower().startswith("action:"):
-                    action_key = line.split(":", 1)[1].strip().lower()
-                    result = self.perform_action(action_key)
-                    result_json = json.dumps(result)
-                    log(f"DEBUG: Action result for '{action_key}': {result_json}")
-                    action_result_str = f"<ActionResult>{result_json}</ActionResult>"
-                    extra_context_lines.append(action_result_str)
-                    new_lines.append(action_result_str)
-                else:
-                    new_lines.append(line)
+            #for line in lines:
+            #    if line.strip().lower().startswith("action:"):
+            #        action_key = line.split(":", 1)[1].strip().lower()
+            #        result = self.perform_action(action_key)
+            #        result_json = json.dumps(result)
+            #        log(f"DEBUG: Action result for '{action_key}': {result_json}")
+            #        action_result_str = f"<ActionResult>{result_json}</ActionResult>"
+            #        extra_context_lines.append(action_result_str)
+            #        new_lines.append(action_result_str)
+            #    else:
+            #        new_lines.append(line)
 
-            response = "\n".join(new_lines)
+            #response = "\n".join(new_lines)
             full += f"{response.strip()}\n"
 
 
@@ -248,7 +248,6 @@ class RecursiveThinker:
                 + "<|assistant|>\n"
             )
 
-        final_prompt = translate_llama_prompt_to_chatml(final_prompt)
         tokenizer = DummyTokenizer()
         prompt_tokens_used = tokenizer.count_tokens(final_prompt)
 

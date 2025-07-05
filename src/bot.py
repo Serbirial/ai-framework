@@ -217,7 +217,7 @@ class ChatBot:
             f"<|assistant|>\n"
         )
 
-        return openai.translate_llama_prompt_to_chatml(prompt)
+        return prompt
 
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
@@ -232,7 +232,7 @@ class ChatBot:
             top_p=top_p,
             stream=True
         ):
-            text_chunk = openai.extract_generated_text(output)
+            text_chunk = output
             output_text += text_chunk
 
             # Call stop criteria with the new text chunk; stop if it returns True
@@ -280,7 +280,7 @@ class ChatBot:
             repeat_penalty=1.2,
             stream=True
         ):
-            text = openai.extract_generated_text(chunk)
+            text = chunk
             # Call stop criteria with the new text chunk; stop if it returns True
             if stop_criteria and stop_criteria(text):
                 break
