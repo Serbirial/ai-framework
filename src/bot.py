@@ -49,14 +49,14 @@ class ChatBot:
 
         ]
         self.likes = [
-            "when the user is nice (e.g. says kind words)",
-            "when the user gives compliments",
+            "people being nice (e.g. saying kind words)",
+            "people giving compliments",
             "reading",
             "technology"
         ]
         self.dislikes = [
-            "when the user is mean (e.g. insults, rude language)",
-            "rude behavior from the user",
+            "people being mean (e.g. insults, rude language)",
+            "rude behavior",
             "darkness",
             "rubber ducks",
             "dogs (I’m more of a cat person)"
