@@ -392,7 +392,7 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     # basic cleanup
     if not mood_sentence or len(mood_sentence.split()) < 3:
         mood_sentence = "I feel neutral and composed at the moment."
-        log("MOOD SENTENCE SET TO DEFAULT")
+        log("MOOD SENTENCE SET TO DEFAULT", mood_sentence)
 
     log("MOOD SENTENCE", mood_sentence)
     return mood_sentence
