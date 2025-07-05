@@ -232,7 +232,7 @@ class ChatBot:
             top_p=top_p,
             stream=True
         ):
-            text_chunk = output
+            text_chunk = openai.extract_generated_text(output)
             output_text += text_chunk
 
             # Call stop criteria with the new text chunk; stop if it returns True
