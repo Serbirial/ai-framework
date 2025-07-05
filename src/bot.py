@@ -250,7 +250,7 @@ class ChatBot:
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
 
-        for output in self.model.create_completion(
+        for output in self.model.create_chat_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
             temperature=temperature,
@@ -297,7 +297,7 @@ class ChatBot:
         output_text = ""
 
         # llama_cpp streaming generator call
-        for chunk in self.model.create_completion(
+        for chunk in self.model.create_chat_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
             temperature=temperature,
