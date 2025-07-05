@@ -90,7 +90,7 @@ class ChatBot:
                     "likes": self.likes,
                     "dislikes": self.dislikes
                 },
-                timeout=15  # optional, prevents hanging forever
+                timeout=120
             )
             if response.status_code == 200:
                 classification = response.json().get("classification", "NEUTRAL")
@@ -148,7 +148,7 @@ class ChatBot:
                     "classification": social_tone_classification,
                     "top_n": 3
                 },
-                timeout=15
+                timeout=120
             )
             if response.status_code == 200:
                 moods = response.json().get("top_moods", [])
@@ -297,7 +297,7 @@ class ChatBot:
             response = requests.post(
                 "http://192.168.0.8:5007/classify_social_tone",
                 json={"user_input": user_input},
-                timeout=15
+                timeout=120
             )
             if response.status_code == 200:
                 usertone = response.json().get("classification", {
@@ -338,7 +338,7 @@ class ChatBot:
             response = requests.post(
                 "http://192.168.0.8:5007/classify_moods_into_sentence",
                 json={"moods_dict": moods},
-                timeout=15
+                timeout=120
             )
             if response.status_code == 200:
                 self.mood_sentence = response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
@@ -356,7 +356,7 @@ class ChatBot:
             response = requests.post(
                 "http://192.168.0.8:5007/classify_user_input",
                 json={"user_input": user_input},
-                timeout=15
+                timeout=120
             )
             if response.status_code == 200:
                 category = response.json().get("category", "other")
