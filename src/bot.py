@@ -216,7 +216,7 @@ class ChatBot:
             "**Rules**:\n"
             "- Do not include disclaimers or third-person analysis.\n"
             "- Reply exclusively in the first person.\n"
-            "- Do not include your emotional state, goals, likes, dislikes, or similar in the reply unless the user explicitly instructed.\n"
+            "- Do not include your emotional state, goals, likes, dislikes, or similar **unless the user asks about them or requests personal context.**\n"
 
         )
         task_prompt = (
