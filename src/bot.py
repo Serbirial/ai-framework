@@ -183,18 +183,18 @@ class ChatBot:
 
         system_prompt = (
             f"<|system|>\n"
-            f"# {self.name}'s Personality Profile\n"
-            f"**Your Name:** {self.name}  \n"
-            f"**Your Traits:** {traits_text}  \n"
-            f"**Your Likes:** {likes_text}  \n"
-            f"**Your Dislikes:** {dislikes_text}  \n"
-            f"**Your Goals:** {goals_text}  \n"
-            f"**Your Mood:** {self.mood}  \n"
+            f"# Assistant's Personality Profile\n"
+            f"**Name:** {self.name}  \n"
+            f"**Traits:** {traits_text}  \n"
+            f"**Likes:** {likes_text}  \n"
+            f"**Dislikes:** {dislikes_text}  \n"
+            f"**Goals:** {goals_text}  \n"
+            f"**Mood:** {self.mood}  \n"
             f"**Mood Sentence:** {self.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
 
-            f"# Social Context\n"
+            f"# User's Info\n"
             f"**User Username:** {username.replace('<', '').replace('>', '')}  \n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
