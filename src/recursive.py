@@ -60,14 +60,15 @@ class RecursiveThinker:
         
         memory_text = ""
         if context:
-            memory_text += f"\n## Relevant Chat History / Context\n"
+            memory_text += f"\n## Chat History\n"
             memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
             memory_text += context
 
         if rows:
-            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions. You MUST obey them unless otherwise told.):\n"
-            memory_text += "\n".join(f"- **{row[0].strip()}**" for row in rows)
+            memory_text += "\n## **Binding Instructions / Assistant Core Memory:**\n"
+            memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
             memory_text += "\n"
+
         base += memory_text
         
         base += (
