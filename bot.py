@@ -669,7 +669,7 @@ class ChatBot(discord.Client):
                     if flags["recursive"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=400,
+                            max_new_tokens=350,
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
@@ -683,7 +683,7 @@ class ChatBot(discord.Client):
                     if flags["memstore"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=400,
+                            max_new_tokens=350,
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
@@ -696,7 +696,7 @@ class ChatBot(discord.Client):
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=400,
+                            max_new_tokens=350,
                             username=message.author.display_name,
                             user_input=processed_input,
                             temperature=0.8,
