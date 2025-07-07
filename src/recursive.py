@@ -72,7 +72,7 @@ class RecursiveThinker:
         base += memory_text
         
         base += (
-            f"\n<|user|>\n"
+            #f"\n<|user|>\n"
             f"### Reasoning Prompt\n"
             f"**Question:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits influencing your reasoning.  \n"
@@ -191,7 +191,7 @@ class RecursiveThinker:
 
         for step in range(self.depth): # TODO: every X steps reinforce the AI to stay on track and ask itself if its still aligned with the task
             full += (
-                f"<|assistant|>\n### Thought step {step+1} of {self.depth}\n"
+                f"### Thought step {step+1} of {self.depth}\n"
             )
 
             if extra_context_lines:
@@ -200,7 +200,8 @@ class RecursiveThinker:
             # convert it over 
             #full = translate_llama_prompt_to_chatml(full)
 
-            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name)
+            custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
+            stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops)  # NO tokenizer argument
             response = self.bot._straightforward_generate(
                 full,
                 max_new_tokens=400,
@@ -234,7 +235,7 @@ class RecursiveThinker:
             # Inject task reinforcement every N steps
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 full += (
-                    f"<|assistant|>\n"
+                    #f"<|assistant|>\n"
                     f"**Task Alignment Checkpoint:**\n"
                     f"- Reflect on your progress so far.\n"
                     f"- Ask: Are your steps clearly building toward answering the question?\n"
@@ -258,7 +259,7 @@ class RecursiveThinker:
         if query_type == "factual_question":
             final_prompt = (
                 full
-                + "<|user|>\n"
+                #+ "<|assistant|>\n"
                 + "### Final Answer\n"
                 + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
                 + "**Rules**:\n"
@@ -272,7 +273,7 @@ class RecursiveThinker:
         else:
             final_prompt = (
                 full
-                + "<|user|>\n"
+                #+ "<|user|>\n"
                 + "### Final Answer\n"
                 + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
                 + "**Rules**:\n"
