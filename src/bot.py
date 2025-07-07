@@ -563,6 +563,7 @@ class ChatBot:
                 if debug:
                     final = f"{thoughts}\n{final}"
                 log("DEBUG: FINAL THOUGHTS",final)
+                response = final
 
         self.log_interaction_to_history(owner=identifier, username=username, user_input=user_input, botname=self.name, response=response)
         self.mood = "neutral" # FIXME change to per user mood, and have a mood history
