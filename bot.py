@@ -3,7 +3,6 @@ import discord
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 import re
-from transformers import LlamaTokenizer
 import aiohttp
 import sqlite3
 from src import bot
@@ -556,8 +555,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
-        tokenizer = LlamaTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-
+        tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
             context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 12768, 800)
             db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
