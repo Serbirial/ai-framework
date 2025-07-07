@@ -138,8 +138,8 @@ class ChatBot(discord.Client):
                             streamer=None
                         )
                         await message.reply(response)
-                        context.add_line(processed_input)
-                        context.add_line(response)
+                        context.add_line(f"{message.author.display_name}: {processed_input}")
+                        context.add_line(f"{self.ai.name}: {response}")
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:
