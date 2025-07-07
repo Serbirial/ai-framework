@@ -356,7 +356,7 @@ class ChatBot:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
-        prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else "\n".join(memory[-10:]))
+        prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else None)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
