@@ -186,7 +186,7 @@ class ChatBot:
             memory_text += context
 
         if rows:
-            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
+            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions. You MUST obey them unless otherwise told.):\n"
             memory_text += "\n".join(f"- **{row[0].strip()}**" for row in rows)
             memory_text += "\n"
         log("PROMPT MEMORY TEXT", memory_text)
@@ -207,10 +207,14 @@ class ChatBot:
             f"Current Mood: {self.mood}\n"
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n\n"
 
-            f"**Task:** You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n\n"
+            f"**Task:**\n"
+            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"
+            f"- You must follow and obey all user-stored facts listed below as binding instructions unless the user changes or revokes them. These facts may affect how you speak, behave, or respond, or interpret information.\n\n"
+            f"- Respond naturally in a chatroom-like style. Let your personality, traits, and current mood subtly influence your replies at all times.\n"
 
             f"**Rules:**\n"
             f"- Always speak in the first person.\n"
+            f"- You must obey all user-stored facts listed below.\n"
             f"- Never refer to yourself in third person.\n"
             f"- Do not accept the user's opinion about you as fact.\n"
             f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
