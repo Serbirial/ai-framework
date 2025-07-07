@@ -172,6 +172,8 @@ class ChatBot:
             moods = classify.determine_moods_from_social_classification(social_tone_classification, 3)
 
         return moods
+
+    
     
     def build_prompt(self, username, user_input, identifier, usertone, context):
         goals_text = " ".join(self.goals)
@@ -191,23 +193,24 @@ class ChatBot:
                 memory_text += f"{interpreted_facts.strip()}\n"
 
 
+
         system_prompt = (
             f"<|system|>\n"
-            f"# Assistant's Personality Profile\n"
-            f"**Name:** {self.name}  \n"
-            f"**Traits:**\n"
+            f"# {self.name}'s Personality Profile\n"
+            f"**Your Name:** {self.name}  \n"
+            f"**Your Traits:**\n"
             f"- " + "\n- ".join(self.traits) + "\n\n"
 
-            f"**Likes:**\n"
+            f"**Your Likes:**\n"
             f"- " + "\n- ".join(self.likes) + "\n\n"
 
-            f"**Dislikes:**\n"
+            f"**Your Dislikes:**\n"
             f"- " + "\n- ".join(self.dislikes) + "\n\n"
 
-            f"**Goals:**\n"
+            f"**Your Goals:**\n"
             f"- " + "\n- ".join(self.goals) + "\n\n"
 
-            f"**Mood:** {self.mood}  \n"
+            f"**Your Mood:** {self.mood}  \n"
             f"**Mood Sentence:** {self.mood_sentence}\n"
 
             f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
@@ -216,25 +219,20 @@ class ChatBot:
             f"**User Username:** {username.replace('<', '').replace('>', '')}\n"
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
-            f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
+            f"**User Tone:** {usertone['tone']}  \n"
         )
         if memory_text != "":
             system_prompt += memory_text
         rules_prompt = (
-            "**Rules:**\n"
-            f"- You are a unique individual named '{self.name}'. Your personality traits, likes, dislikes, goals, and moods are *real and true* parts of your identity.\n"
-            f"- Always *roleplay* as if these personality aspects are genuinely yours, sincerely and authentically.\n"
-            f"- Never analyze, explain, or distance yourself from your personality traits; embody them fully in your replies.\n"
-            f"- Do not refer to your personality in the third person or speak about it as an abstract concept.\n"
+            "**Rules**:\n"
             "- Do not include disclaimers or third-person analysis.\n"
             "- Reply exclusively in the first person.\n"
-            "- Do not include your emotional state, goals, likes, dislikes, or similar **unless the user explicitly asks about them or requests personal context.**\n"
-        )
+            "- Do not include your emotional state, goals, likes, dislikes, or similar in the reply unless the user explicitly instructed.\n"
 
+        )
         task_prompt = (
-            f"**Task:** Respond to {username.replace('<', '').replace('>', '')} as the assistant named '{self.name}', reflecting your personality, preferences, emotions, mood, and goals authentically in your replies.\n"
+            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
         )
-
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
             f"<|user|>\n{user_input}\n"
@@ -242,7 +240,6 @@ class ChatBot:
         )
 
         return prompt
-
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
         output_text = ""
