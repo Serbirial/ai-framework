@@ -100,12 +100,9 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
 
     output_text = openai.extract_generated_text(output)
 
-    # 5. Extract just the formatted result
-    interpreted = output_text[len(prompt):].strip()
+    log("INTERPRETED MEMORY", output_text)
 
-    log("INTERPRETED MEMORY", interpreted)
-
-    return interpreted
+    return output_text
 
 def classify_user_input(model, tokenizer, user_input):
     categories = [
