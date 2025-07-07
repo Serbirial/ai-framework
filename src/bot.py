@@ -209,9 +209,11 @@ class ChatBot:
         
         memory_text = ""
         if rows:
-            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions. You MUST obey them unless otherwise told.):\n"
+            memory_text += "\n## **Binding User Instructions (User-Stored Memory):**\n"
+            memory_text += "**You MUST obey these instructions at all times unless the user explicitly overrides them.**\n\n"
             memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
             memory_text += "\n"
+
 
         if context:
             memory_text += f"\n## Chat History\n"
