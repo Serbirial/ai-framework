@@ -20,7 +20,7 @@ emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classifica
 WORKER_IP_PORT = "localhost:5007"
 
 TOKEN = ""
-DB_FILE = "memory.db"
+DB_PATH = "memory.db"
 SCHEMA_PATH = "config/schema.sql"
 
 

@@ -18,7 +18,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_FILE, mainLLM, WORKER_IP_PORT
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT
 
 tokenizer = None # FiXME
 
@@ -31,7 +31,7 @@ class StringStreamer:
 
 
 class ChatBot:
-    def __init__(self, name="ayokdaeno", db_path=DB_FILE):
+    def __init__(self, name="ayokdaeno", db_path=DB_PATH):
         self.name = name
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
