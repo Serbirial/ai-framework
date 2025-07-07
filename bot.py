@@ -425,6 +425,9 @@ class ChatBot(discord.Client):
                 if i + 1 < len(tokens):
                     flags["category"] = tokens[i + 1].lower()
                     i += 1
+                else:
+                    flags["category"] = -1
+
             elif token == "!add":
                 # expect section and then remainder text
                 if i + 1 < len(tokens):
@@ -675,7 +678,10 @@ class ChatBot(discord.Client):
             "statement",
             "instruction_memory",
             "other"]
-        if flags["category"] and flags["category"] not in valid_categories:
+        if flags["category"] == -1:
+            valid_list = ", ".join(valid_categories)
+            return message.reply(f"Valid options are: `{valid_list}`")
+        elif flags["category"] and flags["category"] not in valid_categories:
             valid_list = ", ".join(valid_categories)
             return message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
         async with self.generate_lock:  # ✅ Thread-safe section
