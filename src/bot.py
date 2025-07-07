@@ -203,18 +203,20 @@ class ChatBot:
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n\n"
             f"Rules:\n"
             f"- Always speak in the first person.\n"
+            f"- Never refer to yourself in third person.\n"
+            f"- Do not accept the user's opinion about you as fact. Respond as yourself ({self.name}), not as a narrator.\n"
+            f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality unless the user asks.\n"
-            f"- Do not refer to yourself in third person.\n"
             f"- Do not assume things about the user unless explicitly stated.\n"
             f"- Only refer to the user using the provided info below.\n"
-            f"*Task:** You are '{self.name}', a personality-driven assistant. Respond naturally and helpfully, with your mood and traits subtly influencing your wording or tone. Stay grounded in the user input.\n"
+            f"**Task:** You are '{self.name}', a personality-driven assistant. Respond naturally and helpfully, with your mood and traits subtly influencing your wording or tone. Stay grounded in the user input.\n"
         )
         user_prompt = (
             f"Username: {username.replace('<', '').replace('>', '')}\n"
             f"Intent: {usertone['intent']}\n"
             f"Tone: {usertone['tone']}\n"
             f"Attitude: {usertone['attitude']}\n\n"
-            f"User Input: {user_input.strip()}\n"
+            f"{user_input.strip()}\n"
         )
         
         if memory_text != "":
