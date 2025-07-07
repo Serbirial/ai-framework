@@ -216,10 +216,10 @@ class ChatBot:
             f"- **Intent**: What the user is expressing.\n"
             f"- **Tone**: The emotional flavor or expression style of the user's message.\n"
             f"- **Attitude**: The user’s stance or interpersonal energy (e.g., respectful, rude, curious).\n\n"
-            f"User Intent: {usertone['intent']}\n"
-            f"User Tone: {usertone['tone']}\n"
-            f"User Attitude: {usertone['attitude']}\n\n"
-            f"User Message:\n{user_input.strip()}\n"
+            f"Intent: {usertone['intent']}\n"
+            f"Tone: {usertone['tone']}\n"
+            f"Attitude: {usertone['attitude']}\n\n"
+            f"Reply to this message: {user_input.strip()}\n"
         )
 
         
