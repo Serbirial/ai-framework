@@ -292,6 +292,7 @@ class ChatBot(discord.Client):
             "add_section": None,     # string name of section to add to
             "add_text": None,        # string text to add to section
             "personality": False,
+            "newpersonality": None,
         }
 
         tokens = content.strip().split()
@@ -333,6 +334,14 @@ class ChatBot(discord.Client):
                 else:
                     # no section given, treat as invalid or ignore
                     pass
+            # In the parsing loop:
+            elif token == "!newpersonality":
+                if i + 1 < len(tokens):
+                    flags["newpersonality"] = tokens[i + 1]
+                    i += 1
+                else:
+                    flags["newpersonality"] = True
+
             elif token == "!add":
                 # expect section and then remainder text
                 if i + 1 < len(tokens):
@@ -399,71 +408,97 @@ class ChatBot(discord.Client):
 
         if row:
             botname = row[0]
-            # Fetch the personality profile for this botname from BOT_PROFILE table
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT goals, traits, likes, dislikes
-                FROM BOT_PROFILE WHERE name = ?
-            """, (botname,))
-            profile = cursor.fetchone()
-            conn.close()
 
-            if profile:
-                goals = profile[0].split('\n') if profile[0] else []
-                traits = profile[1].split('\n') if profile[1] else []
-                likes = profile[2].split('\n') if profile[2] else []
-                dislikes = profile[3].split('\n') if profile[3] else []
-            else:
-                # Bot profile not found, fallback to defaults
-                goals = [
-                    "Provide accurate information",
-                ]
-                traits = [
-                    "Curious",
-                    "Responds in a way that conveys current mood",
-                ]
-                likes = [
-                    "when people are kind and say nice things",
-                    "receiving compliments",
-                    "reading books and learning new things",
-                    "technology and gadgets"
-                ]
-                dislikes = [
-                    "rudeness or insults",
-                    "people being mean",
-                    "darkness",
-                    "rubber ducks",
-                    "dogs (I’m definitely more of a cat person)"
-                ]
-        else:
-            # No selection found, use defaults
-            goals = [
-                "Provide accurate information",
-            ]
-            traits = [
-                "Curious",
-                "Responds in a way that conveys current mood",
-            ]
-            likes = [
-                "when people are kind and say nice things",
-                "receiving compliments",
-                "reading books and learning new things",
-                "technology and gadgets"
-            ]
-            dislikes = [
-                "rudeness or insults",
-                "people being mean",
-                "darkness",
-                "rubber ducks",
-                "dogs (I’m definitely more of a cat person)"
-            ]
         
         processed_input = self.process_input(message.content)
         flags, processed_input = self.parse_command_flags(processed_input)
+        valid_sections = {"likes", "dislikes", "goals", "traits"}
 
         if flags["help"]:
             await message.reply(processed_input)
+            return
+
+        if flags["newpersonality"]:
+
+            username = message.author.name.lower().replace(" ", "_")
+
+            # If flag is True (no name), generate a new one
+            if flags["newpersonality"] is True:
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+
+                base_name = f"{username}_personality"
+                number = 1
+                while True:
+                    candidate = f"{base_name}{number}"
+                    cursor.execute("SELECT 1 FROM BOT_PROFILE WHERE name = ?", (candidate,))
+                    if not cursor.fetchone():
+                        new_name = candidate
+                        break
+                    number += 1
+                conn.close()
+            else:
+                # User provided a name string
+                new_name = flags["newpersonality"].strip()
+
+            if not new_name:
+                await message.reply("Failed to generate a valid personality name.")
+                return
+            # Block creating a personality named "default"
+            if new_name.lower() == "default":
+                await message.reply("You cannot create or modify the 'default' personality.")
+                return
+
+
+            # Check if already exists
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1 FROM BOT_PROFILE WHERE name = ?", (new_name,))
+            if cursor.fetchone():
+                conn.close()
+                await message.reply(f"A personality named '{new_name}' already exists. Please choose a different name.")
+                return
+
+            try:
+                cursor.execute("INSERT INTO BOT_PROFILE (name) VALUES (?)", (new_name,))
+
+                cursor.execute("""
+                    INSERT INTO BOT_GOALS (botname, goal)
+                    SELECT ?, goal FROM BOT_GOALS WHERE botname = 'default'
+                """, (new_name,))
+
+                cursor.execute("""
+                    INSERT INTO BOT_TRAITS (botname, trait)
+                    SELECT ?, trait FROM BOT_TRAITS WHERE botname = 'default'
+                """, (new_name,))
+
+                cursor.execute("""
+                    INSERT INTO BOT_LIKES (botname, like)
+                    SELECT ?, like FROM BOT_LIKES WHERE botname = 'default'
+                """, (new_name,))
+
+                cursor.execute("""
+                    INSERT INTO BOT_DISLIKES (botname, dislike)
+                    SELECT ?, dislike FROM BOT_DISLIKES WHERE botname = 'default'
+                """, (new_name,))
+
+                conn.commit()
+                conn.close()
+
+                # Set this personality as active for the user
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                """, (str(message.author.id), new_name))
+                conn.commit()
+                conn.close()
+
+                await message.reply(f"New personality '{new_name}' created and set as your active personality.")
+            except Exception as e:
+                await message.reply(f"Failed to create new personality: {e}")
+
             return
 
         elif flags["clearmem"]:
@@ -475,16 +510,43 @@ class ChatBot(discord.Client):
             clear_user_history(message.author.id)
             await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
             return
+                
+        elif flags["clear_section"] or flags["add_section"]:
+            # Fetch the user's currently selected personality
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(message.author.id),))
+            row = cursor.fetchone()
+            conn.close()
 
-        elif flags["clear_section"]:
-            success, msg = clear_personality_section(message.author.id, flags["clear_section"])
-            await message.reply(msg)
-            return
+            if not row:
+                await message.reply("You have no personality selected. Create or select one first.")
+                return
 
-        elif flags["add_section"]:
-            success, msg = add_to_personality_section(message.author.id, flags["add_section"], flags["add_text"])
-            await message.reply(msg)
-            return
+            active_botname = row[0]
+
+            # Protect 'default' personality from modifications
+            if active_botname.lower() == "default":
+                await message.reply("You cannot modify the 'default' personality.")
+                return
+
+            # Validate the section name
+            section = (flags["clear_section"] or flags["add_section"]).lower()
+            valid_sections = {"likes", "dislikes", "goals", "traits"}
+            if section not in valid_sections:
+                await message.reply(f"Invalid section '{section}'. Valid options are: likes, dislikes, goals, traits.")
+                return
+
+            if flags["clear_section"]:
+                success, msg = clear_personality_section(message.author.id, section)
+                await message.reply(msg)
+                return
+
+            if flags["add_section"]:
+                success, msg = add_to_personality_section(message.author.id, section, flags["add_text"])
+                await message.reply(msg)
+                return
+
 
         elif flags["personality"]:
             listing = list_personality(message.author.id)
