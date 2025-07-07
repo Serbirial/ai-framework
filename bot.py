@@ -253,11 +253,11 @@ class ChatBot(discord.Client):
             await message.reply(user_msg)
             return
         elif flags["clearmem"]:
-            clear_user_memory_and_history(message.author.id, self.db_path)
+            clear_user_memory_and_history(message.author.id)
             await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
             return
         elif flags["clearhistory"]:
-            clear_user_history(message.author.id, self.db_path)
+            clear_user_history(message.author.id)
             await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
             return
         async with self.generate_lock:  # ✅ Thread-safe section
