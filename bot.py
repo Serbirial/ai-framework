@@ -296,15 +296,16 @@ def load_recent_history_from_db(user_id, botname, max_tokens, tokenizer):
     result = []
 
     for sender_id, message in rows:
-        tokens = tokenizer.tokenize(message)
-        if total_tokens + len(tokens) > max_tokens:
+        token_count = tokenizer.count_tokens(message)
+        if total_tokens + token_count > max_tokens:
             break
-        total_tokens += len(tokens)
+        total_tokens += token_count
 
         role = "assistant" if sender_id == botname else "user"
         result.append({"role": role, "content": message})
 
     return result
+
 
 
 
