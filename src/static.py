@@ -36,6 +36,14 @@ class StopOnSpeakerChange:
 
     def __call__(self, new_text_chunk):
         self.buffer += new_text_chunk
+
+        # Check all stop tokens in the raw buffer (both default and custom)
+        all_stop_tokens = self.default_stop_tokens + self.custom_stops
+        for stop_token in all_stop_tokens:
+            if stop_token in self.buffer and self.line_count >= self.min_lines:
+                # Stop generation if we see a stop token in raw buffer and min lines passed
+                return True
+
         lines = []
         while "\n" in self.buffer:
             line, self.buffer = self.buffer.split("\n", 1)
@@ -45,13 +53,6 @@ class StopOnSpeakerChange:
 
         assistant_lines = []
         for line in lines:
-            # Check if line matches any custom stop tokens
-            for stop_token in self.custom_stops:
-                if stop_token in line:
-                    # Only stop if minimum lines reached
-                    if self.line_count >= self.min_lines:
-                        return True
-
             if line == "<|assistant|>":
                 continue
             elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>"):
@@ -67,6 +68,7 @@ class StopOnSpeakerChange:
             return True
 
         return False
+
 
 
 class DummyTokenizer:
