@@ -260,7 +260,7 @@ def classify_social_tone(model, tokenizer, user_input):
         stream=False,
     )
 
-    output_text = openai.extract_generated_text(response)
+    output_text = openai.extract_generated_text(response).lower() # ensure keys are all lowercase
 
     # Optional: extract JSON if response is structured
     json_start = output_text.find("{")
