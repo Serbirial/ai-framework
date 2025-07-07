@@ -255,6 +255,8 @@ class ChatBot(discord.Client):
                             recursive_depth=flags["depth"],
                             debug=flags["debug"]
                         )
+                        await message.reply(response)
+                        
                     if flags["memstore"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
@@ -265,6 +267,8 @@ class ChatBot(discord.Client):
                             category_override="instruction_memory",
                             debug=flags["debug"]
                         )
+                        await message.reply(response)
+                        
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
