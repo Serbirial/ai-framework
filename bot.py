@@ -507,7 +507,7 @@ class ChatBot(discord.Client):
             context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 12768, 800)
             db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
             for entry in db_history:
-                context.add_line(entry["content"])
+                context.add_line(entry["content"], entry["role"])
 
             history = context.get_context_text()
         elif message.author.id in self.chat_contexts:
@@ -735,8 +735,8 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                        context.add_line(f"{message.author.display_name}: {processed_input}")
-                        context.add_line(f"{self.ai.name}: {response}")
+                        context.add_line(processed_input, "user")
+                        context.add_line(response, "assistant")
                         return
                     elif flags["memstore"]:
                         response = await asyncio.to_thread(
@@ -750,8 +750,8 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                        context.add_line(f"{message.author.display_name}: {processed_input}")
-                        context.add_line(f"{self.ai.name}: {response}")
+                        context.add_line(processed_input, "user")
+                        context.add_line(response, "assistant")
                         return
                     else:
                         response = await asyncio.to_thread(
@@ -766,8 +766,8 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                        context.add_line(f"{message.author.display_name}: {processed_input}")
-                        context.add_line(f"{self.ai.name}: {response}")
+                        context.add_line(processed_input, "user")
+                        context.add_line(response, "assistant")
                         return
 
 

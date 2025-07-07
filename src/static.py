@@ -135,7 +135,7 @@ class ChatContext:
         self.max_tokens = max_tokens
         self.reserved_tokens = reserved_tokens
 
-    def add_line(self, line: str):
+    def add_line(self, line: str, role: str):
         """
         Adds a new message line to the context, then trims the context if needed
         to keep token usage within limits.
@@ -144,7 +144,7 @@ class ChatContext:
             line (str): A single line string representing a user or bot message,
                         usually formatted with timestamp and speaker label.
         """
-        self.lines.append(line)
+        self.lines.append(f"<{role}> {line}")
         self._trim_to_token_limit()
 
     def remove_line(self):
