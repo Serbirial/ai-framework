@@ -256,9 +256,9 @@ class ChatBot(discord.Client):
             return
 
         processed_input = self.process_input(message.content)
-        flags, user_msg = self.parse_command_flags(processed_input)
+        flags, processed_input = self.parse_command_flags(processed_input)
         if flags["help"]:
-            await message.reply(user_msg)
+            await message.reply(processed_input)
             return
         elif flags["clearmem"]:
             clear_user_memory_and_history(message.author.id)
@@ -300,7 +300,7 @@ class ChatBot(discord.Client):
                         response = await asyncio.to_thread(
                             self.ai.chat,
                             username=message.author.display_name,
-                            user_input=user_msg,
+                            user_input=processed_input,
                             identifier=message.author.id,
                             context=history,
                             force_recursive=True,
@@ -313,7 +313,7 @@ class ChatBot(discord.Client):
                         response = await asyncio.to_thread(
                             self.ai.chat,
                             username=message.author.display_name,
-                            user_input=user_msg,
+                            user_input=processed_input,
                             identifier=message.author.id,
                             context=history,
                             category_override="instruction_memory",
