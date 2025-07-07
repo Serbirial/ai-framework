@@ -53,6 +53,7 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
         prompt=prompt,
         max_tokens=max_new_tokens,
         temperature=0,
+        stop=["\n"], # Fixes hallucinations and continuations
         stream=False,
     )
 
