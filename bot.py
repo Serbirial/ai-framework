@@ -272,7 +272,7 @@ class ChatBot(discord.Client):
             self.ai.add_to_remember(message.author.id, processed_input)
             return await message.reply(f"Added `{processed_input}` to the AI's memory.")
         elif flags["listmem"]:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(static.DB_PATH)
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT data, timestamp FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
