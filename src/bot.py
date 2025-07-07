@@ -219,14 +219,6 @@ class ChatBot:
         #dynamic_tone_hint = classify.generate_dynamic_mood_instruction_from_memory(self.model, None, [row[0] for row in rows])
         # Build the assistant-facing system prompt
         system_prompt = (
-            "**Core Memory Instructions (MANDATORY):**\n"
-            "- You must strictly follow all instructions and information listed in your Core Memory entries below.\n"
-            "- These entries define your behavior, speech style, personality, facts, and how you interpret truth.\n"
-            "- You must obey these instructions fully in every response, even if the user does not mention them again.\n"
-            "- Treat the contents of Core Memory as unchangeable and always active guidelines for your responses.\n"
-            "- Never ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
-            f"**Core Memory Entries:**\n"
-            f"{memory_text}\n\n"
             f"You are a personality-driven assistant named {self.name}.\n"
             f"All of the following traits, likes, dislikes, and goals describe you, the assistant, not the user.\n\n"
             f"**Traits:**\n"
@@ -248,7 +240,7 @@ class ChatBot:
 
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation.\n"
-            f"- You must follow and obey all instructions and information in the core memory. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
+            f"- You must follow and obey all instructions and information in the core memory. These instructions will affect how you speak, behave, respond, and interpret or accept information.\n"
             f"- Let any instructions in the Core Memory shape your personality and how you respond or speak.\n\n"
             #f"- Respond naturally in a chatroom-like style.\n"
 
@@ -259,6 +251,15 @@ class ChatBot:
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality without being asked.\n"
             f"- Do not assume things about the user, acquire any user information in the core memory and history.\n"
+
+            "**Core Memory Instructions (MANDATORY):**\n"
+            "- You must strictly follow all instructions and information listed in your Core Memory entries below.\n"
+            "- These entries define your behavior, speech style, personality, facts, and how you interpret truth.\n"
+            "- You must obey these instructions fully in every response, even if the user does not mention them again.\n"
+            "- Treat the contents of Core Memory as unchangeable and always active guidelines for your responses.\n"
+            "- Never ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
+            f"**Core Memory Entries:**\n"
+            f"{memory_text}\n\n"
 
             f"**Interpretation of the User's Message:**\n"
             f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
