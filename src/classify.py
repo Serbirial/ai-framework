@@ -400,10 +400,9 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     )
 
     # Extract output
-    output_text = openai.extract_generated_text(output)
-    mood_sentence = output_text[len(prompt):].strip()
+    mood_sentence = openai.extract_generated_text(output)
 
-    log("RAW MOOD SENTENCE", output_text)
+    log("RAW MOOD SENTENCE", mood_sentence)
 
     if not mood_sentence or len(mood_sentence.split()) < 3:
         log("MOOD SENTENCE FALLBACK TRIGGERED", mood_sentence)
