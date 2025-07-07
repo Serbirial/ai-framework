@@ -211,12 +211,17 @@ class ChatBot:
             f"- Do not assume things about the user unless explicitly stated.\n"
             f"- Only refer to the user using the provided info below.\n"        )
         user_prompt = (
-            f"Username: {username.replace('<', '').replace('>', '')}\n"
-            f"Intent: {usertone['intent']}\n"
-            f"Tone: {usertone['tone']}\n"
-            f"Attitude: {usertone['attitude']}\n\n"
-            f"{user_input.strip()}\n"
+            f"Username: {username.replace('<', '').replace('>', '')}\n\n"
+            f"The following three attributes describe the user's communication style and intention in the message below:\n"
+            f"- **Intent**: What the user is expressing.\n"
+            f"- **Tone**: The emotional flavor or expression style of the user's message.\n"
+            f"- **Attitude**: The user’s stance or interpersonal energy (e.g., respectful, rude, curious).\n\n"
+            f"User Intent: {usertone['intent']}\n"
+            f"User Tone: {usertone['tone']}\n"
+            f"User Attitude: {usertone['attitude']}\n\n"
+            f"User Message:\n{user_input.strip()}\n"
         )
+
         
         if memory_text != "":
             system_prompt += memory_text
