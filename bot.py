@@ -280,6 +280,33 @@ async def generate_and_stream(self, message, processed_input, history):
     final_text = await gen_task
     await streammsg.edit(content=final_text)
 
+def load_recent_history_from_db(user_id, botname, max_tokens, tokenizer):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT userid, message FROM HISTORY WHERE owner = ? ORDER BY timestamp DESC",
+        (user_id,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    rows.reverse()  # Oldest → Newest
+
+    total_tokens = 0
+    result = []
+
+    for sender_id, message in rows:
+        tokens = tokenizer.tokenize(message)
+        if total_tokens + len(tokens) > max_tokens:
+            break
+        total_tokens += len(tokens)
+
+        role = "assistant" if sender_id == botname else "user"
+        result.append({"role": role, "content": message})
+
+    return result
+
+
 
 AiChatBot = bot.ChatBot
 
@@ -476,7 +503,10 @@ class ChatBot(discord.Client):
             return
         tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
-            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 2048, 800)
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 12768, 800)
+            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
+            for entry in db_history:
+                context.add_line(entry)
             history = context.get_context_text()
         elif message.author.id in self.chat_contexts:
             context = self.chat_contexts[message.author.id]
