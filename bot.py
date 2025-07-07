@@ -90,7 +90,7 @@ class ChatBot(discord.Client):
         #self.set_response_chance()
         super().__init__()
         #super().__init__(intents=intents)
-        self.ai = AiChatBot(memory_file="memory.json")
+        self.ai = AiChatBot(db_path="memory.db")
         self.is_generating = False
         self.generate_lock = asyncio.Lock()
         self.chat_contexts = {} #userID:Object
