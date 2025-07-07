@@ -211,9 +211,7 @@ class ChatBot:
 
         memory_text = ""
         if rows:
-            memory_text += "\n## **Binding Instructions / Assistant Core Memory:**\n"
             memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
-            memory_text += "\n"
 
         log("PROMPT MEMORY TEXT", memory_text)
         personality = list_personality(identifier)
@@ -221,12 +219,12 @@ class ChatBot:
 
         # Build the assistant-facing system prompt
         system_prompt = (
+            "**Binding Instructions (MANDATORY):**\n"
+            "- You must follow all instructions listed in your Core Memory.\n"
+            "- These may affect how you speak, act, and interpret truth.\n"
+            "- Never ignore or contradict these unless told otherwise by the user.\n\n"
+            f"**Core Memory Entries:**\n"
             f"{memory_text}\n"
-            f"**Binding Instructions / Assistant Core Memory guidance:**\n"
-            f"**These instructions are MANDATORY and must be FOLLOWED EXACTLY.**\n"
-            f"- These are entries from your core memory, which the user can add to.\n"
-            f"- These entries can be either instructions you have to follow at all times and abide by, or information you need to accept as true.\n\n"
-
             f"You are a personality-driven assistant named {self.name}.\n"
             f"Here is your personality profile:\n\n"
             f"**Traits:**\n"
