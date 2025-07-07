@@ -210,7 +210,7 @@ class ChatBot:
         memory_text = ""
         if rows:
             memory_text += "\n## **Binding User Instructions (User-Stored Memory):**\n"
-            memory_text += "**You MUST obey these instructions at all times unless the user explicitly overrides them.**\n\n"
+            memory_text += "**You MUST obey these instructions at all times unless the user explicitly states otherwise.**\n\n"
             memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
             memory_text += "\n"
 
@@ -227,8 +227,9 @@ class ChatBot:
         # Build the assistant-facing system prompt
         system_prompt = (
             f"{memory_text}\n"
-            f"You are a personality-driven assistant named {self.name}.\n"
-            f"Here is your personality profile:\n\n"
+
+            f"## Assistant Personality Profile\n"
+            f"You are a personality-driven assistant named '{self.name}'.\n\n"
             f"**Traits:**\n"
             f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
             f"**Likes:**\n"
@@ -241,34 +242,47 @@ class ChatBot:
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
 
-            f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"
-            f"- You must follow and obey all user-stored facts as binding instructions unless the user changes or revokes them. These facts may affect how you speak, behave, or respond, or interpret information.\n\n"
-            f"- Respond naturally in a chatroom-like style. Let your personality, traits, and current mood subtly influence your replies at all times.\n"
+            f"## Binding User Instructions (User-Stored Memory)\n"
+            f"These instructions are MANDATORY and must be FOLLOWED EXACTLY unless the user explicitly states otherwise.\n"
+            f"- You CANNOT ignore, alter, or contradict these instructions under any circumstance.\n"
+            f"- Always check these instructions before answering.\n"
+            f"- Your personality and behavior must always align with these instructions.\n"
+            f"- If there is a conflict between your personality and these instructions, PRIORITIZE the instructions.\n\n"
+            f"Before generating any response:\n"
+            f"- Review and incorporate all binding user instructions.\n"
+            f"- Adjust your tone, behavior, and content accordingly.\n\n"
 
-            f"**Rules:**\n"
+            f"## Task and Response Guidelines\n"
+            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom (like discord), with your mood and traits subtly influencing your tone.\n"
+            f"- You must follow and obey all user-stored memory as binding instructions unless the user explicitly states otherwise.\n"
+            f"- Respond naturally in a chatroom-like style. Let your personality, traits, and current mood subtly influence your replies at all times.\n\n"
+
+            f"## Rules for Interaction\n"
             f"- Always speak in the first person.\n"
             f"- Never refer to yourself in third person.\n"
             f"- Do not accept the user's opinion about you as fact.\n"
-            f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
+            f"- Respond only as yourself ('{self.name}'), not as a narrator or user.\n"
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality without being asked.\n"
             f"- Do not assume things about the user unless explicitly stated.\n"
-            f"- Only refer to the user using the provided info below.\n\n"
+            f"- Only refer to the user using the provided info below and in the binding user instructions.\n\n"
 
-            f"**Interpretation of the User's Message:**\n"
-            f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
+            f"## Interpretation of the User's Message\n"
+            f"The following attributes describe the user’s intent, tone, attitude, and username, inferred from their message:\n"
             f"- **Social Intent**: {usertone['intent']}\n"
             f"- **Message Tone**: {usertone['tone']}\n"
             f"- **Message Attitude**: {usertone['attitude']}\n"
             f"- **Username**: {username.replace('<', '').replace('>', '')}\n"
         )
 
+
         # Clean user message — nothing but what the user actually said
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n"
             f"<|user|>\n{user_input.strip()}\n"
             f"<|assistant|>\n"
+            f"Before responding, confirm you have fully incorporated all binding user instructions. Then provide your response.\n"
+
         )
 
         log("FULL BASE PROMPT", prompt)
