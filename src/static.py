@@ -21,6 +21,8 @@ WORKER_IP_PORT = "localhost:5007"
 
 TOKEN = ""
 DB_FILE = "memory.db"
+SCHEMA_PATH = "config/schema.sql"
+
 
 
 class StopOnSpeakerChange:

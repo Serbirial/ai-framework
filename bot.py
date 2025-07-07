@@ -4,12 +4,41 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor
 import re
 import aiohttp
+import sqlite3
 from src import bot
 from src import static
 
 import asyncio
 
 import time
+
+def get_db_stats(db_path=static.DB_PATH):
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM MEMORY")
+        mem_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(DISTINCT userid) FROM MEMORY")
+        mem_unique_users = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM HISTORY")
+        hist_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(DISTINCT userid) FROM HISTORY")
+        hist_unique_users = cursor.fetchone()[0]
+
+    return mem_count, mem_unique_users, hist_count, hist_unique_users
+
+
+def run_schema_sync(db_path: str, schema_path: str):
+    with sqlite3.connect(db_path) as conn:
+        with open(schema_path, "r") as f:
+            schema_sql = f.read()
+        conn.executescript(schema_sql)
+        conn.commit()
+
+async def run_schema(db_path=static.DB_PATH, schema_path=static.SCHEMA_PATH):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, run_schema_sync, db_path, schema_path)
 
 async def generate_and_stream(self, message, processed_input, history):
     streammsg = await message.reply("Generating...")
@@ -100,8 +129,11 @@ class ChatBot(discord.Client):
 
     async def on_ready(self) -> None:
         """ Initializes the GPT2 AI on bot startup """
-        print("Logged on as", self.user)
-
+        await run_schema()
+        mem_count, mem_unique_users, hist_count, hist_unique_users = await asyncio.get_running_loop().run_in_executor(None, get_db_stats)
+        print(f"Logged on as {self.user}")
+        print(f"Total memories stored: {mem_count} (unique users: {mem_unique_users})")
+        print(f"Total messages in history: {hist_count} (unique users: {hist_unique_users})")
 
 
     def parse_command_flags(self, content: str):
