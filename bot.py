@@ -507,7 +507,8 @@ class ChatBot(discord.Client):
             context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 12768, 800)
             db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
             for entry in db_history:
-                context.add_line(str(entry))
+                context.add_line(entry["content"])
+
             history = context.get_context_text()
         elif message.author.id in self.chat_contexts:
             context = self.chat_contexts[message.author.id]
