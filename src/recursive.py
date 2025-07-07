@@ -200,7 +200,7 @@ class RecursiveThinker:
             # convert it over 
             #full = translate_llama_prompt_to_chatml(full)
 
-            custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
+            custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops)  # NO tokenizer argument
             response = self.bot._straightforward_generate(
                 full,
