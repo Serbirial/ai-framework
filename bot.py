@@ -2,6 +2,7 @@ import random
 import discord
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
+import re
 import aiohttp
 from src import bot
 from src import static
@@ -102,6 +103,48 @@ class ChatBot(discord.Client):
         print("Logged on as", self.user)
 
 
+
+    def parse_command_flags(self, content: str):
+        """
+        Parses command-style flags from the start of a message.
+        Supported: !recursive [depth], !depth [N], !memstore, !debug, etc.
+        Returns: (flags: dict, clean_user_input: str)
+        """
+        flags = {
+            "recursive": False,
+            "depth": 3,  # default recursion depth
+            "memstore": False,
+            "debug": False,
+        }
+
+        tokens = content.strip().split()
+        remaining = []
+
+        i = 0
+        while i < len(tokens):
+            token = tokens[i].lower()
+
+            if token == "!recursive":
+                flags["recursive"] = True
+                if i + 1 < len(tokens) and tokens[i + 1].isdigit():
+                    flags["depth"] = int(tokens[i + 1])
+                    i += 1
+            elif token == "!depth":
+                if i + 1 < len(tokens) and tokens[i + 1].isdigit():
+                    flags["depth"] = int(tokens[i + 1])
+                    i += 1
+            elif token == "!memstore":
+                flags["memstore"] = True
+            elif token == "!debug":
+                flags["debug"] = True
+            else:
+                remaining.append(tokens[i])
+            i += 1
+
+        clean_input = " ".join(remaining)
+        return flags, clean_input
+
+
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
@@ -119,12 +162,32 @@ class ChatBot(discord.Client):
             return
 
         processed_input = self.process_input(message.content)
+        flags, user_msg = self.parse_command_flags(processed_input)
+
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
-                    if processed_input.lower().startswith("!stream"):
-                        processed_input = processed_input.split("!stream", 1)[1]
-                        await generate_and_stream(self, message, processed_input, history)
+                    if flags["recursive"]:
+                        response = await asyncio.to_thread(
+                            self.ai.recursive_think,
+                            username=message.author.display_name,
+                            user_input=user_msg,
+                            identifier=message.guild.id,
+                            context=history,
+                            force_recursive=True,
+                            recursive_depth=flags["depth"],
+                            debug=flags["debug"]
+                        )
+                    if flags["memstore"]:
+                        response = await asyncio.to_thread(
+                            self.ai.recursive_think,
+                            username=message.author.display_name,
+                            user_input=user_msg,
+                            identifier=message.guild.id,
+                            context=history,
+                            category_override="instruction_memory",
+                            debug=flags["debug"]
+                        )
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
@@ -134,12 +197,11 @@ class ChatBot(discord.Client):
                             temperature=0.8,
                             identifier=message.guild.id,
                             context=history,
-                            debug=False,
-                            streamer=None
+                            debug=flags["debug"]
                         )
                         await message.reply(response)
-                        context.add_line(f"{message.author.display_name}: {processed_input}")
-                        context.add_line(f"{self.ai.name}: {response}")
+                    context.add_line(f"{message.author.display_name}: {processed_input}")
+                    context.add_line(f"{self.ai.name}: {response}")
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:
