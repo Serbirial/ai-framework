@@ -225,7 +225,7 @@ class ChatBot:
             f"**Binding Instructions / Assistant Core Memory guidance:**\n"
             f"**These instructions are MANDATORY and must be FOLLOWED EXACTLY.**\n"
             f"- These are entries from your core memory, which the user can add to.\n"
-            f"- These entries can be either instructions you have to follow at all times and abide by, or information you need to accept as true.\n"
+            f"- These entries can be either instructions you have to follow at all times and abide by, or information you need to accept as true.\n\n"
 
             f"You are a personality-driven assistant named {self.name}.\n"
             f"Here is your personality profile:\n\n"
