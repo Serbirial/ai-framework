@@ -298,6 +298,9 @@ class ChatBot:
 
             # Call stop criteria with the new text chunk; stop if it returns True
             if stop_criteria and stop_criteria(text_chunk):
+                log("STOP FOUND", text_chunk)
+                log("FULL BUFF", output_text)
+                
                 break
 
             if streamer:
@@ -477,7 +480,7 @@ class ChatBot:
                 category = classify.classify_user_input(self.model, tokenizer, user_input)
         else:
             category = category_override
-        custom_stops = [f"<|{username}|>", f"<|{identifier}|>"]
+        custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops)  # NO tokenizer argument
         
         
