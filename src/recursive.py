@@ -264,7 +264,7 @@ class RecursiveThinker:
         prompt_tokens_used = tokenizer.count_tokens(final_prompt)
 
         log(f"DEBUG: FINAL RECURSIVE PROMPT:\n",final_prompt)
-        log(f"\nDEBUG: FINAL PROMPT IS {prompt_tokens_used} TOKENS")
+        log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
 
         final_answer = self.bot._straightforward_generate(
