@@ -391,6 +391,7 @@ class ChatBot(discord.Client):
             "help": False,
             "clearmem": False,
             "clearhistory": False,
+            "clearlivehistory": False,
             "rawmemstore": False,
             "listmem": False,
             # new flags:
@@ -430,6 +431,8 @@ class ChatBot(discord.Client):
                 flags["listmem"] = True
             elif token == "!debug":
                 flags["debug"] = True
+            elif token == "!livewipe" or token == "!wipelive":
+                flags["clearlivehistory"] = True
             elif token == "!clearmem":
                 flags["clearmem"] = True
             elif token == "!wipectx" or token == "!clearchat" or token == "!clearhistory":
@@ -624,10 +627,14 @@ class ChatBot(discord.Client):
             clear_user_memory_and_history(message.author.id)
             await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
             return
-
+        elif flags["clearlivehistory"]:
+            context.lines = []
+            await message.reply(f"The AI's live chat history with {message.author.display_name} has been reset (AI wont re-read stored history until its restarted).")
+            return
         elif flags["clearhistory"]:
             clear_user_history(message.author.id)
-            await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
+            context.lines = []
+            await message.reply(f"The AI's entire chat history with {message.author.display_name} has been reset. (live+stored)")
             return
                 
         elif flags["clear_section"] or flags["add_section"]:
