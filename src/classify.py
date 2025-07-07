@@ -1,8 +1,12 @@
 import torch
 import json
+import time
 from utils import openai
 import re
+from .static import DB_FILE
 from log import log
+import sqlite3
+
 
 def build_memory_confirmation_prompt(interpreted_data):
     prompt = (
@@ -18,73 +22,96 @@ def build_memory_confirmation_prompt(interpreted_data):
     )
     return prompt
 
-def interpret_memory_instruction(self, user_input):
-    # Prompt the model to extract structured memory data
-    prompt = (
-        f"<|system|>\n"
-        f"You are an AI assistant that extracts structured memory from user input.\n"
-        f"Given the user instruction below, output a JSON object with key-value pairs for memory.\n"
-        f"Only include relevant memory facts, and only output exact json data, no extras.\n\n"
-        "Example JSON: {\"data\": \"Whenever you reference me from now on, call me by the name 'summer'\"}"
-        f"User Input: \"{user_input}\"\n"
-        f"Output:"
-    )
 
-    output_text = ""
+def interpret_memory_instruction(user_input, model, max_new_tokens=150):
+    """
+    Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
+    """
 
-    # llama_cpp completion call, non-streaming, deterministic
-    output = self.model.create_completion(
-        prompt=prompt,
-        max_tokens=250,
-        temperature=0,
-        stream=False,
-    )
-
-    output_text += openai.extract_generated_text(output)
-
-
-    json_start = output_text.find("{")
-    json_end = output_text.find("}", json_start) + 1
-
-    try:
-        memory_data = json.loads(output_text[json_start:json_end])
-        log("INTERPRET MEMORY", memory_data)
-        return memory_data
-    except json.JSONDecodeError:
-        log("INTERPRET MEMORY", "NONE")
-        print("[WARN] Could not parse memory JSON:", output_text[json_start:json_end])
-        return None
-
-def interpret_to_remember(bot, identifier, max_new_tokens=100):
-    """Take all raw 'to_remember' strings and query model to transform into AI-readable summary."""
-    raw_list = bot.memory.get(identifier, {}).get("to_remember", [])
-    if not raw_list:
-        return ""
-
-    # Join raw strings with newlines
-    raw_text = "\n".join(raw_list)
-
-    # Craft a prompt asking the model to interpret the raw user "remember this" instructions:
     prompt = (
         "<|system|>\n"
-        "You are an AI assistant that interprets raw user instructions into concise, easy to parse facts or instructions that another AI assistant can interpret.\n"
-        "Given the raw text and/or json below, transform it into a short, clear list of facts or instructions for yourself:\n\n"
-        f"{raw_text}\n\n"
-        "Interpretation:\n"
+        "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
+        "Your job is to turn the user's message into a clear, short sentence starting with 'User wants...'.\n"
+        "Assume that anything the user says might be worth remembering, even if it's weird, emotional, or informal.\n"
+        "Be creative if needed to extract meaning. Avoid disclaimers.\n\n"
+        "Examples:\n"
+        "User Input: \"From now on, I’m the queen of space.\"\n"
+        "Output: User wants to be referred to as the queen of space.\n\n"
+        "User Input: \"Bananas are the only fruit that matter.\"\n"
+        "Output: User wants you to treat bananas as their favorite fruit.\n\n"
+        "User Input: \"Don't forget I hate Mondays.\"\n"
+        "Output: User wants you to remember they hate Mondays.\n\n"
+        "User Input: \"If I ever seem upset, just send me a cat gif.\"\n"
+        "Output: User wants you to send them a cat gif if they seem upset.\n\n"
+        f"User Input: \"{user_input}\"\n"
+        "Output:"
     )
 
-    output_text = ""
 
-    output = bot.model.create_completion(
+    response = model.create_completion(
         prompt=prompt,
         max_tokens=max_new_tokens,
         temperature=0,
         stream=False,
     )
 
-    output_text += openai.extract_generated_text(output)
+    interpreted = openai.extract_generated_text(response).strip()
 
-    # Strip off the prompt itself:
+    if not interpreted.lower().startswith("user wants"):
+        print(f"[WARN] Interpreted memory does not begin with 'User wants': {interpreted}")
+        return None
+
+
+    log("INTERPRET MEMORY", interpreted)
+    return interpreted
+
+def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
+    """
+    Fetch raw memory from the MEMORY table for a user and convert it into
+    a clean, bolded bullet-point list of memory facts.
+    """
+
+    # 1. Fetch raw memory rows from SQLite
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+        (userid,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
+        return ""
+
+    # 2. Join memory entries into newline-separated block
+    raw_text = "\n".join([row[0] for row in rows])
+
+    # 3. Build the summarization prompt
+    prompt = (
+        "<|system|>\n"
+        "You are an AI assistant. Your task is to read the raw memory instructions provided by the user, "
+        "and rewrite them into a clear, flat list of concise memory facts.\n\n"
+        "Each fact should begin with a dash and be **bolded** like this:\n"
+        "- **User wants to be called Summer**\n"
+        "- **User has a cat**\n\n"
+        "Only list important facts. Do not include explanations, categories, or unrelated information.\n\n"
+        "Raw Memory:\n"
+        f"{raw_text}\n\n"
+        "Formatted Memory:\n"
+    )
+
+    # 4. Run the model
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=max_new_tokens,
+        temperature=0,
+        stream=False,
+    )
+
+    output_text = openai.extract_generated_text(output)
+
+    # 5. Extract just the formatted result
     interpreted = output_text[len(prompt):].strip()
 
     log("INTERPRETED MEMORY", interpreted)

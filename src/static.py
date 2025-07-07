@@ -20,7 +20,7 @@ emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classifica
 WORKER_IP_PORT = "localhost:5007"
 
 TOKEN = ""
-MEMORY_FILE = "memory.json"
+DB_FILE = "memory.db"
 
 
 class StopOnSpeakerChange:

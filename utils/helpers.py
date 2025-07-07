@@ -1,3 +1,5 @@
+import sqlite3
+
 def pick_ctx_size(available_mb: int, model_size_mb: int) -> int:
     """
     Estimate the maximum safe ctx_size based on available RAM.
@@ -76,4 +78,3 @@ def trim_context_to_fit(base_prompt, context_lines, max_ctx, reserved_for_output
         total_context_tokens += line_tokens
 
     return "\n".join(trimmed_context)
-

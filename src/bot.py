@@ -10,6 +10,7 @@ import requests
 import json
 import time
 import os
+import sqlite3
 from transformers import AutoTokenizer
 from optimum.onnxruntime import ORTModelForSeq2SeqLM
 from .recursive import RecursiveThinker
@@ -17,7 +18,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, MEMORY_FILE, mainLLM, WORKER_IP_PORT
+from .static import mood_instruction, StopOnSpeakerChange, DB_FILE, mainLLM, WORKER_IP_PORT
 
 tokenizer = None # FiXME
 
@@ -30,12 +31,11 @@ class StringStreamer:
 
 
 class ChatBot:
-    def __init__(self, name="ayokdaeno", memory_file=MEMORY_FILE):
+    def __init__(self, name="ayokdaeno", db_path=DB_FILE):
         self.name = name
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
-        self.memory_file = memory_file
-        self.memory = self.load_memory()
+        self.db_path = db_path
         self.goals = [
             #"Be helpful if asked questions",
             "Provide accurate information",
@@ -118,25 +118,17 @@ class ChatBot:
             return "annoyed"
         else:
             return "neutral"
-
-    def load_memory(self):
-        if os.path.exists(self.memory_file):
-            with open(self.memory_file, "r") as f:
-                return json.load(f)
-        return {}
-
-    def save_memory(self):
-        with open(self.memory_file, "w") as f:
-            json.dump(self.memory, f, indent=2)
             
     def add_to_remember(self, identifier, raw_text):
-        if identifier not in self.memory:
-            self.memory[identifier] = {"memory": [], "to_remember": []}
-        else:
-            if "to_remember" not in self.memory[identifier]:
-                self.memory[identifier]["to_remember"] = []
-        self.memory[identifier]["to_remember"].append(raw_text)
-        self.save_memory()
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO MEMORY (userid, data) VALUES (?, ?)",
+            (identifier, raw_text)
+        )
+        conn.commit()
+        conn.close()
+
 
 
     def get_mood_primitive(self, user_input):
@@ -308,6 +300,52 @@ class ChatBot:
         return output_text.strip()
 
 
+    def log_interaction_to_history(self, identifier, username, user_input, botname, response):
+        """
+        Logs the user message and bot response into the HISTORY table with timestamps.
+        """
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.executemany(
+            """
+            INSERT INTO HISTORY (userid, message, timestamp) VALUES (?, ?, ?)
+            """,
+            [
+                (identifier, f"[{timestamp}] {username}: {user_input}", timestamp),
+                (identifier, f"[{timestamp}] {botname}: {response}", timestamp),
+            ]
+        )
+
+        conn.commit()
+        conn.close()
+        
+    def get_recent_history(self, identifier, limit=10):
+        """
+        Fetch the latest `limit` messages from the HISTORY table for a given user.
+        Returns a newline-joined string of the messages, in chronological order.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT message FROM HISTORY
+            WHERE userid = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """,
+            (identifier, limit)
+        )
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Reverse to maintain oldest-to-newest order
+        messages = [row[0] for row in reversed(rows)]
+        return "\n".join(messages)
 
     def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None):
         try:
@@ -390,37 +428,23 @@ class ChatBot:
         if category == "instruction_memory":
             memory_data = classify.interpret_memory_instruction(self, user_input)
             if memory_data:
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                if identifier not in self.memory:
-                    self.memory[identifier] = {"memory": [], "to_remember": []}
-                else:
-                    # Ensure keys exist
-                    if "memory" not in self.memory[identifier]:
-                        self.memory[identifier]["memory"] = []
-                    if "to_remember" not in self.memory[identifier]:
-                        self.memory[identifier]["to_remember"] = []
+                raw_text = memory_data  # make sure this is a string
+                self.add_to_remember(identifier, raw_text)
+                prompt = classify.build_memory_confirmation_prompt(raw_text)
 
-                # Store raw memory data as JSON strings in to_remember (no flattening)
-                import json
-                # Wrap memory_data with timestamp for reference
-                entry = {"date": timestamp, **memory_data}
-                self.memory[identifier]["to_remember"].append(json.dumps(entry))
-            memory_data_ai_readable = classify.interpret_to_remember(self, identifier, max_new_tokens=400)
-            prompt = classify.build_memory_confirmation_prompt(memory_data_ai_readable)
-
-            # add data from helper function into prompt before responding
-            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
-
+                # add data from helper function into prompt before responding
+                response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            else:
+                return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
         elif category == "factual_question":
             # Use recursive thinker for more elaborate introspection
             # TODO: query internet sources for facts
             # Extract just memory lines for context
-            memory = self.memory.get(identifier, {}).get("memory", [])
 
             # Join last 5 pairs (user + bot responses) into context
             if not context:
-                short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+                short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
 
@@ -435,11 +459,11 @@ class ChatBot:
         elif category == "preference_query":
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
-            memory = self.memory.get(identifier, {}).get("memory", [])
+            
 
             # Join last 5 pairs (user + bot responses) into context
             if not context:
-                short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+                short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
             thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
@@ -453,11 +477,11 @@ class ChatBot:
         elif category == "other":
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
-            memory = self.memory.get(identifier, {}).get("memory", [])
+            
 
             # Join last 5 pairs (user + bot responses) into context
             if not context:
-                short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+                short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
             thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
@@ -473,11 +497,11 @@ class ChatBot:
             elif force_recursive:
                 # Use recursive thinker for more elaborate introspection
                 # Extract just memory lines for context
-                memory = self.memory.get(identifier, {}).get("memory", [])
+                
 
                 # Join last 5 pairs (user + bot responses) into context
                 if not context:
-                    short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+                    short_context = self.get_recent_history(identifier, limit=10)
                 else:
                     short_context = context
                 thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
@@ -488,16 +512,6 @@ class ChatBot:
                     final = f"{thoughts}\n{final}"
                 log("DEBUG: FINAL THOUGHTS",final)
 
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.log_interaction_to_history(identifier, username, user_input, self.name, response)
 
-        if identifier not in self.memory:
-                self.memory[identifier] = {"memory": [], "to_remember": []}
-        self.memory[identifier]["memory"].append(f"[{timestamp}] {username}: {user_input}")
-        self.memory[identifier]["memory"].append(f"[{timestamp}] {self.name}: {response}")
-
-        # Limit memory to 80 lines
-        #if len(self.memory[identifier]) > 80:
-        #    self.memory[identifier] = self.memory[identifier][-80:]
-
-        self.save_memory()  # Save after each interaction
         return response
