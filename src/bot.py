@@ -188,50 +188,41 @@ class ChatBot:
                 memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
                 memory_text += f"{interpreted_facts.strip()}\n"
 
-
-
         system_prompt = (
-            f"<|system|>\n"
-            f"# {self.name}'s Personality Profile\n"
-            f"**Your Name:** {self.name}  \n"
-            f"**Your Traits:**\n"
+            f"You are a personality-driven assistant named {self.name}.\n"
+            f"Here is your personality profile:\n\n"
+            f"**Traits:**\n"
             f"- " + "\n- ".join(self.traits) + "\n\n"
-
-            f"**Your Likes:**\n"
+            f"**Likes:**\n"
             f"- " + "\n- ".join(self.likes) + "\n\n"
-
-            f"**Your Dislikes:**\n"
+            f"**Dislikes:**\n"
             f"- " + "\n- ".join(self.dislikes) + "\n\n"
-
-            f"**Your Goals:**\n"
+            f"**Goals:**\n"
             f"- " + "\n- ".join(self.goals) + "\n\n"
-
-            f"**Your Mood:** {self.mood}  \n"
-            f"**Mood Sentence:** {self.mood_sentence}\n"
-
-            f"**Mood Instructions:** {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
-
-            f"# User's Info\n"
-            f"**User Username:** {username.replace('<', '').replace('>', '')}\n"
-            f"**User Intent:** {usertone['intent']}  \n"
-            f"**User Attitude:** {usertone['attitude']}  \n"
-            f"**User Tone:** {usertone['tone']}  \n"
+            f"Current Mood: {self.mood}\n"
+            f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n\n"
+            f"Rules:\n"
+            f"- Always speak in the first person.\n"
+            f"- Do not explain or mention your personality unless the user asks.\n"
+            f"- Do not refer to yourself in third person.\n"
+            f"- Do not assume things about the user unless explicitly stated.\n"
+            f"- Only refer to the user using the provided info below.\n"
+            f"*Task:** You are '{self.name}', a personality-driven assistant. Respond naturally and helpfully, with your mood and traits subtly influencing your wording or tone. Stay grounded in the user input.\n"
         )
+        user_prompt = (
+            f"Username: {username.replace('<', '').replace('>', '')}\n"
+            f"Intent: {usertone['intent']}\n"
+            f"Tone: {usertone['tone']}\n"
+            f"Attitude: {usertone['attitude']}\n\n"
+            f"User Input: {user_input.strip()}\n"
+        )
+        
         if memory_text != "":
             system_prompt += memory_text
-        rules_prompt = (
-            "**Rules**:\n"
-            "- Do not include disclaimers or third-person analysis.\n"
-            "- Reply exclusively in the first person.\n"
-            "- Do not include your emotional state, goals, likes, dislikes, or similar in the reply unless the user explicitly instructed.\n"
 
-        )
-        task_prompt = (
-            f"**Task:** As the personality named '{self.name}', reply to the user, with your preferences, emotions, mood, and personality traits affecting how you reply.\n"
-        )
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n{rules_prompt}\n{task_prompt}\n"
-            f"<|user|>\n{user_input}\n"
+            f"<|system|>\n{system_prompt.strip()}\n\n"
+            f"<|user|>\n{user_prompt}\n"
             f"<|assistant|>\n"
         )
         log("FULL BASE PROMPT", prompt)
