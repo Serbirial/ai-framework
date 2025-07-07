@@ -268,7 +268,7 @@ def get_db_stats(db_path=static.DB_PATH):
     return mem_count, mem_unique_users, hist_count, hist_unique_users
 
 
-def run_schema_sync(db_path: str, schema_path: str):
+def run_schema_sync(db_path: str = static.DB_PATH, schema_path: str = static.SCHEMA_PATH):
     with sqlite3.connect(db_path) as conn:
         with open(schema_path, "r") as f:
             schema_sql = f.read()
@@ -396,7 +396,7 @@ class ChatBot(discord.Client):
 
     async def on_ready(self) -> None:
         """ Initializes the GPT2 AI on bot startup """
-        await run_schema()
+        run_schema_sync()
         initialize_default_personality()
         mem_count, mem_unique_users, hist_count, hist_unique_users = await asyncio.get_running_loop().run_in_executor(None, get_db_stats)
         print(f"Logged on as {self.user}")
