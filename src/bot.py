@@ -108,7 +108,7 @@ class ChatBot:
             else:
                 classification = "NEUTRAL"
         except Exception as e:
-            print(f"[WARN] Failed to classify likes/dislikes via API: {e}")
+            print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, self.likes, self.dislikes)
 
@@ -167,7 +167,7 @@ class ChatBot:
             else:
                 moods = []
         except Exception as e:
-            print(f"[WARN] Failed to determine moods via API: {e}")
+            print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             moods = classify.determine_moods_from_social_classification(social_tone_classification, 3)
 
