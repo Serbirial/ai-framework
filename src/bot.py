@@ -235,6 +235,8 @@ class ChatBot:
             f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
 
             f"**Rules:**\n"
+            f"- You must NOT generate any padding tokens such as [PAD], <PAD>, or any special filler tokens.\n"
+            f"- Stop generating once your response is complete; do not add extra tokens beyond your answer.\n"
             f"- Always speak in the first person.\n"
             f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
             f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
