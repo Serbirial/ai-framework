@@ -680,10 +680,10 @@ class ChatBot(discord.Client):
             "other"]
         if flags["category"] == -1:
             valid_list = ", ".join(valid_categories)
-            return message.reply(f"Valid options are: `{valid_list}`")
+            return await message.reply(f"Valid options are: `{valid_list}`")
         elif flags["category"] and flags["category"] not in valid_categories:
             valid_list = ", ".join(valid_categories)
-            return message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
+            return await message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
