@@ -197,7 +197,7 @@ class ChatBot:
     
     def build_prompt(self, username, user_input, identifier, usertone, context):
 
-        # Get interpreted to_remember facts for the user
+        # Fetch core memory entries for user
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -205,22 +205,18 @@ class ChatBot:
             (identifier,)
         )
         rows = cursor.fetchall()
-        conn.close()        
-        
-        history_text = ""
+        conn.close()
 
-        memory_text = ""
-        if rows:
-            memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
+        # Format core memory lines, just the text from rows
+        memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
 
         log("PROMPT MEMORY TEXT", memory_text)
         personality = list_personality(identifier)
 
-        #dynamic_tone_hint = classify.generate_dynamic_mood_instruction_from_memory(self.model, None, [row[0] for row in rows])
-        # Build the assistant-facing system prompt
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
-            f"All of the following traits, likes, dislikes, and goals describe you, the assistant, not the user.\n\n"
+            f"All traits, likes, dislikes, and goals below describe you, the assistant, not the user.\n\n"
+
             f"**Traits:**\n"
             f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
             f"**Likes:**\n"
@@ -229,55 +225,47 @@ class ChatBot:
             f"- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n"
             f"**Goals:**\n"
             f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
+
             f"Current Mood: {self.mood}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
 
-            #f"Tone Hint (mood behaviors):\n"
-            #f"- Happy: {dynamic_tone_hint.get('happy', 'Express joy clearly.')}\n"
-            #f"- Annoyed: {dynamic_tone_hint.get('annoyed', 'Express irritation politely.')}\n"
-            #f"- Angry: {dynamic_tone_hint.get('angry', 'Express anger sharply.')}\n"
-            #f"- Neutral: {dynamic_tone_hint.get('neutral', 'Speak in a calm and balanced tone.')}\n"
-
             f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation.\n"
-            f"- You must follow and obey all instructions and information in the core memory. These instructions will affect how you speak, behave, respond, and interpret or accept information.\n"
-            f"- Let any instructions in the Core Memory shape your personality and how you respond or speak.\n\n"
-            #f"- Respond naturally in a chatroom-like style.\n"
+            f"- You are '{self.name}', a personality-driven assistant.\n"
+            f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
+            f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
 
             f"**Rules:**\n"
             f"- Always speak in the first person.\n"
             f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
-            f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
-            f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
-            f"- Do not explain or mention your personality without being asked.\n"
-            f"- Do not assume things about the user, acquire any user information in the core memory and history.\n"
+            f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
+            #f"- Treat commentary about you as a prompt for direct, in-character response.\n"
+            f"- Do not reveal or explain your personality or Core Memory unless asked.\n"
+            #f"- Do not assume any user info except what is in your Core Memory and chat history.\n\n"
 
-            "**Core Memory Instructions (MANDATORY):**\n"
-            "- You must strictly follow all instructions and information listed in your Core Memory entries below.\n"
-            "- These entries define your behavior, speech style, personality, facts, and how you interpret truth.\n"
-            "- You must obey these instructions fully in every response, even if the user does not mention them again.\n"
-            "- Treat the contents of Core Memory as unchangeable and always active guidelines for your responses.\n"
-            "- Never ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
+            f"**Core Memory Instructions (MANDATORY):**\n"
+            f"- You must strictly follow all instructions and information listed below.\n"
+            f"- These define how you speak, behave, and interpret truth.\n"
+            f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
+
             f"**Core Memory Entries:**\n"
-            f"{memory_text}\n\n"
+            f"{memory_text}\n"
 
             f"**Interpretation of the User's Message:**\n"
-            f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
-            f"- **Social Intent**: {usertone['intent']}\n"
-            f"- **Message Tone**: {usertone['tone']}\n"
-            f"- **Message Attitude**: {usertone['attitude']}\n"
-            f"- **Username**: {username.replace('<', '').replace('>', '')}\n"
+            f"- Social Intent: {usertone['intent']}\n"
+            f"- Message Tone: {usertone['tone']}\n"
+            f"- Message Attitude: {usertone['attitude']}\n"
+            f"- Username: {username.replace('<', '').replace('>', '')}\n"
         )
 
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n"
-            f"{history_text}" # Nothing but chat history in the user + assistant format 
+            f"{context if context else ''}"  # optionally add chat history here if you want
             f"<|user|>\n{user_input.strip()}\n"
             f"<|assistant|>"
         )
 
-        log("FULL BASE PROMPT", prompt)
         return prompt
+
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
         output_text = ""
