@@ -274,6 +274,7 @@ def run_schema_sync(db_path: str = static.DB_PATH, schema_path: str = static.SCH
             schema_sql = f.read()
         conn.executescript(schema_sql)
         conn.commit()
+run_schema_sync()
 
 async def run_schema(db_path=static.DB_PATH, schema_path=static.SCHEMA_PATH):
     loop = asyncio.get_running_loop()
@@ -396,7 +397,6 @@ class ChatBot(discord.Client):
 
     async def on_ready(self) -> None:
         """ Initializes the GPT2 AI on bot startup """
-        run_schema_sync()
         initialize_default_personality()
         mem_count, mem_unique_users, hist_count, hist_unique_users = await asyncio.get_running_loop().run_in_executor(None, get_db_stats)
         print(f"Logged on as {self.user}")
