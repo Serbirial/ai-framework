@@ -8,7 +8,7 @@ mood_instruction = {
     "neutral": "Use a calm and balanced tone if not stated otherwise."
 }
 MODEL_NAME = ""
-mainLLM = "/home/koya/models/Qwen-7B-Chat.Q4_K_M.gguf" # TEMP while running on dedi VM
+mainLLM = "/home/koya/models/llama-2-7b-chat.Q4_K_S.gguf" # TEMP while running on dedi VM
 
 webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-news.gguf"
 baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
