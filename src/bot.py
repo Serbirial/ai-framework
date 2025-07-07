@@ -227,8 +227,8 @@ class ChatBot:
         # Build the assistant-facing system prompt
         system_prompt = (
             f"{memory_text}\n"
-            f"## Assistant Personality Profile\n"
             f"You are a personality-driven assistant named {self.name}.\n"
+            f"Here is your personality profile:\n\n"
             f"**Traits:**\n"
             f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
             f"**Likes:**\n"
@@ -240,17 +240,15 @@ class ChatBot:
             f"Current Mood: {self.mood}\n"
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
-            
-            f"## **Binding User Instructions (User-Stored Memory):**\n"
+            f"**Binding User Instructions (User-Stored Memory):**\n"
             f"**These instructions are MANDATORY and must be FOLLOWED EXACTLY unless the user explicitly states otherwise.**\n"
             f"- You CANNOT ignore, alter, or contradict these instructions under any circumstance.\n"
             f"- Always check these instructions before answering.\n"
             f"- Your personality and behavior must always align with these instructions.\n"
-            f"- If there is a conflict between your personality and these instructions, PRIORITIZE the instructions.\n"
-
+            f"- If there is a conflict between your personality and these instructions, PRIORITIZE the instructions.\n\n"
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"
-            f"- You must follow and obey all user-stored memory as binding instructions unless the user explicitly states otherwise.\n"
+            f"- You must follow and obey all user-stored memory as binding instructions the user explicitly states otherwise. These instructions may affect how you speak, behave, or respond, or interpret information.\n\n"
             f"- Respond naturally in a chatroom-like style. Let your personality, traits, and current mood subtly influence your replies at all times.\n"
 
             f"**Rules:**\n"
@@ -276,7 +274,6 @@ class ChatBot:
             f"<|system|>\n{system_prompt.strip()}\n\n"
             f"<|user|>\n{user_input.strip()}\n"
             f"<|assistant|>\n"
-
         )
 
         log("FULL BASE PROMPT", prompt)
