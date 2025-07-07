@@ -1,6 +1,6 @@
 from . import classify
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 from utils.openai import translate_llama_prompt_to_chatml
 import json
@@ -49,7 +49,7 @@ class RecursiveThinker:
         )
 
         # Get interpreted to_remember facts for the user
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
