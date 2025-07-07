@@ -231,7 +231,7 @@ class RecursiveThinker:
             full += f"{response.strip()}\n"
 
             # Inject task reinforcement every N steps
-            if step != 0 and step % 5 == 0:
+            if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 full += (
                     f"<|assistant|>\n"
                     f"**Task Alignment Checkpoint:**\n"
@@ -239,6 +239,7 @@ class RecursiveThinker:
                     f"- Ask: Are your steps clearly building toward answering the question?\n"
                     f"- Briefly summarize what you've accomplished and what remains.\n"
                     f"- Then continue with the next step, staying focused.\n\n"
+                    f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
                 )
                 response = self.bot._straightforward_generate(
                     full,
