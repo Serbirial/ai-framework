@@ -32,6 +32,7 @@ class StopOnSpeakerChange:
         self.max_lines = max_lines
         self.line_count = 0
         self.buffer = ""
+        self.default_stop_tokens = ["<|user|>", "<|system|>", "<|end|>"]
         self.custom_stops = custom_stops or []  # List of strings that trigger stop
 
     def __call__(self, new_text_chunk):
