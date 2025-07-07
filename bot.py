@@ -735,8 +735,10 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                        
-                    if flags["memstore"]:
+                        context.add_line(f"{message.author.display_name}: {processed_input}")
+                        context.add_line(f"{self.ai.name}: {response}")
+                        return
+                    elif flags["memstore"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
                             max_new_tokens=350,
@@ -748,7 +750,9 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                        
+                        context.add_line(f"{message.author.display_name}: {processed_input}")
+                        context.add_line(f"{self.ai.name}: {response}")
+                        return
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
@@ -762,8 +766,9 @@ class ChatBot(discord.Client):
                             debug=flags["debug"]
                         )
                         await message.reply(response)
-                    context.add_line(f"{message.author.display_name}: {processed_input}")
-                    context.add_line(f"{self.ai.name}: {response}")
+                        context.add_line(f"{message.author.display_name}: {processed_input}")
+                        context.add_line(f"{self.ai.name}: {response}")
+                        return
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:

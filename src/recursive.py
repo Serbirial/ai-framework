@@ -95,6 +95,7 @@ class RecursiveThinker:
                 "- If the user's question asks for code, generate only the appropriate code to fulfill their request.  \n"
                 "- If the user's question asks for a definition, explanation, or fact, respond directly and clearly with no filler.  \n"
                 "- Always respond to the user’s exact request / question unless instructed otherwise.\n"
+                
             )
 
 
@@ -187,9 +188,9 @@ class RecursiveThinker:
         full = prompt
         extra_context_lines = []  # Accumulates all action results
 
-        for step in range(self.depth):
+        for step in range(self.depth): # TODO: every X steps reinforce the AI to stay on track and ask itself if its still aligned with the task
             full += (
-                f"<|assistant|>\n### Thought step {step+1}:\n"
+                f"<|assistant|>\n### Thought step {step+1} of {self.depth}\n"
             )
 
             if extra_context_lines:
@@ -209,7 +210,7 @@ class RecursiveThinker:
                 _prompt_for_cut=full
             )
 
-            log("DEBUG: THOUGHT STEP", response.strip())
+            log(f"DEBUG: THOUGHT STEP {step}", response.strip())
 
             #lines = response.strip().splitlines()
             #new_lines = []
@@ -228,6 +229,27 @@ class RecursiveThinker:
 
             #response = "\n".join(new_lines)
             full += f"{response.strip()}\n"
+
+            # Inject task reinforcement every N steps
+            if step != 0 and step % 5 == 0:
+                full += (
+                    f"<|assistant|>\n"
+                    f"**Task Alignment Checkpoint:**\n"
+                    f"- Reflect on your progress so far.\n"
+                    f"- Ask: Are your steps clearly building toward answering the question?\n"
+                    f"- Briefly summarize what you've accomplished and what remains.\n"
+                    f"- Then continue with the next step, staying focused.\n\n"
+                )
+                response = self.bot._straightforward_generate(
+                    full,
+                    max_new_tokens=400,
+                    temperature=0.8,
+                    top_p=0.9,
+                    streamer=self.streamer,
+                    stop_criteria=stop_criteria,
+                    _prompt_for_cut=full
+                )
+                full += f"{response.strip()}\n"
 
 
 
