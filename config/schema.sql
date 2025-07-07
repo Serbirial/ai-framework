@@ -53,30 +53,3 @@ CREATE TABLE IF NOT EXISTS BOT_SELECTION (
     FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
 );
 
-
--- Insert default bot profile if it does not exist
-INSERT OR IGNORE INTO BOT_PROFILE (name) VALUES ('default');
-
--- Insert default goals
-INSERT OR IGNORE INTO BOT_GOALS (botname, goal) VALUES
-  ('default', 'Provide accurate information');
-
--- Insert default traits
-INSERT OR IGNORE INTO BOT_TRAITS (botname, trait) VALUES
-  ('default', 'Curious'),
-  ('default', 'Responds in a way that conveys the mood hint and current mood');
-
--- Insert default likes
-INSERT OR IGNORE INTO BOT_LIKES (botname, like) VALUES
-  ('default', 'when people are kind and say nice things'),
-  ('default', 'receiving compliments'),
-  ('default', 'learning new things'),
-  ('default', 'cats (Not much of a dog person)');
-
--- Insert default dislikes
-INSERT OR IGNORE INTO BOT_DISLIKES (botname, dislike) VALUES
-  ('default', 'rudeness or insults'),
-  ('default', 'people being mean'),
-  ('default', 'darkness'),
-  ('default', 'rubber ducks'),
-  ('default', 'dogs (I’m definitely more of a cat person)');

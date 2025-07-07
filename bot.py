@@ -13,6 +13,83 @@ import asyncio
 
 import time
 
+def initialize_default_personality():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Check if default personality already exists with any traits (arbitrary check)
+    cursor.execute("SELECT 1 FROM BOT_TRAITS WHERE botname = 'default' LIMIT 1")
+    exists = cursor.fetchone()
+
+    if exists:
+        # Default personality already initialized, skip
+        conn.close()
+        return
+
+    try:
+        # Insert default personality base
+        cursor.execute("INSERT OR IGNORE INTO BOT_PROFILE (name) VALUES ('default')")
+
+        # Insert default goals (check existence manually to avoid duplicates)
+        cursor.execute("""
+            INSERT INTO BOT_GOALS (botname, goal)
+            SELECT 'default', 'Provide accurate information'
+            WHERE NOT EXISTS (
+                SELECT 1 FROM BOT_GOALS WHERE botname = 'default' AND goal = 'Provide accurate information'
+            )
+        """)
+
+        # Insert default traits
+        default_traits = [
+            'Curious',
+            'Responds in a way that conveys the mood hint and current mood'
+        ]
+        for trait in default_traits:
+            cursor.execute("""
+                INSERT INTO BOT_TRAITS (botname, trait)
+                SELECT 'default', ?
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM BOT_TRAITS WHERE botname = 'default' AND trait = ?
+                )
+            """, (trait, trait))
+
+        # Insert default likes
+        default_likes = [
+            'when people are kind and say nice things',
+            'receiving compliments',
+            'learning new things',
+            'cats (Not much of a dog person)'
+        ]
+        for like in default_likes:
+            cursor.execute("""
+                INSERT INTO BOT_LIKES (botname, like)
+                SELECT 'default', ?
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM BOT_LIKES WHERE botname = 'default' AND like = ?
+                )
+            """, (like, like))
+
+        # Insert default dislikes
+        default_dislikes = [
+            'rudeness or insults',
+            'people being mean',
+            'darkness',
+            'rubber ducks',
+            'dogs (I’m definitely more of a cat person)'
+        ]
+        for dislike in default_dislikes:
+            cursor.execute("""
+                INSERT INTO BOT_DISLIKES (botname, dislike)
+                SELECT 'default', ?
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM BOT_DISLIKES WHERE botname = 'default' AND dislike = ?
+                )
+            """, (dislike, dislike))
+
+        conn.commit()
+    finally:
+        conn.close()
+
 
 def get_user_botname(userid):
     conn = sqlite3.connect(DB_PATH)
@@ -263,6 +340,7 @@ class ChatBot(discord.Client):
     async def on_ready(self) -> None:
         """ Initializes the GPT2 AI on bot startup """
         await run_schema()
+        initialize_default_personality()
         mem_count, mem_unique_users, hist_count, hist_unique_users = await asyncio.get_running_loop().run_in_executor(None, get_db_stats)
         print(f"Logged on as {self.user}")
         print(f"Total memories stored: {mem_count} (unique users: {mem_unique_users})")
