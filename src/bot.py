@@ -309,7 +309,7 @@ class ChatBot:
 
 
 
-    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=recursive_depth, category_override=None):
+    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None):
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_social_tone",
