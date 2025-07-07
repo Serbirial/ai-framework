@@ -239,9 +239,9 @@ class ChatBot:
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
             f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a regular one-on-one conversation, with your mood and traits subtly influencing your tone.\n"
+            f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation, with your mood and traits subtly influencing your tone.\n"
             f"- You must follow and obey all binding instructions. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
-            f"- Respond naturally in a chatroom-like style.\n"
+            #f"- Respond naturally in a chatroom-like style.\n"
 
             f"**Rules:**\n"
             f"- Always speak in the first person.\n"
