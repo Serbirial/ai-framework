@@ -222,7 +222,7 @@ class ChatBot(discord.Client):
                 try:
                     if flags["recursive"]:
                         response = await asyncio.to_thread(
-                            self.ai.recursive_think,
+                            self.ai.chat,
                             username=message.author.display_name,
                             user_input=user_msg,
                             identifier=message.guild.id,
@@ -233,7 +233,7 @@ class ChatBot(discord.Client):
                         )
                     if flags["memstore"]:
                         response = await asyncio.to_thread(
-                            self.ai.recursive_think,
+                            self.ai.chat,
                             username=message.author.display_name,
                             user_input=user_msg,
                             identifier=message.guild.id,
