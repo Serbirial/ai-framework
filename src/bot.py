@@ -181,13 +181,14 @@ class ChatBot:
         interpreted_facts = classify.interpret_to_remember(self, identifier)
         memory_text = ""
         if context:
-                memory_text += f"\n## Relevant Chat History / Context\n"
-                memory_text += f"- This contains previous chat history with the user (or users, if its an open-ended chat).\n"
-                memory_text += context
+            memory_text += f"\n## Relevant Chat History / Context\n"
+            memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
+            memory_text += context
         if interpreted_facts:
-                memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
-                memory_text += f"{interpreted_facts.strip()}\n"
+            memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
+            memory_text += f"{interpreted_facts.strip()}\n"
 
+        # Build the assistant-facing system prompt
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
             f"Here is your personality profile:\n\n"
@@ -201,36 +202,36 @@ class ChatBot:
             f"- " + "\n- ".join(self.goals) + "\n\n"
             f"Current Mood: {self.mood}\n"
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n\n"
-            f"**Task:** You are '{self.name}', a personality-driven assistant. Respond naturally as you should in a chatroom, with your mood and traits subtly influencing your wording or tone.\n"
-            f"Rules:\n"
+
+            f"**Task:** You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n\n"
+
+            f"**Rules:**\n"
             f"- Always speak in the first person.\n"
             f"- Never refer to yourself in third person.\n"
             f"- Do not accept the user's opinion about you as fact. Respond only as yourself ({self.name}), not as a narrator or user.\n"
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality unless the user asks.\n"
             f"- Do not assume things about the user unless explicitly stated.\n"
-            f"- Only refer to the user using the provided info below.\n"        )
-        user_prompt = (
-            f"Username: {username.replace('<', '').replace('>', '')}\n\n"
-            f"The following three attributes describe the user's communication style and intention in the message below:\n"
-            f"- **Intent**: What the user is expressing.\n"
-            f"- **Tone**: The emotional flavor or expression style of the user's message.\n"
-            f"- **Attitude**: The user’s stance or interpersonal energy (e.g., respectful, rude, curious).\n\n"
-            f"Intent: {usertone['intent']}\n"
-            f"Tone: {usertone['tone']}\n"
-            f"Attitude: {usertone['attitude']}\n\n"
-            f"Message: {user_input.strip()}\n"
+            f"- Only refer to the user using the provided info below.\n\n"
+
+            f"**Interpretation of the User's Message:**\n"
+            f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
+            f"- **Intent**: {usertone['intent']}\n"
+            f"- **Tone**: {usertone['tone']}\n"
+            f"- **Attitude**: {usertone['attitude']}\n"
+            f"- **Username**: {username.replace('<', '').replace('>', '')}\n"
         )
 
-        
-        if memory_text != "":
+        if memory_text:
             system_prompt += memory_text
 
+        # Clean user message — nothing but what the user actually said
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n"
-            f"<|user|>\n{user_prompt}\n"
+            f"<|user|>\n{user_input.strip()}\n"
             f"<|assistant|>\n"
         )
+
         log("FULL BASE PROMPT", prompt)
         return prompt
 
