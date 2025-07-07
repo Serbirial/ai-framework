@@ -176,10 +176,6 @@ class ChatBot:
     
     
     def build_prompt(self, username, user_input, identifier, usertone, context):
-        goals_text = " ".join(self.goals)
-        traits_text = " ".join(self.traits)
-        likes_text = ", ".join(self.likes)
-        dislikes_text = ", ".join(self.dislikes)
 
         # Get interpreted to_remember facts for the user
         interpreted_facts = classify.interpret_to_remember(self, identifier)
@@ -335,7 +331,7 @@ class ChatBot:
                     "tone": "NEUTRAL"
                 }
         except Exception as e:
-            print(f"[WARN] classify_social_tone API failed: {e}")
+            print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
         moods = {
@@ -366,7 +362,7 @@ class ChatBot:
             else:
                 self.mood_sentence = "I feel neutral and composed at the moment."
         except Exception as e:
-            print(f"[WARN] Failed to classify mood sentence via API: {e}")
+            print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
         prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else "\n".join(memory[-10:]))
@@ -385,7 +381,7 @@ class ChatBot:
             else:
                 category = "other"
         except Exception as e:
-            print(f"[WARN] classify_user_input API failed: {e}")
+            print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             category = classify.classify_user_input(self.model, tokenizer, user_input)
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
