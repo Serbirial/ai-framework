@@ -4,6 +4,8 @@ from .static import mood_instruction, StopOnSpeakerChange
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 from utils.openai import translate_llama_prompt_to_chatml
 import json
+import sqlite3
+from . import bot
 
 class RecursiveThinker:
     def __init__(self, bot, depth=3, streamer=None):
@@ -12,10 +14,14 @@ class RecursiveThinker:
         self.streamer = streamer
 
     def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
-        traits = ", ".join(self.bot.traits)
-        goals = ", ".join(self.bot.goals)
-        likes = ", ".join(self.bot.likes)
-        dislikes = ", ".join(self.bot.dislikes)
+        personality = bot.list_personality(identifier)
+
+        traits = "\n- " + "\n- ".join(personality.get("traits", [])) if personality.get("traits") else "None"
+        goals = "\n- " + "\n- ".join(personality.get("goals", [])) if personality.get("goals") else "None"
+        likes = "\n- " + "\n- ".join(personality.get("likes", [])) if personality.get("likes") else "None"
+        dislikes = "\n- " + "\n- ".join(personality.get("dislikes", [])) if personality.get("dislikes") else "None"
+
+
         mood = self.bot.mood
 
         base = (
@@ -35,28 +41,35 @@ class RecursiveThinker:
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
-            f"# Info"
-            "You may optionally output ONE <Action> JSON block per step:\n"
-            '<Action>{"action":"action_name","parameters":{...}}</Action>\n'
-            "If no action needed, respond with reasoning only.\n"
-            "Results of actions will be given next step in <ActionResult> block.\n"
+            #f"# Info"
+            #"You may optionally output ONE <Action> JSON block per step:\n"
+            #'<Action>{"action":"action_name","parameters":{...}}</Action>\n'
+            #"If no action needed, respond with reasoning only.\n"
+            #"Results of actions will be given next step in <ActionResult> block.\n"
         )
 
+        # Get interpreted to_remember facts for the user
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+            (identifier,)
+        )
+        rows = cursor.fetchall()
+        conn.close()        
+        
+        memory_text = ""
         if context:
-            base += (
-                f"\n## Relevant Chat History / Context\n"
-                f"- This contains previous chat history, or the current context before the interaction.\n"
-                f"{context.strip()}\n"
-            )
+            memory_text += f"\n## Relevant Chat History / Context\n"
+            memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
+            memory_text += context
 
-        if identifier:
-            interpreted_facts = classify.interpret_to_remember(self.bot, identifier)
-            if interpreted_facts:
-                base += (
-                    f"\n## Things you were told to remember by the user, you must abide by any and all things in here:\n"
-                    f"{interpreted_facts.strip()}\n"
-                )
-
+        if rows:
+            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions. You MUST obey them unless otherwise told.):\n"
+            memory_text += "\n".join(f"- **{row[0].strip()}**" for row in rows)
+            memory_text += "\n"
+        base += memory_text
+        
         base += (
             f"\n<|user|>\n"
             f"### Reasoning Prompt\n"
@@ -156,7 +169,7 @@ class RecursiveThinker:
 
             if mood_reflections:
                 base += "\n" + mood_reflections + "\n"
-
+        log("RECURSIVE PROMPT", base)
         return base
 
     def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
@@ -172,7 +185,6 @@ class RecursiveThinker:
         # Build full prompt using the trimmed context
         prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
-        log("DEBUG: RECURSIVE PROMPT",full)
         extra_context_lines = []  # Accumulates all action results
 
         for step in range(self.depth):
@@ -199,7 +211,7 @@ class RecursiveThinker:
 
             log("DEBUG: THOUGHT STEP", response.strip())
 
-            lines = response.strip().splitlines()
+            #lines = response.strip().splitlines()
             #new_lines = []
 
             #for line in lines:
