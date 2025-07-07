@@ -589,22 +589,16 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
         if flags["help"]:
             await message.reply(processed_input)
             return
-
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
-            
-            # If flag is True (no data), generate a name and copy default personality (existing logic)
+
+            # Determine personality data string, or None if no data given
             if flags["newpersonality"] is True:
-                # (existing logic to generate a new name)
-                # ...
                 personality_data = None
             else:
-                # User supplied personality data string
                 personality_data = flags["newpersonality"].strip()
 
-            # Determine new personality name - you can generate or require user to specify as part of data or separate
-            # For example, require "name: <name>" in personality_data or generate like before
-            # For simplicity, here we generate name automatically:
+            # Generate a new unique personality name
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             base_name = f"{username}_personality"
@@ -616,48 +610,73 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
                     new_name = candidate
                     break
                 number += 1
-            
-            # Create new personality
+
             try:
+                # Insert new personality profile
                 cursor.execute("INSERT INTO BOT_PROFILE (name) VALUES (?)", (new_name,))
 
-                # If no custom data provided, copy from default
                 if not personality_data:
+                    # Copy personality data from default if none supplied
                     for table in ["BOT_GOALS", "BOT_TRAITS", "BOT_LIKES", "BOT_DISLIKES"]:
-                        cursor.execute(f"""
-                            INSERT INTO {table} (botname, {table[:-1].lower()})
-                            SELECT ?, {table[:-1].lower()} FROM {table} WHERE botname = 'default'
-                        """, (new_name,))
+                        try:
+                            cursor.execute(f"""
+                                INSERT INTO {table} (botname, {table[:-1].lower()})
+                                SELECT ?, {table[:-1].lower()} FROM {table} WHERE botname = 'default'
+                            """, (new_name,))
+                        except Exception as e:
+                            print(f"Error copying default data from {table}: {e}")
+                            raise
                 else:
                     # Parse supplied personality data string
                     parsed = parse_personality_data(personality_data)
-                    # Insert parsed data into tables
+                    print(f"DEBUG: Parsed personality data: {parsed}")
+
+                    # Insert parsed data into DB tables
                     for goal in parsed["goals"]:
-                        cursor.execute("INSERT INTO BOT_GOALS (botname, goal) VALUES (?, ?)", (new_name, goal))
+                        try:
+                            cursor.execute("INSERT INTO BOT_GOALS (botname, goal) VALUES (?, ?)", (new_name, goal))
+                        except Exception as e:
+                            print(f"Error inserting goal '{goal}': {e}")
+                            raise
                     for trait in parsed["traits"]:
-                        cursor.execute("INSERT INTO BOT_TRAITS (botname, trait) VALUES (?, ?)", (new_name, trait))
+                        try:
+                            cursor.execute("INSERT INTO BOT_TRAITS (botname, trait) VALUES (?, ?)", (new_name, trait))
+                        except Exception as e:
+                            print(f"Error inserting trait '{trait}': {e}")
+                            raise
                     for like in parsed["likes"]:
-                        cursor.execute("INSERT INTO BOT_LIKES (botname, like) VALUES (?, ?)", (new_name, like))
+                        try:
+                            cursor.execute("INSERT INTO BOT_LIKES (botname, like) VALUES (?, ?)", (new_name, like))
+                        except Exception as e:
+                            print(f"Error inserting like '{like}': {e}")
+                            raise
                     for dislike in parsed["dislikes"]:
-                        cursor.execute("INSERT INTO BOT_DISLIKES (botname, dislike) VALUES (?, ?)", (new_name, dislike))
+                        try:
+                            cursor.execute("INSERT INTO BOT_DISLIKES (botname, dislike) VALUES (?, ?)", (new_name, dislike))
+                        except Exception as e:
+                            print(f"Error inserting dislike '{dislike}': {e}")
+                            raise
 
                 conn.commit()
+            except Exception as e:
+                conn.rollback()
                 conn.close()
+                await message.reply(f"Failed to create new personality: {e}")
+                return
 
-                # Set active personality for user
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
+            # Set this personality as active for the user
+            try:
                 cursor.execute("""
                     INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
                     VALUES (?, ?, CURRENT_TIMESTAMP)
                 """, (str(message.author.id), new_name))
                 conn.commit()
                 conn.close()
-
-                await message.reply(f"New personality '{new_name}' created and set as your active personality.")
             except Exception as e:
-                await message.reply(f"Failed to create new personality: {e}")
+                await message.reply(f"Failed to set active personality: {e}")
+                return
 
+            await message.reply(f"New personality '{new_name}' created and set as your active personality.")
             return
 
         elif flags["clearmem"]:
