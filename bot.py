@@ -27,6 +27,17 @@ def clear_user_memory_and_history(owner_id, db_path=static.DB_PATH):
         conn.commit()
     finally:
         conn.close()
+        
+def clear_user_history(owner_id, db_path=static.DB_PATH):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        # Clear HISTORY where owner = this user
+        cursor.execute("DELETE FROM HISTORY WHERE owner = ?", (owner_id,))
+        
+        conn.commit()
+    finally:
+        conn.close()
 
 def get_db_stats(db_path=static.DB_PATH):
     with sqlite3.connect(db_path) as conn:
@@ -167,6 +178,7 @@ class ChatBot(discord.Client):
             "debug": False,
             "help": False,
             "clearmem": False,
+            "clearhistory": False,
         }
 
         tokens = content.strip().split()
@@ -194,6 +206,8 @@ class ChatBot(discord.Client):
                 flags["debug"] = True
             elif token == "!clearmem":
                 flags["clearmem"] = True
+            elif token == "!wipectx" or token == "!clearchat" or token == "!clearhistory":
+                flags["clearhistory"] = True
             else:
                 remaining.append(tokens[i])
             i += 1
@@ -206,6 +220,7 @@ class ChatBot(discord.Client):
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
                 "`!clearmem`      - Clears all memory for the current user.\n"
+                "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
                 "`!help`          - Shows this help message.\n"
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -239,7 +254,11 @@ class ChatBot(discord.Client):
             return
         elif flags["clearmem"]:
             clear_user_memory_and_history(message.author.id, self.db_path)
-            await message.reply("Your memory and history have been cleared.")
+            await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
+            return
+        elif flags["clearhistory"]:
+            clear_user_history(message.author.id, self.db_path)
+            await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
             return
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
