@@ -201,9 +201,10 @@ class ChatBot:
             f"**Rules:**\n"
             f"- Always speak in the first person.\n"
             f"- Never refer to yourself in third person.\n"
-            f"- Do not accept the user's opinion about you as fact. Respond only as yourself ({self.name}), not as a narrator or user.\n"
+            f"- Do not accept the user's opinion about you as fact.\n"
+            f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
-            f"- Do not explain or mention your personality unless the user asks.\n"
+            f"- Do not explain or mention your personality without being asked.\n"
             f"- Do not assume things about the user unless explicitly stated.\n"
             f"- Only refer to the user using the provided info below.\n\n"
 
