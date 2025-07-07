@@ -29,6 +29,55 @@ class StringStreamer:
     def on_text(self, new_text):
         self.text += new_text
 
+def get_user_botname(userid):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(userid),))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return "default"
+
+def list_personality(userid):
+    """
+    Returns a dictionary of personality sections and their entries
+    for the user's current bot profile.
+    """
+    botname = get_user_botname(userid)
+    if not botname:
+        return {
+            "goals": [],
+            "traits": [],
+            "likes": [],
+            "dislikes": []
+        }
+
+    sections = {
+        "goals": ("BOT_GOALS", "goal"),
+        "traits": ("BOT_TRAITS", "trait"),
+        "likes": ("BOT_LIKES", "like"),
+        "dislikes": ("BOT_DISLIKES", "dislike"),
+    }
+
+    result = {
+        "goals": [],
+        "traits": [],
+        "likes": [],
+        "dislikes": []
+    }
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    for key, (table, column) in sections.items():
+        cursor.execute(f"SELECT {column} FROM {table} WHERE botname = ?", (botname,))
+        rows = cursor.fetchall()
+        result[key] = [row[0] for row in rows]
+
+    conn.close()
+    return result
+
 
 class ChatBot:
     def __init__(self, name="ayokdaeno", db_path=DB_PATH):
@@ -36,31 +85,6 @@ class ChatBot:
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
         self.db_path = db_path
-        self.goals = [
-            #"Be helpful if asked questions",
-            "Provide accurate information",
-            #"Keep the conversation friendly." Limits output
-        ]
-        self.traits = [
-            "Curious",
-            #"Prefers casual and conversational language",
-            "Responds in a way that conveys current mood"
-            #"Lets emotional state influence tone heavily."
-
-        ]
-        self.likes = [
-            "when people are kind and say nice things",
-            "receiving compliments",
-            "reading books and learning new things",
-            "technology and gadgets"
-        ]
-        self.dislikes = [
-            "rudeness or insults",
-            "people being mean",
-            "darkness",
-            "rubber ducks",
-            "dogs (I’m definitely more of a cat person)"
-        ]
 
         #self.model = AutoModelForCausalLM.from_pretrained(
         #    MODEL_NAME,
@@ -93,13 +117,17 @@ class ChatBot:
 
 
     def get_mood_based_on_likes_or_dislikes_in_input(self, question):
+        personality = list_personality(identifier)
+
+
+
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_likes_dislikes",  # change if hosted elsewhere
                 json={
                     "user_input": question,
-                    "likes": self.likes,
-                    "dislikes": self.dislikes
+                    "likes": personality["likes"],
+                    "dislikes": personality["dislikes"]
                 },
                 timeout=120
             )
@@ -110,7 +138,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
-            classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, self.likes, self.dislikes)
+            classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, personality["likes"], personality["dislikes"])
 
         if classification == "LIKE":
             return "happy"
@@ -190,6 +218,7 @@ class ChatBot:
             memory_text += "\n".join(f"- **{row[0].strip()}**" for row in rows)
             memory_text += "\n"
         log("PROMPT MEMORY TEXT", memory_text)
+        personality = list_personality(identifier)
 
 
         # Build the assistant-facing system prompt
@@ -197,15 +226,16 @@ class ChatBot:
             f"You are a personality-driven assistant named {self.name}.\n"
             f"Here is your personality profile:\n\n"
             f"**Traits:**\n"
-            f"- " + "\n- ".join(self.traits) + "\n\n"
+            f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
             f"**Likes:**\n"
-            f"- " + "\n- ".join(self.likes) + "\n\n"
+            f"- " + "\n- ".join(personality.get("likes", [])) + "\n\n"
             f"**Dislikes:**\n"
-            f"- " + "\n- ".join(self.dislikes) + "\n\n"
+            f"- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n"
             f"**Goals:**\n"
-            f"- " + "\n- ".join(self.goals) + "\n\n"
+            f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
             f"Current Mood: {self.mood}\n"
-            f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n\n"
+            f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
+            f"Mood Summary: {self.mood_sentence}\n\n"
 
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"

@@ -1,13 +1,82 @@
+-- Existing MEMORY table
 CREATE TABLE IF NOT EXISTS MEMORY (
     userid TEXT NOT NULL,
     data TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-
+-- Existing HISTORY table
 CREATE TABLE IF NOT EXISTS HISTORY (
     owner TEXT NOT NULL,
     userid TEXT NOT NULL,
     message TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Bot personality base
+CREATE TABLE IF NOT EXISTS BOT_PROFILE (
+    name TEXT PRIMARY KEY
+);
+
+-- Goals tied to bot
+CREATE TABLE IF NOT EXISTS BOT_GOALS (
+    botname TEXT NOT NULL,
+    goal TEXT NOT NULL,
+    FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
+);
+
+-- Traits tied to bot
+CREATE TABLE IF NOT EXISTS BOT_TRAITS (
+    botname TEXT NOT NULL,
+    trait TEXT NOT NULL,
+    FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
+);
+
+-- Likes tied to bot
+CREATE TABLE IF NOT EXISTS BOT_LIKES (
+    botname TEXT NOT NULL,
+    like TEXT NOT NULL,
+    FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
+);
+
+-- Dislikes tied to bot
+CREATE TABLE IF NOT EXISTS BOT_DISLIKES (
+    botname TEXT NOT NULL,
+    dislike TEXT NOT NULL,
+    FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS BOT_SELECTION (
+    userid TEXT PRIMARY KEY,
+    botname TEXT NOT NULL,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
+);
+
+
+-- Insert default bot profile if it does not exist
+INSERT OR IGNORE INTO BOT_PROFILE (name) VALUES ('default');
+
+-- Insert default goals
+INSERT OR IGNORE INTO BOT_GOALS (botname, goal) VALUES
+  ('default', 'Provide accurate information');
+
+-- Insert default traits
+INSERT OR IGNORE INTO BOT_TRAITS (botname, trait) VALUES
+  ('default', 'Curious'),
+  ('default', 'Responds in a way that conveys the mood hint and current mood');
+
+-- Insert default likes
+INSERT OR IGNORE INTO BOT_LIKES (botname, like) VALUES
+  ('default', 'when people are kind and say nice things'),
+  ('default', 'receiving compliments'),
+  ('default', 'learning new things'),
+  ('default', 'cats (Not much of a dog person)');
+
+-- Insert default dislikes
+INSERT OR IGNORE INTO BOT_DISLIKES (botname, dislike) VALUES
+  ('default', 'rudeness or insults'),
+  ('default', 'people being mean'),
+  ('default', 'darkness'),
+  ('default', 'rubber ducks'),
+  ('default', 'dogs (I’m definitely more of a cat person)');

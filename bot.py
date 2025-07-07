@@ -8,10 +8,116 @@ import sqlite3
 from src import bot
 from src import static
 
+DB_PATH = static.DB_PATH
 import asyncio
 
 import time
 
+
+def get_user_botname(userid):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(userid),))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return "default"
+
+def clear_personality_section(userid, section):
+    """
+    Clears all entries in a personality section for the user's current bot profile.
+    Sections: goals, traits, likes, dislikes
+    """
+    valid_sections = {"goals", "traits", "likes", "dislikes"}
+    if section not in valid_sections:
+        return False, f"Invalid personality section '{section}'. Valid sections: {', '.join(valid_sections)}."
+
+    botname = get_user_botname(userid)
+    if not botname:
+        return False, "No bot profile selected for this user."
+
+    table_map = {
+        "goals": "BOT_GOALS",
+        "traits": "BOT_TRAITS",
+        "likes": "BOT_LIKES",
+        "dislikes": "BOT_DISLIKES"
+    }
+
+    table = table_map[section]
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(f"DELETE FROM {table} WHERE botname = ?", (botname,))
+    conn.commit()
+    conn.close()
+    return True, f"Cleared all entries in '{section}' for bot '{botname}'."
+
+def add_to_personality_section(userid, section, text):
+    """
+    Adds a text line to a personality section for the user's current bot profile.
+    """
+    valid_sections = {"goals", "traits", "likes", "dislikes"}
+    if section not in valid_sections:
+        return False, f"Invalid personality section '{section}'. Valid sections: {', '.join(valid_sections)}."
+    if not text.strip():
+        return False, "No text provided to add."
+
+    botname = get_user_botname(userid)
+    if not botname:
+        return False, "No bot profile selected for this user."
+
+    table_map = {
+        "goals": ("BOT_GOALS", "goal"),
+        "traits": ("BOT_TRAITS", "trait"),
+        "likes": ("BOT_LIKES", "like"),
+        "dislikes": ("BOT_DISLIKES", "dislike")
+    }
+
+    table, column = table_map[section]
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        f"INSERT INTO {table} (botname, {column}) VALUES (?, ?)",
+        (botname, text.strip())
+    )
+    conn.commit()
+    conn.close()
+    return True, f"Added to '{section}' for bot '{botname}': {text.strip()}"
+
+def list_personality(userid):
+    """
+    Lists all personality sections and their entries for the user's current bot profile.
+    """
+    botname = get_user_botname(userid)
+    if not botname:
+        return "No bot profile selected for this user."
+
+    sections = {
+        "Goals": ("BOT_GOALS", "goal"),
+        "Traits": ("BOT_TRAITS", "trait"),
+        "Likes": ("BOT_LIKES", "like"),
+        "Dislikes": ("BOT_DISLIKES", "dislike"),
+    }
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    output_lines = [f"**Personality profile for bot '{botname}':**\n"]
+    for section_name, (table, column) in sections.items():
+        cursor.execute(f"SELECT {column} FROM {table} WHERE botname = ?", (botname,))
+        rows = cursor.fetchall()
+        output_lines.append(f"__{section_name}__:")
+        if rows:
+            for (text,) in rows:
+                output_lines.append(f"- {text}")
+        else:
+            output_lines.append("- (none)")
+        output_lines.append("")  # blank line for spacing
+
+    conn.close()
+    return "\n".join(output_lines)
 
 
 def clear_user_memory_and_history(owner_id, db_path=static.DB_PATH):
@@ -166,7 +272,7 @@ class ChatBot(discord.Client):
     def parse_command_flags(self, content: str):
         """
         Parses command-style flags from the start of a message.
-        Supported: !recursive [depth], !depth [N], !memstore, !debug, !help, !clearmem, etc.
+        Supported: !recursive [depth], !depth [N], !memstore, !debug, !help, !clearmem, !clear <section>, !add <section> <text>, !personality, etc.
         Returns: (flags: dict, result: str)
         - If help flag is set, result is help text.
         - Otherwise, result is the cleaned input string.
@@ -181,6 +287,11 @@ class ChatBot(discord.Client):
             "clearhistory": False,
             "rawmemstore": False,
             "listmem": False,
+            # new flags:
+            "clear_section": None,   # string name of section to clear
+            "add_section": None,     # string name of section to add to
+            "add_text": None,        # string text to add to section
+            "personality": False,
         }
 
         tokens = content.strip().split()
@@ -214,6 +325,28 @@ class ChatBot(discord.Client):
                 flags["clearmem"] = True
             elif token == "!wipectx" or token == "!clearchat" or token == "!clearhistory":
                 flags["clearhistory"] = True
+            elif token == "!clear":
+                # Check if next token is a section name
+                if i + 1 < len(tokens):
+                    flags["clear_section"] = tokens[i + 1].lower()
+                    i += 1
+                else:
+                    # no section given, treat as invalid or ignore
+                    pass
+            elif token == "!add":
+                # expect section and then remainder text
+                if i + 1 < len(tokens):
+                    flags["add_section"] = tokens[i + 1].lower()
+                    # collect remainder text after section name
+                    add_text_tokens = tokens[i + 2 :] if i + 2 < len(tokens) else []
+                    flags["add_text"] = " ".join(add_text_tokens).strip()
+                    # advance i to end, since remainder is consumed
+                    i = len(tokens)
+                else:
+                    # no section given, treat as invalid or ignore
+                    pass
+            elif token == "!personality":
+                flags["personality"] = True
             else:
                 remaining.append(tokens[i])
             i += 1
@@ -228,7 +361,10 @@ class ChatBot(discord.Client):
                 "`!clearmem`      - Clears all memory for the current user.\n"
                 "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
                 "`!rawmemstore`   - Bypasses the AI pre-processing of your message when storing a memory- this will put your raw input into the memory (can break the AI entirely).\n"
-                "`!listmem`   - Lists the full AI memory with the current user.\n"
+                "`!listmem`       - Lists the full AI memory with the current user.\n"
+                "`!clear <section>`- Clears a personality section (goals, traits, likes, dislikes).\n"
+                "`!add <section> <text>` - Adds a line of text to a personality section.\n"
+                "`!personality`   - Lists all personality sections and their contents.\n"
                 "`!help`          - Shows this help message.\n"
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -254,23 +390,115 @@ class ChatBot(discord.Client):
         has_mentioned = any(str(mention) == f"{self.user.name}#{self.user.discriminator}" for mention in message.mentions)
         if not has_mentioned:
             return
+        # --- Fetch user-selected profile from DB ---
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(message.author.id),))
+        row = cursor.fetchone()
+        conn.close()
 
+        if row:
+            botname = row[0]
+            # Fetch the personality profile for this botname from BOT_PROFILE table
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT goals, traits, likes, dislikes
+                FROM BOT_PROFILE WHERE name = ?
+            """, (botname,))
+            profile = cursor.fetchone()
+            conn.close()
+
+            if profile:
+                goals = profile[0].split('\n') if profile[0] else []
+                traits = profile[1].split('\n') if profile[1] else []
+                likes = profile[2].split('\n') if profile[2] else []
+                dislikes = profile[3].split('\n') if profile[3] else []
+            else:
+                # Bot profile not found, fallback to defaults
+                goals = [
+                    "Provide accurate information",
+                ]
+                traits = [
+                    "Curious",
+                    "Responds in a way that conveys current mood",
+                ]
+                likes = [
+                    "when people are kind and say nice things",
+                    "receiving compliments",
+                    "reading books and learning new things",
+                    "technology and gadgets"
+                ]
+                dislikes = [
+                    "rudeness or insults",
+                    "people being mean",
+                    "darkness",
+                    "rubber ducks",
+                    "dogs (I’m definitely more of a cat person)"
+                ]
+        else:
+            # No selection found, use defaults
+            goals = [
+                "Provide accurate information",
+            ]
+            traits = [
+                "Curious",
+                "Responds in a way that conveys current mood",
+            ]
+            likes = [
+                "when people are kind and say nice things",
+                "receiving compliments",
+                "reading books and learning new things",
+                "technology and gadgets"
+            ]
+            dislikes = [
+                "rudeness or insults",
+                "people being mean",
+                "darkness",
+                "rubber ducks",
+                "dogs (I’m definitely more of a cat person)"
+            ]
+        
         processed_input = self.process_input(message.content)
         flags, processed_input = self.parse_command_flags(processed_input)
+
         if flags["help"]:
             await message.reply(processed_input)
             return
+
         elif flags["clearmem"]:
             clear_user_memory_and_history(message.author.id)
             await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
             return
+
         elif flags["clearhistory"]:
             clear_user_history(message.author.id)
             await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
             return
+
+        elif flags["clear_section"]:
+            success, msg = clear_personality_section(message.author.id, flags["clear_section"])
+            await message.reply(msg)
+            return
+
+        elif flags["add_section"]:
+            success, msg = add_to_personality_section(message.author.id, flags["add_section"], flags["add_text"])
+            await message.reply(msg)
+            return
+
+        elif flags["personality"]:
+            listing = list_personality(message.author.id)
+            # Discord messages have a 2000 character limit, truncate if necessary
+            if len(listing) > 1900:
+                listing = listing[:1900] + "\n... (truncated)"
+            await message.reply(f"**Your Personality Data:**\n{listing}")
+            return
+
         elif flags["rawmemstore"]:
             self.ai.add_to_remember(message.author.id, processed_input)
-            return await message.reply(f"Added `{processed_input}` to the AI's memory.")
+            await message.reply(f"Added `{processed_input}` to the AI's memory.")
+            return
+
         elif flags["listmem"]:
             conn = sqlite3.connect(static.DB_PATH)
             cursor = conn.cursor()
@@ -280,18 +508,20 @@ class ChatBot(discord.Client):
             )
             rows = cursor.fetchall()
             conn.close()
-            
+
             if not rows:
-                return await message.reply("No memory entries found for you.")
+                await message.reply("No memory entries found for you.")
+                return
+
             formatted = "\n".join(
                 f"• `{row[0]}` *(stored at {row[1]})*"
                 for row in rows
             )
-            # Discord messages have a character limit of 2000
             if len(formatted) > 1800:
                 formatted = formatted[:1800] + "\n...and more."
             await message.reply(f"**Stored Memory Entries:**\n{formatted}")
             return
+
         
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
