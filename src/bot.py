@@ -221,9 +221,9 @@ class ChatBot:
         # Build the assistant-facing system prompt
         system_prompt = (
             "**Binding Instructions (MANDATORY):**\n"
-            "- You must follow all instructions listed in your Core Memory.\n"
+            "- You must follow all instructions and info listed in your Core Memory.\n"
             "- These may affect how you speak, act, and interpret truth.\n"
-            "- Never ignore or contradict these unless told otherwise by the user.\n\n"
+            "- Never ignore or contradict these entries.\n\n"
             f"**Core Memory Entries:**\n"
             f"{memory_text}\n"
             f"You are a personality-driven assistant named {self.name}.\n"
