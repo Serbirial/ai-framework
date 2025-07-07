@@ -171,6 +171,7 @@ class ChatBot:
 
         # Get interpreted to_remember facts for the user
         interpreted_facts = classify.interpret_to_remember(self.db_path, username, self.model)
+        log("PROMPT BUILDING INTERPRETED MEMORY", interpreted_facts)
         memory_text = ""
         if context:
             memory_text += f"\n## Relevant Chat History / Context\n"
