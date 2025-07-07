@@ -289,7 +289,7 @@ class ChatBot:
             max_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            repeat_penalty=1.2,  # >1 discourages repeats
+            repeat_penalty=1.1,  # >1 discourages repeats
 
             stream=True
         ):
@@ -477,7 +477,7 @@ class ChatBot:
                 category = classify.classify_user_input(self.model, tokenizer, user_input)
         else:
             category = category_override
-        custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
+        custom_stops = [f"<|{username}|>", f"<|{identifier}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops)  # NO tokenizer argument
         
         
