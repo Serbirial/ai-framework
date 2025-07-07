@@ -268,13 +268,13 @@ class RecursiveThinker:
 
 
         final_answer = self.bot._straightforward_generate(
-            final_prompt,
             max_new_tokens=400, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,
             stop_criteria=stop_criteria,
-            prompt=final_prompt
+            prompt=final_prompt,
+            _prompt_for_cut=final_prompt
         ).strip()
         log("DEBUG: RECURSIVE GENERATION",final_answer)
         final_tokens_used = tokenizer.count_tokens(final_prompt)
