@@ -107,14 +107,17 @@ class ChatBot(discord.Client):
     def parse_command_flags(self, content: str):
         """
         Parses command-style flags from the start of a message.
-        Supported: !recursive [depth], !depth [N], !memstore, !debug, etc.
-        Returns: (flags: dict, clean_user_input: str)
+        Supported: !recursive [depth], !depth [N], !memstore, !debug, !help, etc.
+        Returns: (flags: dict, result: str)
+        - If help flag is set, result is help text.
+        - Otherwise, result is the cleaned input string.
         """
         flags = {
             "recursive": False,
-            "depth": 3,  # default recursion depth
+            "depth": 3,
             "memstore": False,
             "debug": False,
+            "help": False,
         }
 
         tokens = content.strip().split()
@@ -124,7 +127,10 @@ class ChatBot(discord.Client):
         while i < len(tokens):
             token = tokens[i].lower()
 
-            if token == "!recursive":
+            if token == "!help":
+                flags["help"] = True
+                break  # stop parsing further flags
+            elif token == "!recursive":
                 flags["recursive"] = True
                 if i + 1 < len(tokens) and tokens[i + 1].isdigit():
                     flags["depth"] = int(tokens[i + 1])
@@ -140,6 +146,18 @@ class ChatBot(discord.Client):
             else:
                 remaining.append(tokens[i])
             i += 1
+
+        if flags["help"]:
+            help_text = (
+                "**Available Command Flags:**\n"
+                "`!recursive [N]` - Forces the bot to use recursive reasoning (default depth = 3, or use a number).\n"
+                "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
+                "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
+                "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
+                "`!help`          - Shows this help message.\n"
+                "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!"
+            )
+            return flags, help_text
 
         clean_input = " ".join(remaining)
         return flags, clean_input
@@ -163,6 +181,9 @@ class ChatBot(discord.Client):
 
         processed_input = self.process_input(message.content)
         flags, user_msg = self.parse_command_flags(processed_input)
+        if flags["help"]:
+            await message.reply(user_msg)
+            return
 
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
