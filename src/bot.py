@@ -245,8 +245,8 @@ class ChatBot:
 
             f"Mood Summary: {self.mood_sentence}\n\n"
             f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation, with your mood and traits subtly influencing your tone.\n"
-            f"- You must follow and obey all binding instructions. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
+            f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation.\n"
+            f"- You must follow and obey all binding instructions and everything in the core memory. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
             #f"- Respond naturally in a chatroom-like style.\n"
 
             f"**Rules:**\n"
