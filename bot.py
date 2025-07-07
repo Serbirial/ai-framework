@@ -391,7 +391,7 @@ class ChatBot(discord.Client):
         if not has_mentioned:
             return
         # --- Fetch user-selected profile from DB ---
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(message.author.id),))
         row = cursor.fetchone()
@@ -400,7 +400,7 @@ class ChatBot(discord.Client):
         if row:
             botname = row[0]
             # Fetch the personality profile for this botname from BOT_PROFILE table
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT goals, traits, likes, dislikes
