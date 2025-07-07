@@ -308,6 +308,7 @@ class ChatBot:
             response_raw = output_text[prompt_index + len(_prompt_for_cut):]
         else:
             response_raw = output_text
+        log("RAW OUTPUT BASE", response_raw)
         return response_raw
 
 
