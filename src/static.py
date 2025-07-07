@@ -57,6 +57,31 @@ class StopOnSpeakerChange:
 
         return False
 
+class DummyTokenizer:
+    eos_token_id = 0
+    eos_token = ""
+
+    def encode(self, text):
+        # Just split on whitespace, approx tokens
+        return text.split()
+
+    def decode(self, tokens, skip_special_tokens=True):
+        if isinstance(tokens, list):
+            return " ".join(tokens)
+        return str(tokens)
+
+    def __call__(self, text, return_tensors=None, padding=None):
+        tokens = self.encode(text)
+        # Return dummy tensor-like object to avoid breaking code
+        class DummyTensor:
+            def to(self, device):
+                return self
+            def __len__(self):
+                return len(tokens)
+        return {"input_ids": DummyTensor(), "attention_mask": DummyTensor()}
+
+    def count_tokens(self, text):
+        return len(self.encode(text))
 
 
 class ChatContext:

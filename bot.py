@@ -105,8 +105,9 @@ class ChatBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
+        tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
-            context = self.chat_contexts[message.author.id] = static.ChatContext(bot.tokenizer, 2048, 800)
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 2048, 800)
             history = context.get_context_text()
         elif message.author.id in self.chat_contexts:
             context = self.chat_contexts[message.author.id]

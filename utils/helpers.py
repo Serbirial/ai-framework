@@ -14,7 +14,7 @@ def pick_ctx_size(available_mb: int, model_size_mb: int) -> int:
     return tokens - (tokens % 64)  # round down to nearest multiple of 64
 
 
-class DummyTokenizer:
+class DummyTokenizer: # TODO: remove and use static.dummytokenizer
     eos_token_id = 0
     eos_token = ""
 
@@ -76,3 +76,4 @@ def trim_context_to_fit(base_prompt, context_lines, max_ctx, reserved_for_output
         total_context_tokens += line_tokens
 
     return "\n".join(trimmed_context)
+
