@@ -10,7 +10,7 @@ import asyncio
 
 import time
 
-async def generate_and_stream(self, message, processed_input, processed_context):
+async def generate_and_stream(self, message, processed_input, history):
     streammsg = await message.reply("Generating...")
 
     streamer = object()
@@ -23,7 +23,7 @@ async def generate_and_stream(self, message, processed_input, processed_context)
             username=message.author.display_name,
             user_input=processed_input,
             identifier=message.guild.id,
-            context=processed_context,
+            context=history,
             debug=False,
             streamer=streamer
         )
@@ -62,7 +62,8 @@ class ChatBot(discord.Client):
         #super().__init__(intents=intents)
         self.ai = AiChatBot(memory_file="memory.json")
         self.is_generating = False
-        self.generate_lock = asyncio.Lock() 
+        self.generate_lock = asyncio.Lock()
+        self.chat_contexts = {} #userID:Object
 
 
     async def get_chat_context(self, message):
@@ -104,22 +105,26 @@ class ChatBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
+        if message.author.id not in self.chat_contexts:
+            context = self.chat_contexts[message.author.id] = static.ChatContext(bot.tokenizer, 2048, 800)
+            history = context.get_context_text()
+        elif message.author.id in self.chat_contexts:
+            context = self.chat_contexts[message.author.id]
+            history = context.get_context_text()
+            
 
         has_mentioned = any(str(mention) == f"{self.user.name}#{self.user.discriminator}" for mention in message.mentions)
         if not has_mentioned:
             return
 
         processed_input = self.process_input(message.content)
-        context = await self.get_chat_context(message)
-        processed_context = "\n".join(self.process_context(context))
-
         try:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
                     try:
                         if processed_input.lower().startswith("!stream"):
                             processed_input = processed_input.split("!stream", 1)[1]
-                            await generate_and_stream(self, message, processed_input, processed_context)
+                            await generate_and_stream(self, message, processed_input, history)
                         else:
                             response = await asyncio.to_thread(
                                 self.ai.chat,
@@ -127,7 +132,7 @@ class ChatBot(discord.Client):
                                 user_input=processed_input,
                                 temperature=0.8,
                                 identifier=message.guild.id,
-                                context=processed_context,
+                                context=history,
                                 debug=False,
                                 streamer=None
                             )
