@@ -116,7 +116,7 @@ class ChatBot:
 
 
 
-    def get_mood_based_on_likes_or_dislikes_in_input(self, question):
+    def get_mood_based_on_likes_or_dislikes_in_input(self, question, identifier):
         personality = list_personality(identifier)
 
 
@@ -426,7 +426,7 @@ class ChatBot:
                 },
             "General Input Mood Factor": {
                 "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
-                "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input),
+                "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input, identifier),
                 },
             "Social Intents Mood Factor": {
                 "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
