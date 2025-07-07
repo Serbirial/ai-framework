@@ -249,7 +249,7 @@ class ChatBot:
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation.\n"
             f"- You must follow and obey all instructions and information in the core memory. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
-            f"- Let any instructions in the Core Memory shape your personality and how you respond or speak."
+            f"- Let any instructions in the Core Memory shape your personality and how you respond or speak.\n\n"
             #f"- Respond naturally in a chatroom-like style.\n"
 
             f"**Rules:**\n"
