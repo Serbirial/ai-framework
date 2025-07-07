@@ -22,7 +22,8 @@ def build_memory_confirmation_prompt(interpreted_data):
     )
     return prompt
 
-def interpret_memory_instruction(user_input, model, max_new_tokens=60):
+
+def interpret_memory_instruction(user_input, model, max_new_tokens=150):
     """
     Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
     """
@@ -34,17 +35,7 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
         "All outputs must start exactly with 'User wants'.\n"
         "Assume anything might be worth remembering, even if informal or emotional.\n"
         "Avoid disclaimers. Keep output under 35 words.\n"
-        "Only infer what is reasonably implied.\n"
-        "Only output the memory instruction sentence. Do NOT repeat the User Input or add extra explanation.\n\n"
-        "Examples:\n"
-        "User Input: \"From now on, I’m the queen of space.\"\n"
-        "Output: User wants to be referred to as the queen of space.\n\n"
-        "User Input: \"Bananas are the only fruit that matter.\"\n"
-        "Output: User wants you to treat bananas as their favorite fruit.\n\n"
-        "User Input: \"Don't forget I hate Mondays.\"\n"
-        "Output: User wants you to remember they hate Mondays.\n\n"
-        "User Input: \"If I ever seem upset, just send me a cat gif.\"\n"
-        "Output: User wants you to send them a cat gif if they seem upset.\n\n"
+        "Only infer what is reasonably implied.\n\n"
         f"User Input: \"{user_input}\"\n"
         "Output:"
     )
@@ -62,7 +53,6 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
 
     log("INTERPRET MEMORY", interpreted)
     return interpreted
-
 
 def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
     """
