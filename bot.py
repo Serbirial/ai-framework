@@ -61,6 +61,9 @@ class ChatBot(discord.Client):
         super().__init__()
         #super().__init__(intents=intents)
         self.ai = AiChatBot(memory_file="memory.json")
+        self.is_generating = False
+        self.generate_lock = asyncio.Lock() 
+
 
     async def get_chat_context(self, message):
         channel: discord.TextChannel = self.get_channel(message.channel.id)
@@ -99,30 +102,19 @@ class ChatBot(discord.Client):
 
 
     async def on_message(self, message: discord.Message) -> None:
-        """ Handle new messages sent to the server channels this bot is watching """
-
         if message.author == self.user:
-            # Skip any messages sent by ourselves so that we don't get stuck in any loops
             return
 
-        # Check to see if bot has been mentioned
-        has_mentioned = False
-        for mention in message.mentions:
-            if str(mention) == self.user.name+"#"+self.user.discriminator:
-                has_mentioned = True
-                break
+        has_mentioned = any(str(mention) == f"{self.user.name}#{self.user.discriminator}" for mention in message.mentions)
+        if not has_mentioned:
+            return
 
-        # Only respond randomly (or when mentioned), not to every message
-        #if random.random() > float(self.response_chance) and has_mentioned == False:
-        #    return
-        if has_mentioned:
-            processed_input = self.process_input(message.content)
+        processed_input = self.process_input(message.content)
+        context = await self.get_chat_context(message)
+        processed_context = "\n".join(self.process_context(context))
 
-            context = await self.get_chat_context(message)
-
-            processed_context = "\n".join(self.process_context(context))
-
-            try:
+        try:
+            async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
                     try:
                         if processed_input.lower().startswith("!stream"):
@@ -143,8 +135,11 @@ class ChatBot(discord.Client):
 
                     except aiohttp.client_exceptions.ClientConnectorError:
                         pass
-            except discord.errors.Forbidden:
-                pass
+        except discord.errors.Forbidden:
+            pass
+        except Exception as e:
+            print("Unhandled error in on_message:", e)
+
     def process_input(self, message):
         """ Process the input message """
         if type(message) == type(list):
