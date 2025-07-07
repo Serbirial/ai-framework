@@ -684,6 +684,8 @@ class ChatBot(discord.Client):
         elif flags["category"] and flags["category"] not in valid_categories:
             valid_list = ", ".join(valid_categories)
             return await message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
+        if int(flags["depth"]) > 75:
+            return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
