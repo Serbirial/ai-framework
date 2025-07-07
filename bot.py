@@ -143,8 +143,6 @@ class ChatBot(discord.Client):
 
                 except aiohttp.client_exceptions.ClientConnectorError:
                     pass
-    except discord.errors.Forbidden:
-        pass
 
     def process_input(self, message):
         """ Process the input message """
