@@ -155,7 +155,7 @@ class ChatBot(discord.Client):
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
                 "`!help`          - Shows this help message.\n"
-                "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!"
+                "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
             return flags, help_text
 
