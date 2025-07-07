@@ -201,7 +201,7 @@ class RecursiveThinker:
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name)
             response = self.bot._straightforward_generate(
                 full,
-                max_new_tokens=120,
+                max_new_tokens=400,
                 temperature=0.8,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -268,7 +268,7 @@ class RecursiveThinker:
 
 
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=400, # NOTE: double for debugging, should be 400
+            max_new_tokens=350, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,
