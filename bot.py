@@ -137,6 +137,9 @@ class ChatBot(discord.Client):
                                 streamer=None
                             )
                             await message.reply(response)
+                            context.add_line(processed_input)
+                            context.add_line(response)
+
 
                     except aiohttp.client_exceptions.ClientConnectorError:
                         pass
