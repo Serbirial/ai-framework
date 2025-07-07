@@ -371,6 +371,8 @@ class ChatBot(discord.Client):
             "add_text": None,        # string text to add to section
             "personality": False,
             "newpersonality": None,
+            "category": None,  # New: override input category (e.g., "factual_question")
+
         }
 
         tokens = content.strip().split()
@@ -419,7 +421,10 @@ class ChatBot(discord.Client):
                     i += 1
                 else:
                     flags["newpersonality"] = True
-
+            elif token == "!category":
+                if i + 1 < len(tokens):
+                    flags["category"] = tokens[i + 1].lower()
+                    i += 1
             elif token == "!add":
                 # expect section and then remainder text
                 if i + 1 < len(tokens):
@@ -449,6 +454,7 @@ class ChatBot(discord.Client):
                 "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
                 "`!rawmemstore`   - Bypasses the AI pre-processing of your message when storing a memory- this will put your raw input into the memory (can break the AI entirely).\n"
                 "`!listmem`       - Lists the full AI memory with the current user.\n"
+                "`!category`       - Overrides the internal input category classification, must be a valid category.\n"
                 "`!clear <section>`- Clears a personality section (goals, traits, likes, dislikes).\n"
                 "`!add <section> <text>` - Adds a line of text to a personality section.\n"
                 "`!personality`   - Lists all personality sections and their contents.\n"
@@ -661,8 +667,17 @@ class ChatBot(discord.Client):
                 formatted = formatted[:1800] + "\n...and more."
             await message.reply(f"**Stored Memory Entries:**\n{formatted}")
             return
-
-        
+        valid_categories = [
+            "greeting",
+            "goodbye",
+            "factual_question",
+            "preference_query",
+            "statement",
+            "instruction_memory",
+            "other"]
+        if flags["category"] and flags["category"] not in valid_categories:
+            valid_list = ", ".join(valid_categories)
+            return message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
@@ -675,6 +690,7 @@ class ChatBot(discord.Client):
                             identifier=message.author.id,
                             context=history,
                             force_recursive=True,
+                            category_override=flags["category"],
                             recursive_depth=flags["depth"],
                             debug=flags["debug"]
                         )
@@ -701,6 +717,7 @@ class ChatBot(discord.Client):
                             user_input=processed_input,
                             temperature=0.8,
                             identifier=message.author.id,
+                            category_override=flags["category"],
                             context=history,
                             debug=flags["debug"]
                         )
