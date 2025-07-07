@@ -170,16 +170,27 @@ class ChatBot:
     def build_prompt(self, username, user_input, identifier, usertone, context):
 
         # Get interpreted to_remember facts for the user
-        interpreted_facts = classify.interpret_to_remember(self.db_path, identifier, self.model)
-        log("PROMPT BUILDING INTERPRETED MEMORY", interpreted_facts)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+            (identifier,)
+        )
+        rows = cursor.fetchall()
+        conn.close()        
+        
         memory_text = ""
         if context:
             memory_text += f"\n## Relevant Chat History / Context\n"
             memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
             memory_text += context
-        if interpreted_facts:
-            memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
-            memory_text += f"{interpreted_facts.strip()}\n"
+
+        if rows:
+            memory_text += "\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
+            memory_text += "\n".join(f"- **{row[0].strip()}**" for row in rows)
+            memory_text += "\n"
+        log("PROMPT MEMORY TEXT", memory_text)
+
 
         # Build the assistant-facing system prompt
         system_prompt = (
