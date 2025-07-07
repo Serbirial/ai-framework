@@ -238,7 +238,7 @@ class RecursiveThinker:
                     f"- Reflect on your progress so far.\n"
                     f"- Ask: Are your steps clearly building toward answering the question?\n"
                     f"- Briefly summarize what you've accomplished and what remains.\n"
-                    f"- Then continue with the next step, staying focused.\n\n"
+                    f"- Then continue with the next step, staying focused.\n"
                     f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
                 )
                 response = self.bot._straightforward_generate(
