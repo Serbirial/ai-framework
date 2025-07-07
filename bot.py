@@ -128,7 +128,7 @@ class ChatBot(discord.Client):
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            new_max_tokens=500,
+                            max_new_tokens=500,
                             username=message.author.display_name,
                             user_input=processed_input,
                             temperature=0.8,
