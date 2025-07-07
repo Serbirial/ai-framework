@@ -276,7 +276,7 @@ class ChatBot(discord.Client):
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT data, timestamp FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-                (message.author.id),
+                (message.author.id,)
             )
             rows = cursor.fetchall()
             conn.close()
