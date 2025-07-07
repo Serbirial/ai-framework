@@ -26,12 +26,13 @@ SCHEMA_PATH = "config/schema.sql"
 
 
 class StopOnSpeakerChange:
-    def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20):
+    def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
         self.bot_name = bot_name
         self.min_lines = min_lines
         self.max_lines = max_lines
         self.line_count = 0
         self.buffer = ""
+        self.custom_stops = custom_stops or []  # List of strings that trigger stop
 
     def __call__(self, new_text_chunk):
         self.buffer += new_text_chunk
@@ -44,11 +45,19 @@ class StopOnSpeakerChange:
 
         assistant_lines = []
         for line in lines:
+            # Check if line matches any custom stop tokens
+            for stop_token in self.custom_stops:
+                if stop_token in line:
+                    # Only stop if minimum lines reached
+                    if self.line_count >= self.min_lines:
+                        return True
+
             if line == "<|assistant|>":
                 continue
             elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>"):
                 if self.line_count >= self.min_lines:
                     return True
+
             if line and not line.startswith("<|"):
                 assistant_lines.append(line)
 
@@ -58,6 +67,7 @@ class StopOnSpeakerChange:
             return True
 
         return False
+
 
 class DummyTokenizer:
     eos_token_id = 0

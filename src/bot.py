@@ -469,7 +469,9 @@ class ChatBot:
                 category = classify.classify_user_input(self.model, tokenizer, user_input)
         else:
             category = category_override
+        custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
+        
         
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
