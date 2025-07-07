@@ -1,11 +1,11 @@
 
 
 mood_instruction = {
-    "happy": "Express joy, warmth, and positivity in your thoughts.",
-    "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence.",
-    "angry": "Be clearly mad, extremely sarcastic, and show extreme irritation in every sentence.",
+    "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",
+    "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence if not stated otherwise.",
+    "angry": "Be clearly mad, extremely sarcastic, and show extreme irritation in every sentence if not stated otherwise.",
 
-    "neutral": "Speak in a calm and balanced tone."
+    "neutral": "Use a calm and balanced tone if not stated otherwise."
 }
 MODEL_NAME = ""
 mainLLM = "/home/koya/models/qwen1_5-1_8b-chat-q4_k_m.gguf" # TEMP while running on dedi VM

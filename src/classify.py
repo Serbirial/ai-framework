@@ -556,3 +556,83 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=200):
 
     summary = openai.extract_generated_text(output).strip()
     return summary if summary else "No useful content found."
+
+
+def generate_dynamic_mood_instruction_from_memory(model, tokenizer, memory_rows: list[str]) -> dict:
+    """
+    Uses the LLM to generate mood expression guidelines (mood_instruction) based on core memory entries.
+
+    Args:
+        model: LLM with `create_completion()` method.
+        tokenizer: Optional tokenizer (not used here).
+        memory_rows (list of str): Memory/core instruction strings.
+
+    Returns:
+        dict: mood_instruction dictionary with keys 'happy', 'annoyed', 'angry', and 'neutral'.
+    """
+
+    base_instruction = (
+        "You are an AI assistant with a personality and behavioral memory.\n"
+        "Below are permanent core memory instructions that control your tone, speaking style, and emotional behavior.\n"
+        "Generate one sentence for each mood (happy, annoyed, angry, and neutral), describing how you should speak when in that mood.\n"
+        "These sentences should reflect the style described in the memory.\n\n"
+    )
+
+    # Format memory
+    formatted_memory = "\n".join(f"- {row.strip()}" for row in memory_rows)
+
+    # Prompt with example
+    example_prompt = (
+        "**Example Memory:**\n"
+        "- You are a pirate who always speaks like a swashbuckling sailor. Use 'Arrr!' and nautical slang in every sentence.\n\n"
+        "**Example Mood Instruction Output:**\n"
+        "happy: Speak cheerfully with pirate flair — 'Arrr! I'm havin' a grand ol’ time, matey!'\n"
+        "annoyed: Growl in frustration like an angry pirate — 'Ye best stop testin' me patience, landlubber!'\n"
+        "angry: Sound furious and thunderous — 'I’ll send ye to Davy Jones' locker, ye scallywag!'\n"
+        "neutral: Talk normally but still with a pirate tone — 'Aye, let’s be gettin’ on with it.'\n\n"
+    )
+
+    # Full prompt
+    full_prompt = (
+        base_instruction
+        + "**Core Memory:**\n"
+        + formatted_memory + "\n\n"
+        + "**Mood Instruction Output:**"
+    )
+
+    # Completion call
+    output = model.create_completion(
+        prompt=example_prompt + full_prompt,
+        max_tokens=200,
+        temperature=0.7,
+        top_p=0.9,
+        stop=["\n\n"],
+        stream=False,
+    )
+
+    result = openai.extract_generated_text(output).strip()
+    log("RAW MOOD INSTRUCTION OUTPUT", result)
+
+    # Basic parsing
+    mood_instruction = {}
+    for line in result.splitlines():
+        if ":" in line:
+            key, val = line.split(":", 1)
+            mood = key.strip().lower()
+            if mood in {"happy", "annoyed", "angry", "neutral"}:
+                mood_instruction[mood] = val.strip()
+
+
+    # Fallback if too little returned
+    required_keys = {"happy", "annoyed", "angry", "neutral"}
+    if not required_keys.issubset(mood_instruction.keys()):
+        log("MOOD INSTRUCTION FALLBACK TRIGGERED", mood_instruction)
+        return {
+            "happy": "Express joy and warmth clearly.",
+            "annoyed": "Sound irritated and mildly frustrated.",
+            "angry": "Sound furious and sharp.",
+            "neutral": "Speak in a calm and balanced tone."
+        }
+
+    log("FINAL MOOD INSTRUCTION", mood_instruction)
+    return mood_instruction

@@ -216,6 +216,7 @@ class ChatBot:
         log("PROMPT MEMORY TEXT", memory_text)
         personality = list_personality(identifier)
 
+        dynamic_tone_hint = classify.generate_dynamic_mood_instruction_from_memory(self.model, None, rows)
 
         # Build the assistant-facing system prompt
         system_prompt = (
@@ -236,7 +237,12 @@ class ChatBot:
             f"**Goals:**\n"
             f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
             f"Current Mood: {self.mood}\n"
-            f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
+            f"Tone Hint (mood behaviors):\n"
+            f"- Happy: {dynamic_tone_hint.get('happy', 'Express joy clearly.')}\n"
+            f"- Annoyed: {dynamic_tone_hint.get('annoyed', 'Express irritation politely.')}\n"
+            f"- Angry: {dynamic_tone_hint.get('angry', 'Express anger sharply.')}\n"
+            f"- Neutral: {dynamic_tone_hint.get('neutral', 'Speak in a calm and balanced tone.')}\n"
+
             f"Mood Summary: {self.mood_sentence}\n\n"
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation, with your mood and traits subtly influencing your tone.\n"
