@@ -23,7 +23,7 @@ def build_memory_confirmation_prompt(interpreted_data):
     return prompt
 
 
-def interpret_memory_instruction(user_input, model, max_new_tokens=150):
+def interpret_memory_instruction(user_input, model, max_new_tokens=60):
     """
     Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
     """
@@ -32,8 +32,10 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=150):
         "<|system|>\n"
         "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
         "Your job is to turn the user's message into a clear, short sentence starting with 'User wants...'.\n"
-        "Assume that anything the user says might be worth remembering, even if it's weird, emotional, or informal.\n"
-        "Be creative if needed to extract meaning. Avoid disclaimers. Only use a single sentence.\n\n"
+        "All outputs must start exactly with 'User wants'.\n"
+        "Assume anything might be worth remembering, even if informal or emotional.\n"
+        "Avoid disclaimers. Keep output under 35 words.\n"
+        "Only infer what is reasonably implied.\n\n"
         "Examples:\n"
         "User Input: \"From now on, I’m the queen of space.\"\n"
         "Output: User wants to be referred to as the queen of space.\n\n"
