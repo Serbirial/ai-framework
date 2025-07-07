@@ -12,6 +12,22 @@ import asyncio
 
 import time
 
+
+
+def clear_user_memory_and_history(owner_id, db_path=static.DB_PATH):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        # Clear MEMORY for this user
+        cursor.execute("DELETE FROM MEMORY WHERE userid = ?", (owner_id,))
+        
+        # Clear HISTORY where owner = this user
+        cursor.execute("DELETE FROM HISTORY WHERE owner = ?", (owner_id,))
+        
+        conn.commit()
+    finally:
+        conn.close()
+
 def get_db_stats(db_path=static.DB_PATH):
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -139,7 +155,7 @@ class ChatBot(discord.Client):
     def parse_command_flags(self, content: str):
         """
         Parses command-style flags from the start of a message.
-        Supported: !recursive [depth], !depth [N], !memstore, !debug, !help, etc.
+        Supported: !recursive [depth], !depth [N], !memstore, !debug, !help, !clearmem, etc.
         Returns: (flags: dict, result: str)
         - If help flag is set, result is help text.
         - Otherwise, result is the cleaned input string.
@@ -150,6 +166,7 @@ class ChatBot(discord.Client):
             "memstore": False,
             "debug": False,
             "help": False,
+            "clearmem": False,
         }
 
         tokens = content.strip().split()
@@ -175,6 +192,8 @@ class ChatBot(discord.Client):
                 flags["memstore"] = True
             elif token == "!debug":
                 flags["debug"] = True
+            elif token == "!clearmem":
+                flags["clearmem"] = True
             else:
                 remaining.append(tokens[i])
             i += 1
@@ -186,6 +205,7 @@ class ChatBot(discord.Client):
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
+                "`!clearmem`      - Clears all memory for the current user.\n"
                 "`!help`          - Shows this help message.\n"
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -193,6 +213,7 @@ class ChatBot(discord.Client):
 
         clean_input = " ".join(remaining)
         return flags, clean_input
+
 
 
     async def on_message(self, message: discord.Message) -> None:
@@ -216,7 +237,10 @@ class ChatBot(discord.Client):
         if flags["help"]:
             await message.reply(user_msg)
             return
-
+        elif flags["clearmem"]:
+            clear_user_memory_and_history(message.author.id, self.db_path)
+            await message.reply("Your memory and history have been cleared.")
+            return
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
@@ -225,7 +249,7 @@ class ChatBot(discord.Client):
                             self.ai.chat,
                             username=message.author.display_name,
                             user_input=user_msg,
-                            identifier=message.guild.id,
+                            identifier=message.author.id,
                             context=history,
                             force_recursive=True,
                             recursive_depth=flags["depth"],
@@ -236,7 +260,7 @@ class ChatBot(discord.Client):
                             self.ai.chat,
                             username=message.author.display_name,
                             user_input=user_msg,
-                            identifier=message.guild.id,
+                            identifier=message.author.id,
                             context=history,
                             category_override="instruction_memory",
                             debug=flags["debug"]
@@ -248,7 +272,7 @@ class ChatBot(discord.Client):
                             username=message.author.display_name,
                             user_input=processed_input,
                             temperature=0.8,
-                            identifier=message.guild.id,
+                            identifier=message.author.id,
                             context=history,
                             debug=flags["debug"]
                         )
