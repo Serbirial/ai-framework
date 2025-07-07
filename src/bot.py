@@ -234,7 +234,7 @@ class ChatBot:
             f"<|user|>\n{user_input}\n"
             f"<|assistant|>\n"
         )
-
+        log("FULL BASE PROMPT", prompt)
         return prompt
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
