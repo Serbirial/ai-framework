@@ -540,9 +540,9 @@ class ChatBot:
                 if debug:
                     final = f"{thoughts}\n{final}"
                 log("DEBUG: FINAL THOUGHTS",final)
+                response = final
             else:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
-
         else: #fallback 
             if not force_recursive:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
