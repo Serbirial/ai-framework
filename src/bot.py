@@ -182,7 +182,7 @@ class ChatBot:
         memory_text = ""
         if context:
                 memory_text += f"\n## Relevant Chat History / Context\n"
-                memory_text += f"- This contains previous chat history with the user.\n"
+                memory_text += f"- This contains previous chat history with the user (or users, if its an open-ended chat).\n"
                 memory_text += context
         if interpreted_facts:
                 memory_text += f"\n## User-Stored Facts (These are things the user explicitly told you to remember. Treat them as binding instructions.):\n"
