@@ -299,9 +299,10 @@ class ChatBot:
         return output_text.strip()
 
 
-    def log_interaction_to_history(self, identifier, username, user_input, botname, response):
+    def log_interaction_to_history(self, owner, username, user_input, botname, response):
         """
         Logs the user message and bot response into the HISTORY table with timestamps.
+        Uses `username` as the userid in the database.
         """
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -310,16 +311,18 @@ class ChatBot:
 
         cursor.executemany(
             """
-            INSERT INTO HISTORY (userid, message, timestamp) VALUES (?, ?, ?)
+            INSERT INTO HISTORY (owner, userid, message, timestamp) VALUES (?, ?, ?, ?)
             """,
             [
-                (identifier, f"[{timestamp}] {username}: {user_input}", timestamp),
-                (identifier, f"[{timestamp}] {botname}: {response}", timestamp),
+                (owner, username, f"[{timestamp}] {username}: {user_input}", timestamp),
+                (owner, username, f"[{timestamp}] {botname}: {response}", timestamp),
             ]
         )
 
         conn.commit()
         conn.close()
+
+
         
     def get_recent_history(self, identifier, limit=10):
         """
@@ -511,7 +514,7 @@ class ChatBot:
                     final = f"{thoughts}\n{final}"
                 log("DEBUG: FINAL THOUGHTS",final)
 
-        self.log_interaction_to_history(identifier, username, user_input, self.name, response)
+        self.log_interaction_to_history(owner=identifier, username=username, user_input=user_input, botname=self.name, response=response)
         self.mood = "neutral" # FIXME change to per user mood, and have a mood history
         self.mood_sentence = "I feel neutral and composed at the moment."
         return response

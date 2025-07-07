@@ -22,7 +22,6 @@ def build_memory_confirmation_prompt(interpreted_data):
     )
     return prompt
 
-
 def interpret_memory_instruction(user_input, model, max_new_tokens=60):
     """
     Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
@@ -35,7 +34,8 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
         "All outputs must start exactly with 'User wants'.\n"
         "Assume anything might be worth remembering, even if informal or emotional.\n"
         "Avoid disclaimers. Keep output under 35 words.\n"
-        "Only infer what is reasonably implied.\n\n"
+        "Only infer what is reasonably implied.\n"
+        "Only output the memory instruction sentence. Do NOT repeat the User Input or add extra explanation.\n\n"
         "Examples:\n"
         "User Input: \"From now on, I’m the queen of space.\"\n"
         "Output: User wants to be referred to as the queen of space.\n\n"
@@ -49,7 +49,6 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
         "Output:"
     )
 
-
     response = model.create_completion(
         prompt=prompt,
         max_tokens=max_new_tokens,
@@ -59,13 +58,10 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=60):
 
     interpreted = openai.extract_generated_text(response).strip()
 
-    if not interpreted.lower().startswith("user wants"):
-        print(f"[WARN] Interpreted memory does not begin with 'User wants': {interpreted}")
-        return None
-
 
     log("INTERPRET MEMORY", interpreted)
     return interpreted
+
 
 def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
     """
