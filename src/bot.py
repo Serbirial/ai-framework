@@ -170,7 +170,7 @@ class ChatBot:
     def build_prompt(self, username, user_input, identifier, usertone, context):
 
         # Get interpreted to_remember facts for the user
-        interpreted_facts = classify.interpret_to_remember(self, identifier)
+        interpreted_facts = classify.interpret_to_remember(self.db_path, username, self.model)
         memory_text = ""
         if context:
             memory_text += f"\n## Relevant Chat History / Context\n"
