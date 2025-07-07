@@ -219,7 +219,7 @@ class ChatBot:
             f"Intent: {usertone['intent']}\n"
             f"Tone: {usertone['tone']}\n"
             f"Attitude: {usertone['attitude']}\n\n"
-            f"Reply to this message: {user_input.strip()}\n"
+            f"Message: {user_input.strip()}\n"
         )
 
         
