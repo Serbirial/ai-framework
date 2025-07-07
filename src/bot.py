@@ -214,7 +214,7 @@ class ChatBot:
             memory_text += "\n"
 
         if context:
-            memory_text += f"\n## Relevant Chat History / Context\n"
+            memory_text += f"\n## Chat History\n"
             memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
             memory_text += context
 
@@ -239,7 +239,6 @@ class ChatBot:
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
 
-            f"IMPORTANT: You MUST obey all instructions in 'User-Stored Facts'. These define how you behave.\n\n"
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"
             f"- You must follow and obey all user-stored facts as binding instructions unless the user changes or revokes them. These facts may affect how you speak, behave, or respond, or interpret information.\n\n"
