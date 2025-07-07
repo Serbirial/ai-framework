@@ -216,9 +216,9 @@ class ChatBot:
 
             f"**Interpretation of the User's Message:**\n"
             f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
-            f"- **Intent**: {usertone['intent']}\n"
-            f"- **Tone**: {usertone['tone']}\n"
-            f"- **Attitude**: {usertone['attitude']}\n"
+            f"- **Social Intent**: {usertone['intent']}\n"
+            f"- **Message Tone**: {usertone['tone']}\n"
+            f"- **Message Attitude**: {usertone['attitude']}\n"
             f"- **Username**: {username.replace('<', '').replace('>', '')}\n"
         )
 
@@ -309,7 +309,7 @@ class ChatBot:
 
 
 
-    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None):
+    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=recursive_depth, category_override=None):
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_social_tone",
@@ -367,21 +367,23 @@ class ChatBot:
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
-
-        try:
-            response = requests.post(
-                f"http://{WORKER_IP_PORT}/classify_user_input",
-                json={"user_input": user_input},
-                timeout=120
-            )
-            if response.status_code == 200:
-                category = response.json().get("category", "other")
-            else:
-                category = "other"
-        except Exception as e:
-            print(f"[WARN] API Down, cant offload to sub models.")
-            print("[WARN] Falling back to local model.")
-            category = classify.classify_user_input(self.model, tokenizer, user_input)
+        if category_override == None:
+            try:
+                response = requests.post(
+                    f"http://{WORKER_IP_PORT}/classify_user_input",
+                    json={"user_input": user_input},
+                    timeout=120
+                )
+                if response.status_code == 200:
+                    category = response.json().get("category", "other")
+                else:
+                    category = "other"
+            except Exception as e:
+                print(f"[WARN] API Down, cant offload to sub models.")
+                print("[WARN] Falling back to local model.")
+                category = classify.classify_user_input(self.model, tokenizer, user_input)
+        else:
+            category = category_override
         stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
         
         response = "This is the default blank response, you should never see this."
@@ -420,9 +422,9 @@ class ChatBot:
             if not context:
                 short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
             else:
-                short_context = "\n".join(context)
+                short_context = context
 
-            thinker = RecursiveThinker(self, depth=4, streamer=streamer)
+            thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
@@ -439,8 +441,8 @@ class ChatBot:
             if not context:
                 short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
             else:
-                short_context = "\n".join(context)
-            thinker = RecursiveThinker(self, depth=5, streamer=streamer)
+                short_context = context
+            thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -457,8 +459,8 @@ class ChatBot:
             if not context:
                 short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
             else:
-                short_context = "\n".join(context)
-            thinker = RecursiveThinker(self, depth=3, streamer=streamer)
+                short_context = context
+            thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -466,7 +468,25 @@ class ChatBot:
                 final = f"{thoughts}\n{final}"
             log("DEBUG: FINAL THOUGHTS",final)
         else: #fallback 
-            response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            if not force_recursive:
+                response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+            elif force_recursive:
+                # Use recursive thinker for more elaborate introspection
+                # Extract just memory lines for context
+                memory = self.memory.get(identifier, {}).get("memory", [])
+
+                # Join last 5 pairs (user + bot responses) into context
+                if not context:
+                    short_context = "\n".join(memory[-10:])  # last 10 lines = 5 pairs of messages
+                else:
+                    short_context = context
+                thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
+
+                thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+                log("DEBUG: GENERATED THOUGHTS",thoughts)
+                if debug:
+                    final = f"{thoughts}\n{final}"
+                log("DEBUG: FINAL THOUGHTS",final)
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
