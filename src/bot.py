@@ -256,7 +256,6 @@ class ChatBot:
             response_raw = output_text[prompt_index + len(_prompt_for_cut):]
         else:
             response_raw = output_text
-        print(f"\n\n{response_raw}\n")
         return response_raw
 
 

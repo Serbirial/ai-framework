@@ -33,7 +33,7 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=150):
         "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
         "Your job is to turn the user's message into a clear, short sentence starting with 'User wants...'.\n"
         "Assume that anything the user says might be worth remembering, even if it's weird, emotional, or informal.\n"
-        "Be creative if needed to extract meaning. Avoid disclaimers.\n\n"
+        "Be creative if needed to extract meaning. Avoid disclaimers. Only use a single sentence.\n\n"
         "Examples:\n"
         "User Input: \"From now on, I’m the queen of space.\"\n"
         "Output: User wants to be referred to as the queen of space.\n\n"
