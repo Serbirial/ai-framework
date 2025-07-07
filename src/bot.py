@@ -246,7 +246,8 @@ class ChatBot:
             f"Mood Summary: {self.mood_sentence}\n\n"
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant. Respond as you would in a regular one-on-one conversation.\n"
-            f"- You must follow and obey all binding instructions and everything in the core memory. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
+            f"- You must follow and obey all instructions and information in the core memory. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
+            f"- Let any instructions in the Core Memory shape your personality and how you respond or speak."
             #f"- Respond naturally in a chatroom-like style.\n"
 
             f"**Rules:**\n"
@@ -255,7 +256,7 @@ class ChatBot:
             f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality without being asked.\n"
-            f"- Do not assume things about the user, acquire any user information in the binding instructions / core memory and history.\n"
+            f"- Do not assume things about the user, acquire any user information in the core memory and history.\n"
 
             f"**Interpretation of the User's Message:**\n"
             f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
