@@ -12,6 +12,35 @@ DB_PATH = static.DB_PATH
 import asyncio
 
 import time
+def parse_personality_data(data_str):
+    """
+    Parses personality data string into dict of lists:
+    Example input:
+        traits: Curious, Playful; likes: cats, compliments; dislikes: dogs, rudeness; goals: Help users, Learn new things
+    Returns:
+        {
+          "traits": ["Curious", "Playful"],
+          "likes": ["cats", "compliments"],
+          "dislikes": ["dogs", "rudeness"],
+          "goals": ["Help users", "Learn new things"]
+        }
+    """
+    sections = ["traits", "likes", "dislikes", "goals"]
+    parsed = {sec: [] for sec in sections}
+    
+    # Split on semicolons or newlines
+    parts = [p.strip() for p in data_str.split(";") if p.strip()]
+    
+    for part in parts:
+        # split into section_name and items by colon
+        if ":" in part:
+            sec_name, items_str = part.split(":", 1)
+            sec_name = sec_name.strip().lower()
+            if sec_name in sections:
+                items = [item.strip() for item in items_str.split(",") if item.strip()]
+                parsed[sec_name].extend(items)
+    return parsed
+
 
 def initialize_default_personality():
     conn = sqlite3.connect(DB_PATH)
@@ -458,6 +487,11 @@ class ChatBot(discord.Client):
                     i += 1
                 else:
                     flags["category"] = -1
+            elif token == "!newpersonality":
+                # Grab everything *after* the flag as the personality data string
+                personality_data = " ".join(tokens[i + 1 :]) if i + 1 < len(tokens) else ""
+                flags["newpersonality"] = personality_data if personality_data else True
+                break  # consume all remaining tokens as one argument
 
             elif token == "!add":
                 # expect section and then remainder text
@@ -484,6 +518,22 @@ class ChatBot(discord.Client):
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
+                "`!newpersonality [data]` - Creates a new personality and sets it as your active personality."
+                """
+```
+- If you provide no data, a new personality with a unique name will be created by copying the "default" personality.
+- If you provide data, it should be a single string containing your personality traits, likes, dislikes, and goals.
+- The data string format uses semicolons to separate sections, and colons to assign section names.
+- Each section's values are comma-separated.
+
+Example format:
+
+traits: Curious, Playful; likes: cats, compliments; dislikes: rudeness, dogs; goals: Help users, Learn new things
+
+This will create a personality with those traits, likes, dislikes, and goals.
+Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; dislikes: bugs, rude users; goals: Assist effectively, Keep learning
+```
+                """
                 "`!clearmem`      - Clears all memory for the current user.\n"
                 "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
                 "`!rawmemstore`   - Bypasses the AI pre-processing of your message when storing a memory- this will put your raw input into the memory (can break the AI entirely).\n"
@@ -541,73 +591,60 @@ class ChatBot(discord.Client):
             return
 
         if flags["newpersonality"]:
-
             username = message.author.name.lower().replace(" ", "_")
-
-            # If flag is True (no name), generate a new one
+            
+            # If flag is True (no data), generate a name and copy default personality (existing logic)
             if flags["newpersonality"] is True:
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
-
-                base_name = f"{username}_personality"
-                number = 1
-                while True:
-                    candidate = f"{base_name}{number}"
-                    cursor.execute("SELECT 1 FROM BOT_PROFILE WHERE name = ?", (candidate,))
-                    if not cursor.fetchone():
-                        new_name = candidate
-                        break
-                    number += 1
-                conn.close()
+                # (existing logic to generate a new name)
+                # ...
+                personality_data = None
             else:
-                # User provided a name string
-                new_name = flags["newpersonality"].strip()
+                # User supplied personality data string
+                personality_data = flags["newpersonality"].strip()
 
-            if not new_name:
-                await message.reply("Failed to generate a valid personality name.")
-                return
-            # Block creating a personality named "default"
-            if new_name.lower() == "default":
-                await message.reply("You cannot create or modify the 'default' personality.")
-                return
-
-
-            # Check if already exists
+            # Determine new personality name - you can generate or require user to specify as part of data or separate
+            # For example, require "name: <name>" in personality_data or generate like before
+            # For simplicity, here we generate name automatically:
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
-            cursor.execute("SELECT 1 FROM BOT_PROFILE WHERE name = ?", (new_name,))
-            if cursor.fetchone():
-                conn.close()
-                await message.reply(f"A personality named '{new_name}' already exists. Please choose a different name.")
-                return
-
+            base_name = f"{username}_personality"
+            number = 1
+            while True:
+                candidate = f"{base_name}{number}"
+                cursor.execute("SELECT 1 FROM BOT_PROFILE WHERE name = ?", (candidate,))
+                if not cursor.fetchone():
+                    new_name = candidate
+                    break
+                number += 1
+            
+            # Create new personality
             try:
                 cursor.execute("INSERT INTO BOT_PROFILE (name) VALUES (?)", (new_name,))
 
-                cursor.execute("""
-                    INSERT INTO BOT_GOALS (botname, goal)
-                    SELECT ?, goal FROM BOT_GOALS WHERE botname = 'default'
-                """, (new_name,))
-
-                cursor.execute("""
-                    INSERT INTO BOT_TRAITS (botname, trait)
-                    SELECT ?, trait FROM BOT_TRAITS WHERE botname = 'default'
-                """, (new_name,))
-
-                cursor.execute("""
-                    INSERT INTO BOT_LIKES (botname, like)
-                    SELECT ?, like FROM BOT_LIKES WHERE botname = 'default'
-                """, (new_name,))
-
-                cursor.execute("""
-                    INSERT INTO BOT_DISLIKES (botname, dislike)
-                    SELECT ?, dislike FROM BOT_DISLIKES WHERE botname = 'default'
-                """, (new_name,))
+                # If no custom data provided, copy from default
+                if not personality_data:
+                    for table in ["BOT_GOALS", "BOT_TRAITS", "BOT_LIKES", "BOT_DISLIKES"]:
+                        cursor.execute(f"""
+                            INSERT INTO {table} (botname, {table[:-1].lower()})
+                            SELECT ?, {table[:-1].lower()} FROM {table} WHERE botname = 'default'
+                        """, (new_name,))
+                else:
+                    # Parse supplied personality data string
+                    parsed = parse_personality_data(personality_data)
+                    # Insert parsed data into tables
+                    for goal in parsed["goals"]:
+                        cursor.execute("INSERT INTO BOT_GOALS (botname, goal) VALUES (?, ?)", (new_name, goal))
+                    for trait in parsed["traits"]:
+                        cursor.execute("INSERT INTO BOT_TRAITS (botname, trait) VALUES (?, ?)", (new_name, trait))
+                    for like in parsed["likes"]:
+                        cursor.execute("INSERT INTO BOT_LIKES (botname, like) VALUES (?, ?)", (new_name, like))
+                    for dislike in parsed["dislikes"]:
+                        cursor.execute("INSERT INTO BOT_DISLIKES (botname, dislike) VALUES (?, ?)", (new_name, dislike))
 
                 conn.commit()
                 conn.close()
 
-                # Set this personality as active for the user
+                # Set active personality for user
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
                 cursor.execute("""
