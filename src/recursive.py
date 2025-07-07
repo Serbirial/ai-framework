@@ -276,7 +276,7 @@ class RecursiveThinker:
             prompt=final_prompt,
             _prompt_for_cut=final_prompt
         ).strip()
-        log("DEBUG: RECURSIVE GENERATION",final_answer)
+        log("\n\nDEBUG: RECURSIVE GENERATION",final_answer)
         final_tokens_used = tokenizer.count_tokens(final_prompt)
 
         log(f"DEBUG: FINAL TOKEN SIZE:", final_tokens_used)
