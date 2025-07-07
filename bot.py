@@ -119,35 +119,32 @@ class ChatBot(discord.Client):
             return
 
         processed_input = self.process_input(message.content)
-        try:
-            async with self.generate_lock:  # ✅ Thread-safe section
-                async with message.channel.typing():
-                    try:
-                        if processed_input.lower().startswith("!stream"):
-                            processed_input = processed_input.split("!stream", 1)[1]
-                            await generate_and_stream(self, message, processed_input, history)
-                        else:
-                            response = await asyncio.to_thread(
-                                self.ai.chat,
-                                username=message.author.display_name,
-                                user_input=processed_input,
-                                temperature=0.8,
-                                identifier=message.guild.id,
-                                context=history,
-                                debug=False,
-                                streamer=None
-                            )
-                            await message.reply(response)
-                            context.add_line(processed_input)
-                            context.add_line(response)
+        async with self.generate_lock:  # ✅ Thread-safe section
+            async with message.channel.typing():
+                try:
+                    if processed_input.lower().startswith("!stream"):
+                        processed_input = processed_input.split("!stream", 1)[1]
+                        await generate_and_stream(self, message, processed_input, history)
+                    else:
+                        response = await asyncio.to_thread(
+                            self.ai.chat,
+                            username=message.author.display_name,
+                            user_input=processed_input,
+                            temperature=0.8,
+                            identifier=message.guild.id,
+                            context=history,
+                            debug=False,
+                            streamer=None
+                        )
+                        await message.reply(response)
+                        context.add_line(processed_input)
+                        context.add_line(response)
 
 
-                    except aiohttp.client_exceptions.ClientConnectorError:
-                        pass
-        except discord.errors.Forbidden:
-            pass
-        except Exception as e:
-            print("Unhandled error in on_message:", e)
+                except aiohttp.client_exceptions.ClientConnectorError:
+                    pass
+    except discord.errors.Forbidden:
+        pass
 
     def process_input(self, message):
         """ Process the input message """
