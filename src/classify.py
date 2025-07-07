@@ -3,7 +3,7 @@ import json
 import time
 from utils import openai
 import re
-from .static import DB_FILE
+from .static import DB_PATH
 from log import log
 import sqlite3
 
