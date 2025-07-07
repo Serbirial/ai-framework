@@ -207,18 +207,13 @@ class ChatBot:
         rows = cursor.fetchall()
         conn.close()        
         
+        history_text = ""
+
         memory_text = ""
         if rows:
-            memory_text += "\n## **Binding User Instructions (User-Stored Memory):**\n"
-            memory_text += "**You MUST obey these instructions at all times unless the user explicitly states otherwise.**\n\n"
+            memory_text += "\n## **Binding Instructions / Assistant Core Memory:**\n"
             memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
             memory_text += "\n"
-
-
-        if context:
-            memory_text += f"\n## Chat History\n"
-            memory_text += f"- This contains previous chat history with the user (or users, if it's an open-ended chat).\n"
-            memory_text += context
 
         log("PROMPT MEMORY TEXT", memory_text)
         personality = list_personality(identifier)
@@ -227,13 +222,11 @@ class ChatBot:
         # Build the assistant-facing system prompt
         system_prompt = (
             f"{memory_text}\n"
-            f"**Binding User Instructions (User-Stored Memory):**\n"
-            f"**These instructions are MANDATORY and must be FOLLOWED EXACTLY unless the user explicitly states otherwise.**\n"
-            f"- You CANNOT ignore, alter, or contradict these instructions under any circumstance.\n"
-            f"- Always check these instructions before answering.\n"
-            f"- Your personality and behavior must always align with these instructions.\n"
-            f"- If there is a conflict between your personality and these instructions, PRIORITIZE the instructions.\n\n"
-            
+            f"**Binding Instructions / Assistant Core Memory guidance:**\n"
+            f"**These instructions are MANDATORY and must be FOLLOWED EXACTLY.**\n"
+            f"- These are entries from your core memory, which the user can add to.\n"
+            f"- These entries can be either instructions you have to follow at all times and abide by, or information you need to accept as true.\n"
+
             f"You are a personality-driven assistant named {self.name}.\n"
             f"Here is your personality profile:\n\n"
             f"**Traits:**\n"
@@ -248,19 +241,17 @@ class ChatBot:
             f"Mood Hint: {mood_instruction.get(self.mood, 'Speak in a calm and balanced tone.')}\n"
             f"Mood Summary: {self.mood_sentence}\n\n"
             f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a chatroom, with your mood and traits subtly influencing your tone.\n"
-            f"- You must follow and obey all user-stored memory as binding instructions the user explicitly states otherwise. These instructions may affect how you speak, behave, or respond, or interpret information.\n\n"
-            f"- Respond naturally in a chatroom-like style. Let your personality, traits, and current mood subtly influence your replies at all times.\n"
+            f"- You are '{self.name}', a personality-driven assistant. Respond naturally as you would in a regular one-on-one conversation, with your mood and traits subtly influencing your tone.\n"
+            f"- You must follow and obey all binding instructions. These instructions may affect how you speak, behave, respond, and interpret or accept information.\n"
+            f"- Respond naturally in a chatroom-like style.\n"
 
             f"**Rules:**\n"
             f"- Always speak in the first person.\n"
-            f"- Never refer to yourself in third person.\n"
-            f"- Do not accept the user's opinion about you as fact.\n"
+            f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
             f"- Respond only as yourself ({self.name}), not as a narrator or user.\n"
             f"- Treat any commentary about you as a prompt for a direct, in-character response.\n"
             f"- Do not explain or mention your personality without being asked.\n"
-            f"- Do not assume things about the user unless explicitly stated.\n"
-            f"- Only refer to the user using the provided info below and in the binding user instructions.\n\n"
+            f"- Do not assume things about the user, acquire any user information in the binding instructions / core memory and history.\n"
 
             f"**Interpretation of the User's Message:**\n"
             f"The following attributes describe the user's intent, tone, attitude, and username, inferred from their message:\n"
@@ -270,11 +261,11 @@ class ChatBot:
             f"- **Username**: {username.replace('<', '').replace('>', '')}\n"
         )
 
-        # Clean user message — nothing but what the user actually said
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n"
+            f"{history_text}" # Nothing but chat history in the user + assistant format 
             f"<|user|>\n{user_input.strip()}\n"
-            f"<|assistant|>\n"
+            f"<|assistant|>"
         )
 
         log("FULL BASE PROMPT", prompt)
