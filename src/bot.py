@@ -426,7 +426,7 @@ class ChatBot:
         
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
-            memory_data = classify.interpret_memory_instruction(self, user_input)
+            memory_data = classify.interpret_memory_instruction(user_input, self.model)
             if memory_data:
                 raw_text = memory_data  # make sure this is a string
                 self.add_to_remember(identifier, raw_text)
