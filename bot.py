@@ -179,6 +179,8 @@ class ChatBot(discord.Client):
             "help": False,
             "clearmem": False,
             "clearhistory": False,
+            "rawmemstore": False,
+            "listmem": False,
         }
 
         tokens = content.strip().split()
@@ -202,6 +204,10 @@ class ChatBot(discord.Client):
                     i += 1
             elif token == "!memstore":
                 flags["memstore"] = True
+            elif token == "!rawmemstore" or token == "!rms":
+                flags["rawmemstore"] = True
+            elif token == "!listmem" or token == "!lm":
+                flags["listmem"] = True
             elif token == "!debug":
                 flags["debug"] = True
             elif token == "!clearmem":
@@ -221,6 +227,8 @@ class ChatBot(discord.Client):
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
                 "`!clearmem`      - Clears all memory for the current user.\n"
                 "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
+                "`!rawmemstore`   - Bypasses the AI pre-processing of your message when storing a memory- this will put your raw input into the memory (can break the AI entirely).\n"
+                "`!listmem`   - Lists the full AI memory with the current user.\n"
                 "`!help`          - Shows this help message.\n"
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -260,6 +268,31 @@ class ChatBot(discord.Client):
             clear_user_history(message.author.id)
             await message.reply(f"The AI's chat history with {message.author.display_name} has been reset.")
             return
+        elif flags["rawmemstore"]:
+            self.ai.add_to_remember(message.author.id, processed_input)
+            return await message.reply(f"Added `{processed_input}` to the AI's memory.")
+        elif flags["listmem"]:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT data, timestamp FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+                (message.author.id),
+            )
+            rows = cursor.fetchall()
+            conn.close()
+            
+            if not rows:
+                return await message.reply("No memory entries found for you.")
+            formatted = "\n".join(
+                f"• `{row[0]}` *(stored at {row[1]})*"
+                for row in rows
+            )
+            # Discord messages have a character limit of 2000
+            if len(formatted) > 1800:
+                formatted = formatted[:1800] + "\n...and more."
+            await message.reply(f"**Stored Memory Entries:**\n{formatted}")
+            return
+        
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 try:
