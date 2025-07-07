@@ -470,7 +470,7 @@ class ChatBot:
         else:
             category = category_override
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
-        stop_criteria = StopOnSpeakerChange(bot_name=self.name)  # NO tokenizer argument
+        stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops)  # NO tokenizer argument
         
         
         response = "This is the default blank response, you should never see this."
