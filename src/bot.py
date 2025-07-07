@@ -536,7 +536,7 @@ class ChatBot:
             else:
                 short_context = context
                 
-            if force_recursive:
+            if force_recursive == True:
                 thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
 
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
@@ -545,7 +545,7 @@ class ChatBot:
                     final = f"{thoughts}\n{final}"
                 log("DEBUG: FINAL THOUGHTS",final)
                 response = final
-            else:
+            elif force_recursive == False:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
         else: #fallback 
             if not force_recursive:
