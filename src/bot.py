@@ -216,7 +216,7 @@ class ChatBot:
         log("PROMPT MEMORY TEXT", memory_text)
         personality = list_personality(identifier)
 
-        dynamic_tone_hint = classify.generate_dynamic_mood_instruction_from_memory(self.model, None, rows)
+        dynamic_tone_hint = classify.generate_dynamic_mood_instruction_from_memory(self.model, None, [row[0] for row in rows])
 
         # Build the assistant-facing system prompt
         system_prompt = (
