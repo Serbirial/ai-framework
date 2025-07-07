@@ -279,7 +279,7 @@ class ChatBot:
             max_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            repeat_penalty=1.1,  # >1 discourages repeats
+            repeat_penalty=1.2,  # >1 discourages repeats
 
             stream=True
         ):
