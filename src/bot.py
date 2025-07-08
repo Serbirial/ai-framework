@@ -19,9 +19,14 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, raw_model, RAW_MODEL
 
-tokenizer = None # FiXME
+if RAW_MODEL:
+    tokenizer, model = raw_model("/home/summers/gpt2/")
+    import raw_classify as replacement
+    classify = replacement
+else:
+    tokenizer = None # FiXME
 
 class StringStreamer:
     def __init__(self):
@@ -100,19 +105,22 @@ class ChatBot:
         #self.model.config.pad_token_id = tokenizer.eos_token_id
         
         # New TinyLlama model init
-        self.model = Llama(
-            model_path=mainLLM,
-            n_ctx=1500,              # TODO use CTX setter 
-            n_threads=4,             # tune to setup
-            use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
-            logits_all=False,
-            verbose=False,
-            use_mmap=True,
-            n_gpu_layers=0,
-            low_vram=True,
-            n_batch=2,
-            numa=False
-        )
+        if not RAW_MODEL:
+            self.model = Llama(
+                model_path=mainLLM,
+                n_ctx=1500,              # TODO use CTX setter 
+                n_threads=4,             # tune to setup
+                use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
+                logits_all=False,
+                verbose=False,
+                use_mmap=True,
+                n_gpu_layers=0,
+                low_vram=True,
+                n_batch=2,
+                numa=False
+            )
+        elif RAW_MODEL:
+            self.model = model
 
 
 
@@ -139,7 +147,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
-            classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, personality["likes"], personality["dislikes"])
+            classification = classify.classify_likes_dislikes_user_input(self.model, question, personality["likes"], personality["dislikes"],tokenizer=tokenizer)
 
         if classification == "LIKE":
             return "happy"
@@ -275,6 +283,18 @@ class ChatBot:
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
 
+        if RAW_MODEL:
+            inputs = tokenizer(prompt, return_tensors="pt")
+
+            outputs = model.generate(
+                **inputs,
+                max_length=128,
+                temperature=0.7,
+                top_k=50,
+                do_sample=True
+            )
+            return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+
         for output in self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
@@ -327,6 +347,17 @@ class ChatBot:
         output_text = ""
 
         # llama_cpp streaming generator call
+        if RAW_MODEL:
+            inputs = tokenizer(prompt, return_tensors="pt")
+
+            outputs = model.generate(
+                **inputs,
+                max_length=128,
+                temperature=0.7,
+                top_k=50,
+                do_sample=True
+            )
+            return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
         for chunk in self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,
@@ -419,7 +450,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
-            usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
+            usertone = classify.classify_social_tone(self.model, user_input, tokenizer=tokenizer)
         moods = {
             "Like/Dislike Mood Factor": { 
                 "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
@@ -450,7 +481,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
-            self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
+            self.mood_sentence = classify.classify_moods_into_sentence(self.model, moods, tokenizer=tokenizer)
         if tiny_mode:
             prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         else:
@@ -472,7 +503,7 @@ class ChatBot:
             except Exception as e:
                 print(f"[WARN] API Down, cant offload to sub models.")
                 print("[WARN] Falling back to local model.")
-                category = classify.classify_user_input(self.model, tokenizer, user_input)
+                category = classify.classify_user_input(self.model, user_input, tokenizer=tokenizer)
         else:
             category = category_override
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]

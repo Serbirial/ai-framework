@@ -1,12 +1,44 @@
 import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import json
-import time
-from utils import openai
-import re
-from .static import DB_PATH, RAW_MODEL
-from log import log
 import sqlite3
+import re
+from log import log
+from .static import tokenizer as TOKENIZER
 
+# Helper: generate text from prompt using HF model + tokenizer
+def generate_text(model, prompt, max_new_tokens=150, temperature=0.7, top_p=1.0, stop_tokens=None, tokenizer=TOKENIZER):
+    input_ids = tokenizer.encode(prompt, return_tensors="pt")
+    input_len = input_ids.shape[1]
+
+    # Generate output ids with stopping tokens support
+    # We generate max_new_tokens tokens beyond input prompt length
+    output_ids = model.generate(
+        input_ids=input_ids,
+        max_length=input_len + max_new_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        do_sample=True if temperature > 0 else False,
+        pad_token_id=tokenizer.eos_token_id,
+    )
+
+    # Decode full output
+    output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
+    # Extract generated part only (after prompt)
+    generated_part = output_text[len(prompt):]
+
+    # Handle stop tokens: truncate at first occurrence
+    if stop_tokens:
+        for stop_token in stop_tokens:
+            index = generated_part.find(stop_token)
+            if index != -1:
+                generated_part = generated_part[:index]
+                break
+
+    return generated_part.strip()
+
+# --- Your functions rewritten below ---
 
 def build_memory_confirmation_prompt(interpreted_data):
     prompt = (
@@ -22,12 +54,7 @@ def build_memory_confirmation_prompt(interpreted_data):
     )
     return prompt
 
-
-def interpret_memory_instruction(user_input, model, max_new_tokens=150):
-    """
-    Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
-    """
-
+def interpret_memory_instruction(user_input, model, max_new_tokens=150, tokenizer=TOKENIZER):
     prompt = (
         "<|system|>\n"
         "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
@@ -40,43 +67,30 @@ def interpret_memory_instruction(user_input, model, max_new_tokens=150):
         "Output:"
     )
 
-    response = model.create_completion(
+    generated = generate_text(
+        model, 
+        tokenizer=TOKENIZER, 
         prompt=prompt,
-        max_tokens=max_new_tokens,
+        max_new_tokens=max_new_tokens,
         temperature=0,
-        stop=["\n"], # Fixes hallucinations and continuations
-        stream=False,
+        stop_tokens=["\n"]
     )
 
-    interpreted = openai.extract_generated_text(response).strip()
+    log("INTERPRET MEMORY", generated)
+    return generated
 
-
-    log("INTERPRET MEMORY", interpreted)
-    return interpreted
-
-def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
-    """
-    Fetch raw memory from the MEMORY table for a user and convert it into
-    a clean, bolded bullet-point list of memory facts.
-    """
-
-    # 1. Fetch raw memory rows from SQLite
+def interpret_to_remember(db_path, userid, model,  max_new_tokens=300, tokenizer=TOKENIZER):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-        (userid,)
-    )
+    cursor.execute("SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC", (userid,))
     rows = cursor.fetchall()
     conn.close()
 
     if not rows:
         return ""
 
-    # 2. Join memory entries into newline-separated block
-    raw_text = "\n".join([row[0] for row in rows])
+    raw_text = "\n".join(row[0] for row in rows)
 
-    # 3. Build the summarization prompt
     prompt = (
         "<|system|>\n"
         "You are an AI assistant. Your task is to read the raw memory instructions provided by the user, "
@@ -90,21 +104,17 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
         "Formatted Memory:\n"
     )
 
-    # 4. Run the model
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=max_new_tokens,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=max_new_tokens,
         temperature=0,
-        stream=False,
+        stop_tokens=None
     )
 
-    output_text = openai.extract_generated_text(output)
+    log("INTERPRETED MEMORY", output)
+    return output
 
-    log("INTERPRETED MEMORY", output_text)
-
-    return output_text
-
-def classify_user_input(model, tokenizer, user_input):
+def classify_user_input(model, user_input, tokenizer=TOKENIZER):
     categories = [
         "greeting",
         "goodbye",
@@ -139,21 +149,16 @@ def classify_user_input(model, tokenizer, user_input):
         f"Input: {user_input.strip()}\nCategory:"
     )
 
-
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=10,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=10,
         temperature=0,
-        top_p=1.0,
-        stop=["\n"],
-        stream=False,
+        stop_tokens=["\n"]
     )
 
     log("RAW CATEGORY OUTPUT", output)
 
-    text = openai.extract_generated_text(output).strip().lower()
-
-    # Strip non-category words (e.g. "category: X")
+    text = output.strip().lower()
     for cat in categories:
         if cat in text:
             log("INPUT CLASSIFICATION", cat)
@@ -162,9 +167,7 @@ def classify_user_input(model, tokenizer, user_input):
     log("INPUT CLASSIFICATION", "other")
     return "other"
 
-
-
-def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
+def classify_likes_dislikes_user_input(model, user_input, likes, dislikes, tokenizer=TOKENIZER):
     likes_str = ", ".join(likes)
     dislikes_str = ", ".join(dislikes)
 
@@ -188,29 +191,23 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
         f"Classification:"
     )
 
-    output_text = ""
-
-    response = model.create_completion(
-        prompt=prompt,
-        max_tokens=10,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=10,
         temperature=0,
-        stream=False,
+        stop_tokens=None
     )
 
-    output_text = openai.extract_generated_text(response)
+    # The model output is expected to be just the classification label
+    classification = output.strip().upper()
 
-
-    classification = output_text[len(prompt):].strip().upper()
-
-    # Basic clean up, just in case
     if classification not in {"LIKE", "DISLIKE", "NEUTRAL"}:
         classification = "NEUTRAL"
 
     log("LIKE CLASSIFICATION", classification)
     return classification
 
-
-def classify_social_tone(model, tokenizer, user_input):
+def classify_social_tone(model, user_input,tokenizer=TOKENIZER):
     prompt = (
         "You are a social tone classifier for a conversation with an AI assistant.\n"
         "Classify the user's tone and attitude in the message.\n"
@@ -264,42 +261,30 @@ def classify_social_tone(model, tokenizer, user_input):
         f"User: \"{user_input}\"\n"
         f"Classification:"
     )
-    output_text = ""
 
-    response = model.create_completion(
-        prompt=prompt,
-        max_tokens=30,
-        temperature=0.0,      # deterministic output FIXME might need bumped a TINY bit
-        top_p=1.0,            # disable nucleus sampling for max focus
-        stop=None,
-        stream=False,
-    )
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=30,
+        temperature=0,
+        stop_tokens=None
+    ).lower()
 
-    output_text = openai.extract_generated_text(response).lower() # ensure keys are all lowercase
-
-    # Optional: extract JSON if response is structured
-    json_start = output_text.find("{")
-    json_end  = output_text.find("}", json_start) + 1
-
+    # Parse JSON from output
     try:
-        import json
-        classification = json.loads(output_text[json_start:json_end])
+        json_start = output.index("{")
+        json_end = output.index("}", json_start) + 1
+        classification = json.loads(output[json_start:json_end])
     except Exception:
         classification = {
-            "intent": "NEUTRAL",
-            "attitude": "NEUTRAL",  
-            "tone": "NEUTRAL"
+            "intent": "neutral",
+            "attitude": "neutral",
+            "tone": "neutral"
         }
 
     log("SOCIAL INTENTS CLASSIFICATION", classification)
     return classification
 
-
-
 def determine_moods_from_social_classification(classification, top_n=3):
-    """
-    Dynamically calculates and returns the top N moods based on user interaction.
-    """
     mood_weights = {
         "happy": 0,
         "annoyed": 0,
@@ -315,7 +300,6 @@ def determine_moods_from_social_classification(classification, top_n=3):
     attitude = classification.get("attitude", "").upper()
     tone = classification.get("tone", "").upper()
 
-    # Intent-based scoring
     if intent == "COMPLIMENT":
         mood_weights["happy"] += 2
         mood_weights["respected"] += 1
@@ -325,7 +309,6 @@ def determine_moods_from_social_classification(classification, top_n=3):
     elif intent == "NEUTRAL":
         mood_weights["neutral"] += 1
 
-    # Attitude-based scoring
     if attitude == "NICE":
         mood_weights["happy"] += 1
         mood_weights["calm"] += 1
@@ -334,7 +317,6 @@ def determine_moods_from_social_classification(classification, top_n=3):
     elif attitude == "NEUTRAL":
         mood_weights["neutral"] += 1
 
-    # Tone-based scoring
     if tone == "POLITE":
         mood_weights["calm"] += 2
         mood_weights["respected"] += 1
@@ -354,35 +336,10 @@ def determine_moods_from_social_classification(classification, top_n=3):
 
     return top_moods
 
-
-
-def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
-    """
-    Converts mood signal dictionary into a single expressive sentence reflecting the AI's current emotional state.
-
-    Args:
-        model: LLM with `create_completion()` method.
-        tokenizer: Optional tokenizer (not used here).
-        moods_dict (dict): {
-            "Like/Dislike Mood Factor": {
-                "prompt": "...",
-                "mood": "neutral" or list of mood tags
-            },
-            ...
-        }
-
-    Returns:
-        str: Mood summary sentence.
-    """
-
-    # Base instruction
+def classify_moods_into_sentence(model,  moods_dict: dict, tokenizer=TOKENIZER):
     prompt = (
         "You are an AI reflecting on your emotional state.\n"
         "Given the mood factors below, write a single expressive sentence that describes your current feelings.\n\n"
-    )
-
-    # Example
-    prompt += (
         "Example:\n"
         "Like/Dislike Mood Factor - This is the mood based on whether your likes or dislikes were mentioned.\n"
         "Mood: pleased\n"
@@ -393,7 +350,6 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
         "Result: I'm feeling amused and pleased, enjoying this friendly interaction.\n\n"
     )
 
-    # Add real mood signals
     for mood_key, data in moods_dict.items():
         moodprompt = data.get("prompt", "")
         mood = data.get("mood", "neutral")
@@ -401,45 +357,26 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
             mood = ", ".join(mood)
         prompt += f"{mood_key} - {moodprompt}\nMood: {mood}\n\n"
 
-    # Final instruction
     prompt += "Result:"
 
-    # Completion call
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=60,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=60,
         temperature=0.5,
         top_p=0.95,
-        stop=["\n"],
-        stream=False,
+        stop_tokens=["\n"]
     )
 
-    # Extract output
-    mood_sentence = openai.extract_generated_text(output)
+    log("RAW MOOD SENTENCE", output)
 
-    log("RAW MOOD SENTENCE", mood_sentence)
+    if not output or len(output.split()) < 3:
+        log("MOOD SENTENCE FALLBACK TRIGGERED", output)
+        output = "I feel neutral and composed at the moment."
 
-    if not mood_sentence or len(mood_sentence.split()) < 3:
-        log("MOOD SENTENCE FALLBACK TRIGGERED", mood_sentence)
-        mood_sentence = "I feel neutral and composed at the moment."
+    log("MOOD SENTENCE", output)
+    return output
 
-    log("MOOD SENTENCE", mood_sentence)
-    return mood_sentence
-
-
-
-def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> bool:
-    """
-    Uses LLaMA to determine whether a given text requires a live web search.
-
-    Args:
-        model: LLaMA model instance (llama_cpp.Llama).
-        input_text (str): Text to evaluate.
-        role (str): "user" or "thought".
-
-    Returns:
-        bool: True if web search is likely needed, False otherwise.
-    """
+def detect_web_search_cue_llama(model, input_text: str, role: str = "user", tokenizer=TOKENIZER) -> bool:
     prompt = (
         "<|system|>\n"
         "You are an intelligent assistant deciding whether the following input requires a live web search.\n"
@@ -457,37 +394,19 @@ def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> b
         "SearchNeeded:"
     )
 
-    output_text = ""
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=10,
-        temperature=0.0,
-        stream=False,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=10,
+        temperature=0,
+        stop_tokens=None
     )
-    output_text += openai.extract_generated_text(output)
 
-    # Remove prompt prefix
-    answer = output_text[len(prompt):].strip().lower()
-
+    answer = output.strip().lower()
     log("WEB SEARCH CUE", answer)
 
-    # Accept any answer that starts with "yes" as True
     return answer.startswith("yes")
 
-def extract_search_query_llama(model, input_text: str, role: str = "user") -> str:
-    """
-    Uses LLaMA to extract and convert a user input or AI thought into
-    a concise search engine query suitable for web searching.
-
-    Args:
-        model: LLaMA model instance.
-        input_text (str): Original text to convert.
-        role (str): One of "user" or "thought".
-
-    Returns:
-        str: Search engine query string extracted from input.
-    """
-
+def extract_search_query_llama(model, input_text: str, role: str = "user", tokenizer=TOKENIZER) -> str:
     prompt = (
         "<|system|>\n"
         "You are an intelligent assistant that extracts the most relevant search query from user input.\n"
@@ -505,37 +424,18 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
         "SearchQuery:"
     )
 
-    output_text = ""
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=30,
-        temperature=0.0,
-        stream=False,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=30,
+        temperature=0,
+        stop_tokens=None
     )
 
-    output_text += openai.extract_generated_text(output)
-
-
-    # Remove prompt prefix, strip whitespace
-    query = output_text[len(prompt):].strip()
-
+    query = output.strip()
     log("EXTRACTED SEARCH QUERY", query)
-
     return query
 
-
-def summarize_raw_scraped_data(model, input_text, max_tokens=200):
-    """
-    Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)
-
-    Args:
-        model: LLaMA or HuggingFace-style model with `create_completion()`.
-        input_text (str): Raw or scraped input text (HTML, article, forum, etc).
-        max_tokens (int): Maximum summary length in tokens.
-
-    Returns:
-        str: Clean summary.
-    """
+def summarize_raw_scraped_data(model, input_text, max_tokens=200, tokenizer=TOKENIZER):
     prompt = (
         "You are an intelligent summarizer.\n"
         "Your job is to read messy, long, or scraped web data and produce a clean, helpful summary.\n"
@@ -546,31 +446,20 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=200):
         "### Summary:\n"
     )
 
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=max_tokens,
+    summary = generate_text(
+        model, tokenizer=tokenizer, prompt=prompt,
+        max_new_tokens=max_tokens,
         temperature=0.5,
         top_p=0.9,
-        stream=False,
+        stop_tokens=None
     )
 
-    summary = openai.extract_generated_text(output).strip()
-    return summary if summary else "No useful content found."
+    summary = summary.strip()
+    if not summary:
+        summary = "No useful content found."
+    return summary
 
-
-def generate_dynamic_mood_instruction_from_memory(model, tokenizer, memory_rows: list[str]) -> dict:
-    """
-    Uses the LLM to generate mood expression guidelines (mood_instruction) based on core memory entries.
-
-    Args:
-        model: LLM with `create_completion()` method.
-        tokenizer: Optional tokenizer (not used here).
-        memory_rows (list of str): Memory/core instruction strings.
-
-    Returns:
-        dict: mood_instruction dictionary with keys 'happy', 'annoyed', 'angry', and 'neutral'.
-    """
-
+def generate_dynamic_mood_instruction_from_memory(model,  memory_rows: list[str], tokenizer=TOKENIZER) -> dict:
     base_instruction = (
         "You are an AI assistant with a personality and behavioral memory.\n"
         "Below are permanent core memory instructions that control your tone, speaking style, and emotional behavior.\n"
@@ -578,10 +467,8 @@ def generate_dynamic_mood_instruction_from_memory(model, tokenizer, memory_rows:
         "These sentences should reflect the style described in the memory.\n\n"
     )
 
-    # Format memory
     formatted_memory = "\n".join(f"- {row.strip()}" for row in memory_rows)
 
-    # Prompt with example
     example_prompt = (
         "**Example Memory:**\n"
         "- You are a pirate who always speaks like a swashbuckling sailor. Use 'Arrr!' and nautical slang in every sentence.\n\n"
@@ -592,38 +479,32 @@ def generate_dynamic_mood_instruction_from_memory(model, tokenizer, memory_rows:
         "neutral: Talk normally but still with a pirate tone — 'Aye, let’s be gettin’ on with it.'\n\n"
     )
 
-    # Full prompt
     full_prompt = (
-        base_instruction
+        example_prompt
+        + base_instruction
         + "**Core Memory:**\n"
         + formatted_memory + "\n\n"
         + "**Mood Instruction Output:**"
     )
 
-    # Completion call
-    output = model.create_completion(
-        prompt=example_prompt + full_prompt,
-        max_tokens=200,
+    output = generate_text(
+        model, tokenizer=tokenizer, prompt=full_prompt,
+        max_new_tokens=200,
         temperature=0.7,
         top_p=0.9,
-        stop=["\n\n"],
-        stream=False,
+        stop_tokens=["\n\n"]
     )
 
-    result = openai.extract_generated_text(output).strip()
-    log("RAW MOOD INSTRUCTION OUTPUT", result)
+    log("RAW MOOD INSTRUCTION OUTPUT", output)
 
-    # Basic parsing
     mood_instruction = {}
-    for line in result.splitlines():
+    for line in output.splitlines():
         if ":" in line:
             key, val = line.split(":", 1)
             mood = key.strip().lower()
             if mood in {"happy", "annoyed", "angry", "neutral"}:
                 mood_instruction[mood] = val.strip()
 
-
-    # Fallback if too little returned
     required_keys = {"happy", "annoyed", "angry", "neutral"}
     if not required_keys.issubset(mood_instruction.keys()):
         log("MOOD INSTRUCTION FALLBACK TRIGGERED", mood_instruction)
