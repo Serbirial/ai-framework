@@ -1,6 +1,56 @@
 import sqlite3
-from src.bot import list_personality
 from src.static import DB_PATH
+
+
+def get_user_botname(userid):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(userid),))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return row[0]
+    return "default"
+
+def list_personality(userid):
+    """
+    Returns a dictionary of personality sections and their entries
+    for the user's current bot profile.
+    """
+    botname = get_user_botname(userid)
+    if not botname:
+        return {
+            "goals": [],
+            "traits": [],
+            "likes": [],
+            "dislikes": []
+        }
+
+    sections = {
+        "goals": ("BOT_GOALS", "goal"),
+        "traits": ("BOT_TRAITS", "trait"),
+        "likes": ("BOT_LIKES", "like"),
+        "dislikes": ("BOT_DISLIKES", "dislike"),
+    }
+
+    result = {
+        "goals": [],
+        "traits": [],
+        "likes": [],
+        "dislikes": []
+    }
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    for key, (table, column) in sections.items():
+        cursor.execute(f"SELECT {column} FROM {table} WHERE botname = ?", (botname,))
+        rows = cursor.fetchall()
+        result[key] = [row[0] for row in rows]
+
+    conn.close()
+    return result
+
 
 def build_recursive_checkpoint_prompt(bot):
     string = (
@@ -129,5 +179,5 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
         if mood_reflect:
             base += mood_reflect
 
-    log("RECURSIVE PROMPT TINY", base)
+    print("RECURSIVE PROMPT TINY" + base)
     return base
