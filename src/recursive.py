@@ -5,13 +5,15 @@ from utils.helpers import DummyTokenizer, trim_context_to_fit
 from utils.openai import translate_llama_prompt_to_chatml
 import json
 import sqlite3
+import tiny_prompts
 from . import bot
 
 class RecursiveThinker:
-    def __init__(self, bot, depth=3, streamer=None):
+    def __init__(self, bot, depth=3, streamer=None, tiny_mode = False):
         self.bot = bot  # Reference to ChatBot
         self.depth = depth
         self.streamer = streamer
+        self.tiny_mode = tiny_mode
 
     def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
         personality = bot.list_personality(identifier)
@@ -178,14 +180,20 @@ class RecursiveThinker:
         tokenizer = DummyTokenizer()
 
         # Build base prompt first (before context)
-        base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+        if self.tiny_mode:
+            base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)            
+        else:
+            base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
 
         # Token-safe context trimming
         context_lines = context.split("\n") if isinstance(context, str) else context
         trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx(), reserved_for_output=400)
 
         # Build full prompt using the trimmed context
-        prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+        if self.tiny_mode:
+            prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+        else:
+            prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
         extra_context_lines = []  # Accumulates all action results
 
@@ -234,15 +242,18 @@ class RecursiveThinker:
 
             # Inject task reinforcement every N steps
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
-                full += (
-                    #f"<|assistant|>\n"
-                    f"**Task Alignment Checkpoint:**\n"
-                    f"- Reflect on your progress so far.\n"
-                    f"- Ask: Are your steps clearly building toward answering the question?\n"
-                    f"- Briefly summarize what you've accomplished and what remains.\n"
-                    f"- Then continue with the next step, staying focused.\n"
-                    f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
-                )
+                if self.tiny_mode:
+                    full += tiny_prompts.build_recursive_checkpoint_prompt(bot)
+                else:
+                    full += (
+                        #f"<|assistant|>\n"
+                        f"**Task Alignment Checkpoint:**\n"
+                        f"- Reflect on your progress so far.\n"
+                        f"- Ask: Are your steps clearly building toward answering the question?\n"
+                        f"- Briefly summarize what you've accomplished and what remains.\n"
+                        f"- Then continue with the next step, staying focused.\n"
+                        f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
+                    )
                 response = self.bot._straightforward_generate(
                     full,
                     max_new_tokens=400,
@@ -255,35 +266,40 @@ class RecursiveThinker:
                 full += f"{response.strip()}\n"
 
 
-
-        if query_type == "factual_question":
+        if self.tiny_mode:
             final_prompt = (
                 full
-                #+ "<|assistant|>\n"
-                + "### Final Answer\n"
-                + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
-                + "**Rules**:\n"
-                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
-                + "- Do not include disclaimers.\n"
-                + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
-                + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
-                + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
-                + "<|assistant|>\n"
-            )
+                + tiny_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
+                )
         else:
-            final_prompt = (
-                full
-                #+ "<|user|>\n"
-                + "### Final Answer\n"
-                + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
-                + "**Rules**:\n"
+            if query_type == "factual_question":
+                final_prompt = (
+                    full
+                    #+ "<|assistant|>\n"
+                    + "### Final Answer\n"
+                    + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
+                    + "**Rules**:\n"
+                    + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
+                    + "- Do not include disclaimers.\n"
+                    + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
+                    + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
+                    + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
+                    + "<|assistant|>\n"
+                )
+            else:
+                final_prompt = (
+                    full
+                    #+ "<|user|>\n"
+                    + "### Final Answer\n"
+                    + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
+                    + "**Rules**:\n"
 
-                + "- Avoid including numbered steps or markdown titles in the final answer.\n"
-                + "- Do not include disclaimers or third-person analysis.\n"
-                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
-                + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
-                + "<|assistant|>\n"
-            )
+                    + "- Avoid including numbered steps or markdown titles in the final answer.\n"
+                    + "- Do not include disclaimers or third-person analysis.\n"
+                    + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
+                    + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
+                    + "<|assistant|>\n"
+                )
 
         tokenizer = DummyTokenizer()
         prompt_tokens_used = tokenizer.count_tokens(final_prompt)

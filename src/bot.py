@@ -7,6 +7,7 @@
 from llama_cpp import Llama
 
 import requests
+import tiny_prompts
 import json
 import time
 import os
@@ -396,7 +397,7 @@ class ChatBot:
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
 
-    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None):
+    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False):
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_social_tone",
@@ -450,7 +451,10 @@ class ChatBot:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
-        prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else None)
+        if tiny_mode:
+            prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
+        else:
+            prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else None)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
@@ -499,7 +503,7 @@ class ChatBot:
             else:
                 short_context = context
 
-            thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
@@ -517,7 +521,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -537,7 +541,7 @@ class ChatBot:
                 short_context = context
                 
             if force_recursive == True:
-                thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -560,7 +564,7 @@ class ChatBot:
                     short_context = self.get_recent_history(identifier, limit=10)
                 else:
                     short_context = context
-                thinker = RecursiveThinker(self, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)

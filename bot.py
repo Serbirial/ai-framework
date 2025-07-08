@@ -430,6 +430,8 @@ class ChatBot(discord.Client):
             "personality": False,
             "newpersonality": None,
             "category": None,  # New: override input category (e.g., "factual_question")
+            "orp": False,  
+            "tinymode": False,  
 
         }
 
@@ -454,6 +456,8 @@ class ChatBot(discord.Client):
                     i += 1
             elif token == "!memstore":
                 flags["memstore"] = True
+            elif token == "!tiny" or token == "!tinymode":
+                flags["tinymode"] = True
             elif token == "!rawmemstore" or token == "!rms":
                 flags["rawmemstore"] = True
             elif token == "!listmem" or token == "!lm":
@@ -466,6 +470,8 @@ class ChatBot(discord.Client):
                 flags["clearmem"] = True
             elif token == "!wipectx" or token == "!clearchat" or token == "!clearhistory":
                 flags["clearhistory"] = True
+            elif token == "!orp" or token == "!overrideprompt" or token == "!customprompt":
+                flags["orp"] = True
             elif token == "!clear":
                 # Check if next token is a section name
                 if i + 1 < len(tokens):
@@ -514,6 +520,9 @@ class ChatBot(discord.Client):
         if flags["help"]:
             help_text = (
                 "**Available Command Flags:**\n"
+                "`!tiny           - Forces the bot to exclusively use tiny prompts. strip most functioanlity but speed things up drastically.`"
+
+                "`!orp data       - Forces the bot to exclusively use YOUR given prompt. this will use the RAW model and skip everything, use at your own peril.`"
                 "`!recursive [N]` - Forces the bot to use recursive reasoning (default depth = 3, or use a number).\n"
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
@@ -584,7 +593,11 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
         
         processed_input = self.process_input(message.content)
         flags, processed_input = self.parse_command_flags(processed_input)
+        stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
+        if flags["orp"] == True:
+            data = self.ai._straightforward_generate(processed_input, 350, 0.8, 0.9, None, stop_criteria, processed_input)
+            return await message.reply(data)
 
         if flags["help"]:
             await message.reply(processed_input)
@@ -795,6 +808,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
                             force_recursive=True,
                             category_override=flags["category"],
                             recursive_depth=flags["depth"],
+                            tiny_mode=flags["tinymode"],
                             debug=flags["debug"]
                         )
                         await message.reply(response)
@@ -809,6 +823,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
                             user_input=processed_input,
                             identifier=message.author.id,
                             context=history,
+                            tiny_mode=flags["tinymode"],
                             category_override="instruction_memory",
                             debug=flags["debug"]
                         )
@@ -825,6 +840,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
                             temperature=0.8,
                             identifier=message.author.id,
                             category_override=flags["category"],
+                            tiny_mode=flags["tinymode"],
                             context=history,
                             debug=flags["debug"]
                         )
