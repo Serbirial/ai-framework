@@ -111,7 +111,7 @@ def build_base_prompt_tiny(bot, username, user_input, identifier, usertone, cont
     return prompt
 
 def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
-    p = bot.list_personality(identifier)
+    p = list_personality(identifier)
     traits = "\n- " + "\n- ".join(p.get("traits", [])) if p.get("traits") else ""
     goals = "\n- " + "\n- ".join(p.get("goals", [])) if p.get("goals") else ""
     likes = "\n- " + "\n- ".join(p.get("likes", [])) if p.get("likes") else ""
