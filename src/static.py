@@ -25,19 +25,6 @@ TOKEN = ""
 DB_PATH = "memory.db"
 SCHEMA_PATH = "config/schema.sql"
 
-RAW_MODEL = True
-tokenizer = None
-
-def raw_model(path):
-    from transformers import GPT2LMHeadModel, GPT2Tokenizer
-    import torch
-    tokenizer = GPT2Tokenizer.from_pretrained(path)
-    model = GPT2LMHeadModel.from_pretrained(path)
-    model.eval()
-    torch.set_grad_enabled(False)
-    return tokenizer, model
-
-
 
 
 class StopOnSpeakerChange:
