@@ -530,10 +530,6 @@ class ChatBot(discord.Client):
                 "`!newpersonality [data]` - Creates a new personality and sets it as your active personality."
                 """
 ```
-- If you provide no data, a new personality with a unique name will be created by copying the "default" personality.
-- If you provide data, it should be a single string containing your personality traits, likes, dislikes, and goals.
-- The data string format uses semicolons to separate sections, and colons to assign section names.
-- Each section's values are comma-separated.
 Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; dislikes: bugs, rude users; goals: Assist effectively, Keep learning
 ```
                 """
