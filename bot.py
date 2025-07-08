@@ -534,12 +534,6 @@ class ChatBot(discord.Client):
 - If you provide data, it should be a single string containing your personality traits, likes, dislikes, and goals.
 - The data string format uses semicolons to separate sections, and colons to assign section names.
 - Each section's values are comma-separated.
-
-Example format:
-
-traits: Curious, Playful; likes: cats, compliments; dislikes: rudeness, dogs; goals: Help users, Learn new things
-
-This will create a personality with those traits, likes, dislikes, and goals.
 Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; dislikes: bugs, rude users; goals: Assist effectively, Keep learning
 ```
                 """
