@@ -566,7 +566,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
             return
         tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
-            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 12768, 800)
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, 1024, 700)
             db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
             for entry in db_history:
                 context.add_line(entry["content"], entry["role"])

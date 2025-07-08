@@ -256,7 +256,7 @@ class RecursiveThinker:
                     )
                 response = self.bot._straightforward_generate(
                     full,
-                    max_new_tokens=400,
+                    max_new_tokens=150,
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
