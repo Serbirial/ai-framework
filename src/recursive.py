@@ -8,7 +8,7 @@ import sqlite3
 import tiny_prompts
 from . import bot
 
-class RecursiveThinker:
+class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
     def __init__(self, bot, depth=3, streamer=None, tiny_mode = False):
         self.bot = bot  # Reference to ChatBot
         self.depth = depth
