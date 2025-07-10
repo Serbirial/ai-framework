@@ -132,21 +132,21 @@ class DiscordTextStreamer:
                 pass
             self._task = None
 
-class AssistantOnlyFilter:
+class AssistantOnlyFilter: # this filters speaker changes- and special tokens
     def __init__(self, assistant_token="<|assistant|>", other_tokens=None):
         self.assistant_token = assistant_token
         self.other_tokens = other_tokens or ["<|user|>", "<|system|>", "<|end|>", "<user>"]
 
         self.buffer = ""
         self.filtered_output = ""
-        self.saw_any_speaker_change = False  # flag for first detected speaker change
-        self.in_assistant_mode = True  # start accumulating regardless until speaker change
+        self.saw_any_speaker_change = False  # Flag for first detected speaker change
+        self.in_assistant_mode = True        # Start accumulating regardless until speaker change
 
     def __call__(self, new_text_chunk):
         self.buffer += new_text_chunk
 
         lines = self.buffer.split("\n")
-        self.buffer = lines.pop()  # incomplete last line
+        self.buffer = lines.pop()  # Save the last (possibly incomplete) line for next chunk
 
         for line in lines:
             stripped = line.strip()
@@ -155,28 +155,33 @@ class AssistantOnlyFilter:
             if stripped in self.other_tokens:
                 self.saw_any_speaker_change = True
                 self.in_assistant_mode = False
-                continue  # discard token line itself
+                continue  # Skip speaker tokens entirely
 
             # Detect assistant token
             if stripped == self.assistant_token:
-                self.in_assistant_mode = True
                 self.saw_any_speaker_change = True
-                continue  # discard token line itself
+                self.in_assistant_mode = True
+                continue  # Skip speaker tokens entirely
 
-            # Accumulate only if either
-            # - no speaker change seen yet (before first speaker change)
-            # - or currently in assistant mode (after switch back)
+            # Accumulate only assistant-mode lines, but skip speaker tokens
             if (not self.saw_any_speaker_change) or (self.in_assistant_mode and stripped != ""):
                 self.filtered_output += line + "\n"
 
-        return False  # never stop generation by itself
+        return False  # Never stop generation
 
     def get_filtered_output(self):
         leftover = self.buffer.strip()
-        if ((not self.saw_any_speaker_change) or
-            (self.in_assistant_mode and leftover and leftover not in self.other_tokens + [self.assistant_token])):
-            return self.filtered_output + leftover
+
+        # Don't add assistant or other speaker tokens accidentally
+        if leftover in self.other_tokens + [self.assistant_token]:
+            return self.filtered_output
+
+        # Only add leftover if it's valid assistant output
+        if (not self.saw_any_speaker_change) or (self.in_assistant_mode and leftover):
+            return self.filtered_output + leftover + "\n"
+
         return self.filtered_output
+
 
 
 
