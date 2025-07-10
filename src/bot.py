@@ -206,7 +206,7 @@ class ChatBot:
 
     
         
-    def build_prompt(self, username, user_input, identifier, usertone, context):
+    def build_prompt(self, persona_prompt, username, user_input, identifier, usertone, context):
         # Fetch core memory entries for user
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -223,7 +223,6 @@ class ChatBot:
 
         # Generate the persona prompt text
         core_memory_entries = [row[0] for row in rows]
-        persona_prompt = self.get_persona_prompt(identifier)
 
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
@@ -377,8 +376,8 @@ class ChatBot:
             INSERT INTO HISTORY (owner, userid, message, timestamp) VALUES (?, ?, ?, ?)
             """,
             [
-                (owner, username, f"[{timestamp}] {username}: {user_input}", timestamp),
-                (owner, botname, f"[{timestamp}] {botname}: {response}", timestamp),
+                (owner, username, f"[{timestamp}] {user_input}", timestamp),
+                (owner, botname, f"[{timestamp}] {response}", timestamp),
             ]
         )
 
@@ -460,6 +459,8 @@ class ChatBot:
         # Set the base mood based on highest score social mood
         social_moods = moods["Social Intents Mood Factor"]["mood"]
         self.mood = social_moods[0] if social_moods else "uncertain (api error)"
+        persona_prompt = self.get_persona_prompt(identifier)
+        
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
@@ -479,7 +480,7 @@ class ChatBot:
         elif CUSTOM_GPT2:
             prompt = custom_gpt2_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         else:
-            prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else None)
+            prompt = self.build_prompt(persona_prompt, username, user_input, identifier, usertone, context if context else None)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
@@ -526,7 +527,7 @@ class ChatBot:
             else:
                 short_context = context
 
-            thinker = RecursiveWork(self, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveWork(self, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:

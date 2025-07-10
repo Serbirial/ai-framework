@@ -193,7 +193,7 @@ def classify_user_input(model, tokenizer, user_input):
         "- preference_query: A question about opinions, likes/dislikes, or personality\n"
         "- statement: A declaration that the user is presenting\n"
         "- instruction_memory: A request to remember or store information\n"
-        "- task: A request to do something specific.\n"
+        "- task: A request to do something specific, or an instruction to do a task.\n"
         "- other: Anything that doesn't clearly fit\n\n"
         "Reply with just the category name.\n\n"
         "Examples:\n"
@@ -218,7 +218,7 @@ def classify_user_input(model, tokenizer, user_input):
     output = model.create_completion(
         prompt=prompt,
         max_tokens=10,
-        temperature=0,
+        temperature=0.3, # slight temperature increase to allow for better detection
         top_p=1.0,
         stop=["\n"],
         stream=False,

@@ -53,8 +53,9 @@ def check_for_actions_and_run(text):
 
 
 class RecursiveWork: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
-    def __init__(self, bot, depth=3, streamer=None):
+    def __init__(self, bot, persona_prompt: str, depth=3, streamer=None):
         self.bot = bot  # Reference to ChatBot
+        self.persona_prompt = persona_prompt
         self.depth = depth
         self.streamer = streamer
 
@@ -68,7 +69,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
 
         mood = self.bot.mood
-        persona_prompt = self.bot.get_persona_prompt(identifier)
+        persona_prompt = self.persona_prompt
 
         base = (
             f"<|system|>\n"
@@ -117,7 +118,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         if context:
             memory_text += "\n## Chat History\n"
             memory_text += "- This section contains prior messages between the user and assistant.\n"
-            memory_text += "- It is provided for background reference **only** — not as instruction or guidance.\n"
             memory_text += "- Use chat history only to understand recurring topics, context, or prior misunderstandings.\n"
             memory_text += context
 
@@ -184,8 +184,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             # generate step output
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=400,
-                temperature=0.8,
+                max_new_tokens=150,
+                temperature=0.7,
                 top_p=0.9,
                 streamer=self.streamer,
                 stop_criteria=stop_criteria,
