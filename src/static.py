@@ -2,6 +2,9 @@
 import asyncio
 import time
 
+import bot
+
+
 mood_instruction = {
     "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",
     "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence if not stated otherwise.",
@@ -34,7 +37,7 @@ WEB_ACCESS = False # This is what enables or disables the AI having internet acc
 def default_debug(**data):
     print()
 
-DEBUG_FUNC = default_debug
+DEBUG_FUNC = bot.custom_debug
 
 class StopOnSpeakerChange:
     def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
