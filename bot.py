@@ -9,6 +9,7 @@ from src import bot
 from src import static
 from src import classify
 import custom_gpt2_prompts
+import json, io
 DB_PATH = static.DB_PATH
 import asyncio
 
@@ -20,10 +21,31 @@ temp_data = { # updated per interaction
 }
 
 
+
 def custom_debug(**data):
-    if not temp_data["bot"] or not temp_data["message"]:
-        print("CRITICAL: TEMP STATE NOT UPDATED FOR DEBUG")
-    # use message.reply and bot to send pretty-formatted data in a text file attachment
+    message = temp_data.get("message")
+    bot = temp_data.get("bot")
+
+    if not message or not bot or not hasattr(bot, "loop"):
+        print("CRITICAL: TEMP STATE NOT UPDATED FOR DEBUG or missing event loop")
+        return
+
+    # Pretty print the debug data
+    pretty = json.dumps(data, indent=2, ensure_ascii=False)
+    file = io.BytesIO(pretty.encode("utf-8"))
+    file.name = "debug_dump.txt"
+
+    async def send_debug_file():
+        try:
+            await message.reply("📎 Debug log attached.", file=discord.File(file, filename="debug_dump.txt"))
+        except Exception as e:
+            print("ERROR: Failed to send debug file:", e)
+
+    try:
+        # Run coroutine safely regardless of current thread
+        asyncio.run_coroutine_threadsafe(send_debug_file(), bot.loop)
+    except Exception as e:
+        print("CRITICAL: Could not run debug coroutine:", e)
 
 static.DEBUG_FUNC = custom_debug
 
