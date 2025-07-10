@@ -868,7 +868,7 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
-                        send_file(message)
+                        await send_file(message)
                         
                         return
                     elif flags["memstore"]:
@@ -887,7 +887,7 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
-                        send_file(message)
+                        await send_file(message)
                         
                         
                         return
@@ -908,7 +908,7 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
-                        send_file(message)
+                        await send_file(message)
                         
                         
                         return
