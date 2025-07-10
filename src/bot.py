@@ -44,13 +44,20 @@ def list_personality(userid):
     for the user's current bot profile.
     """
     botname = get_user_botname(userid)
+    # Fall back to default profile if none is selected
     if not botname:
-        return {
-            "goals": [],
-            "traits": [],
-            "likes": [],
-            "dislikes": []
-        }
+        cursor.execute("SELECT name FROM BOT_PROFILE ORDER BY ROWID ASC LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            botname = row[0]
+        else:
+            conn.close()
+            return {
+                "goals": ["To tell the user that the list_personality function used to fund your personality is broken."],
+                "traits": ["Very to the point."],
+                "likes": ["Not Erroring"],
+                "dislikes": ["Erroring (i just errored)"]
+            }
 
     sections = {
         "goals": ("BOT_GOALS", "goal"),
@@ -605,8 +612,7 @@ class ChatBot:
         # Manual pretty print personality
         personality = list_personality(identifier)
         botname = get_user_botname(identifier)
-        personality_str = f"Bot Name: {botname if botname != None else 'default'}\n"
-
+        personality_str = f"Bot Name: {botname if botname != None else self.ai.namw}\n"
         for section in ["traits", "likes", "dislikes", "goals"]:
             entries = personality.get(section, [])
             if entries:
