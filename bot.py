@@ -832,6 +832,7 @@ class ChatBot(discord.Client):
             "preference_query",
             "statement",
             "instruction_memory",
+            "task"
             "other"]
         if flags["category"] == -1:
             valid_list = ", ".join(valid_categories)

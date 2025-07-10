@@ -180,7 +180,7 @@ def classify_user_input(model, tokenizer, user_input):
         "preference_query",
         "statement",
         "instruction_memory",
-        "instruction",
+        "task",
         "other"
     ]
 
@@ -193,7 +193,7 @@ def classify_user_input(model, tokenizer, user_input):
         "- preference_query: A question about opinions, likes/dislikes, or personality\n"
         "- statement: A declaration that the user is presenting\n"
         "- instruction_memory: A request to remember or store information\n"
-        "- instruction: A request to do something specific.\n"
+        "- task: A request to do something specific.\n"
         "- other: Anything that doesn't clearly fit\n\n"
         "Reply with just the category name.\n\n"
         "Examples:\n"

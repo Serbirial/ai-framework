@@ -520,7 +520,7 @@ class ChatBot:
             else:
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
-        elif category == "instruction": # The user wants the AI to do something task based- and it will be done step by step.
+        elif category == "task": # The user wants the AI to do something task based- and it will be done step by step.
             if not context:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
