@@ -376,7 +376,7 @@ class ChatBot:
             """,
             [
                 (owner, username, f"[{timestamp}] {username}: {user_input}", timestamp),
-                (owner, username, f"[{timestamp}] {botname}: {response}", timestamp),
+                (owner, botname, f"[{timestamp}] {botname}: {response}", timestamp),
             ]
         )
 

@@ -91,8 +91,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
             
             f"# Actions\n"
-            "You may optionally output up to FIVE <Action> JSON blocks per step.\n"
-            "You must output each action in this exact format:\n"
+            "You may output up to THREE <Action> JSON blocks per step.\n"
+            "You must output actions in this exact format:\n"
             '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
             "Where:\n"
             "- <action_name> must be one of the following:\n"
@@ -105,7 +105,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             "- \"parameters\" are arguments passed to the action.\n"
             "- \"label\" is a unique string to match actions with results.\n\n"
 
-            "If you output MORE THAN ONE action, each must have a distinct \"label\".\n"
+            "If you output MULTIPLE actions, each must have a distinct \"label\".\n"
             "This label is used to connect each action to its returned result in the next step.\n"
             "If no action is needed, respond with reasoning only.\n\n"
 
