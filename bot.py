@@ -528,12 +528,8 @@ class ChatBot(discord.Client):
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
                 "`!debug`         - Enables debug mode, useful for testing prompt contents or reasoning.\n"
-                "`!newpersonality [data]` - Creates a new personality and sets it as your active personality."
-                """
-```
-Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; dislikes: bugs, rude users; goals: Assist effectively, Keep learning
-```
-                """
+                "`!newpersonality [data]` - Creates a new personality and sets it as your active personality.\n"
+                "`Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; dislikes: bugs, rude users; goals: Assist effectively, Keep learning`\n"
                 "`!clearmem`      - Clears all memory for the current user.\n"
                 "`!wipectx`       - Clears all chat history for the current user, keeping memories (ALIASES: !clearchat, !clearhistory).\n"
                 "`!rawmemstore`   - Bypasses the AI pre-processing of your message when storing a memory- this will put your raw input into the memory (can break the AI entirely).\n"
