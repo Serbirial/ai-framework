@@ -104,7 +104,7 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
 
     return output_text
 
-def generate_persona_prompt(model, botname, personality: dict, core_memory_entries: list[str], max_new_tokens=150):
+def generate_persona_prompt(model, botname, personality: dict, core_memory_entries: list[str], max_new_tokens=175):
     """
     Generate a human-like persona prompt based on personality and core memory,
     explicitly instructing to never mention being an AI, and to act fully like a human.

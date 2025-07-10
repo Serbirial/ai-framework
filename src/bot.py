@@ -118,7 +118,7 @@ class ChatBot:
             use_mmap=False,
             n_gpu_layers=0,
             low_vram=True,
-            n_batch=32,
+            n_batch=16,
             numa=False
         )
 
@@ -614,7 +614,7 @@ class ChatBot:
         # Manual pretty print personality
         personality = list_personality(identifier)
         botname = get_user_botname(identifier)
-        personality_str = f"Bot Name: {botname if botname != None else self.ai.namw}\n"
+        personality_str = f"Bot Name: {botname if botname != None else self.namw}\n"
         for section in ["traits", "likes", "dislikes", "goals"]:
             entries = personality.get(section, [])
             if entries:
