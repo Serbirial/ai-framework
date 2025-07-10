@@ -65,7 +65,7 @@ class StopOnSpeakerChange:
 
             if any(line.startswith(tok) for tok in all_stop_tokens):
                 if self.line_count >= self.min_lines:
-                    print("STOP: Detected token in linme and min_lines reached.")
+                    print("STOP: Detected token in line and min_lines reached.")
                     self.stopped = True
                     return True
 
