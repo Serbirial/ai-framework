@@ -102,11 +102,11 @@ class ChatBot:
         self.model = Llama(
             model_path=mainLLM,
             n_ctx=2048,              # TODO use CTX setter 
-            n_threads=7,             # tune to setup
+            n_threads=5,             # tune to setup
             use_mlock=False,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
-            use_mmap=True,
+            use_mmap=False,
             n_gpu_layers=0,
             low_vram=True,
             n_batch=64,
@@ -605,7 +605,7 @@ class ChatBot:
         # Manual pretty print personality
         personality = list_personality(identifier)
         botname = get_user_botname(identifier)
-        personality_str = f"Bot Name: {botname if botname != None else self.name}\n"
+        personality_str = f"Bot Name: {botname if botname != None else 'default'}\n"
 
         for section in ["traits", "likes", "dislikes", "goals"]:
             entries = personality.get(section, [])
