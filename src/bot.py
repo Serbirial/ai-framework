@@ -36,7 +36,7 @@ def get_user_botname(userid):
     conn.close()
     if row:
         return row[0]
-    return "default"
+    return None
 
 def list_personality(userid):
     """
@@ -604,7 +604,8 @@ class ChatBot:
         context_token_count = len(tokenizer.encode(context)) if context else 0
         # Manual pretty print personality
         personality = list_personality(identifier)
-        personality_str = f"Bot Name: {get_user_botname(identifier)}\n"
+        botname = get_user_botname(identifier)
+        personality_str = f"Bot Name: {botname if botname != None else self.name}\n"
 
         for section in ["traits", "likes", "dislikes", "goals"]:
             entries = personality.get(section, [])
