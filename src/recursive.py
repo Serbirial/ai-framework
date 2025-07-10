@@ -183,7 +183,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         if self.tiny_mode:
             base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         elif CUSTOM_GPT2:
-            prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+            base_prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         else:
             base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
 
@@ -200,72 +200,68 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
         extra_context_lines = []  # Accumulates all action results
+    
+        prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
-        for step in range(self.depth): # TODO: every X steps reinforce the AI to stay on track and ask itself if its still aligned with the task
-            full += (
-                f"### Thought step {step+1} of {self.depth}\n"
-            )
+        for step in range(self.depth):
+            # start with the system prompt or base context (not shown in your snippet)
+            step_prompt = f"{prompt}"
 
+            # include prior steps content only (no "### Thought step" headers)
+            if prior_steps:
+                step_prompt += "**Prior Thoughts:**\n"
+                step_prompt += "\n".join(prior_steps) + "\n\n"
+
+            # add the current step header only for clarity in logs and generation
+            step_prompt += f"### Thought step {step+1} of {self.depth}\n"
+
+            # add any extra context lines
             if extra_context_lines:
-                for result_line in extra_context_lines:
-                    full += f"{result_line}\n"
-            # convert it over 
-            #full = translate_llama_prompt_to_chatml(full)
-
+                step_prompt += "\n".join(extra_context_lines) + "\n"
+                
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
-            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops)  # NO tokenizer argument
+            stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
+            # generate step output
             response = self.bot._straightforward_generate(
-                full,
+                step_prompt,
                 max_new_tokens=400,
                 temperature=0.8,
                 top_p=0.9,
                 streamer=self.streamer,
                 stop_criteria=stop_criteria,
-                _prompt_for_cut=full
+                _prompt_for_cut=step_prompt,
             )
+            step_content = response.strip()
 
-            log(f"DEBUG: THOUGHT STEP {step}", response.strip())
+            log(f"DEBUG: THOUGHT STEP {step}", step_content)
 
-            #lines = response.strip().splitlines()
-            #new_lines = []
+            # append only the step content (not header) to prior_steps to feed next step_prompt
+            prior_steps.append(step_content)
 
-            #for line in lines:
-            #    if line.strip().lower().startswith("action:"):
-            #        action_key = line.split(":", 1)[1].strip().lower()
-            #        result = self.perform_action(action_key)
-            #        result_json = json.dumps(result)
-            #        log(f"DEBUG: Action result for '{action_key}': {result_json}")
-            #        action_result_str = f"<ActionResult>{result_json}</ActionResult>"
-            #        extra_context_lines.append(action_result_str)
-            #        new_lines.append(action_result_str)
-            #    else:
-            #        new_lines.append(line)
+            # append the full step (header + content) to the full conversation log
+            full += f"### Thought step {step+1} of {self.depth}\n{step_content}\n\n"
 
-            #response = "\n".join(new_lines)
-            full += f"{response.strip()}\n"
-
-            # Inject task reinforcement every N steps
+            # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
-                if self.tiny_mode:
-                    full += tiny_prompts.build_recursive_checkpoint_prompt(bot)
-                else:
-                    full += (
-                        #f"<|assistant|>\n"
-                        f"**Task Alignment Checkpoint:**\n"
-                        f"- Reflect on your progress so far.\n"
-                        f"- Ask: Are your steps clearly building toward answering the question?\n"
-                        f"- Briefly summarize what you've accomplished and what remains.\n"
-                        f"- Then continue with the next step, staying focused.\n"
-                        f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
-                    )
+                # add checkpoint step_prompt
+                checkpoint_prompt = (
+                    "**Task Alignment Checkpoint:**\n"
+                    "- Reflect on your progress so far.\n"
+                    "- Ask: Are your steps clearly building toward answering the question?\n"
+                    "- Briefly summarize what you've accomplished and what remains.\n"
+                    "- Then continue with the next step, staying focused.\n"
+                    f"- Reminder: Your task is to reason through the user's question step-by-step as the personality '{self.bot.name}'.\n"
+                )
+                step_prompt += checkpoint_prompt
+                stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
                 response = self.bot._straightforward_generate(
-                    full,
+                    step_prompt,
                     max_new_tokens=150,
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
                     stop_criteria=stop_criteria,
-                    _prompt_for_cut=full
+                    _prompt_for_cut=step_prompt,
                 )
                 full += f"{response.strip()}\n"
 
@@ -316,6 +312,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log(f"DEBUG: FINAL RECURSIVE PROMPT:\n",final_prompt)
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
+        stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
 
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=350, # NOTE: double for debugging, should be 400
