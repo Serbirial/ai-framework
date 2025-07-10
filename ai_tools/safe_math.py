@@ -1,5 +1,6 @@
 import ast
 import operator
+from log import log
 
 # Supported operators
 OPERATORS = {
@@ -49,18 +50,19 @@ def do_safe_math(parameters: dict) -> dict:
     expr = parameters.get("expression")
     if not expr or not isinstance(expr, str):
         return {"error": "Missing or invalid 'expression' parameter."}
-
+    log("SAFE-MATH-INPUT", expr)
     try:
         tree = ast.parse(expr, mode='eval')
         result = _eval_node(tree.body)
+        log("SAFE-MATH-OUTPUT", result)
         return {"result": result}
     except Exception as e:
         return {"error": str(e)}
 
 
 EXPORT = {
-    "do_safe_math": {
-        "help": "Safely evaluates a math expression using +, -, *, /, %, //, and **. No variables or functions allowed.",
+    "execute_math": {
+        "help": "Safely evaluates a math expression, EXLCUSIVELY using +, -, *, /, %, //, and **.",
         "callable": do_safe_math,
         "params": {"expression": "23 + (7 * 2) / 3"}
     }}
