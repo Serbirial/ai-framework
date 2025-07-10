@@ -27,6 +27,8 @@ SCHEMA_PATH = "config/schema.sql"
 
 CUSTOM_GPT2 = True
 
+WEB_ACCESS = False # This is what enables or disables the AI having internet access
+
 class StopOnSpeakerChange:
     def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
         self.bot_name = bot_name
@@ -74,32 +76,39 @@ class StopOnSpeakerChange:
 
 
 
+from transformers import AutoTokenizer
+
 class DummyTokenizer:
-    eos_token_id = 0
-    eos_token = ""
+    def __init__(self, model_name="gpt2"):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.eos_token_id = self.tokenizer.eos_token_id
+        self.eos_token = self.tokenizer.eos_token
 
     def encode(self, text):
-        # Just split on whitespace, approx tokens
-        return text.split()
+        return self.tokenizer.encode(text, add_special_tokens=False)
 
     def decode(self, tokens, skip_special_tokens=True):
-        if isinstance(tokens, list):
-            return " ".join(tokens)
-        return str(tokens)
+        return self.tokenizer.decode(tokens, skip_special_tokens=skip_special_tokens)
 
     def __call__(self, text, return_tensors=None, padding=None):
         tokens = self.encode(text)
-        # Return dummy tensor-like object to avoid breaking code
+
+        # Dummy tensor-like object to maintain compatibility
         class DummyTensor:
+            def __init__(self, token_list):
+                self.tokens = token_list
             def to(self, device):
                 return self
             def __len__(self):
-                return len(tokens)
-        return {"input_ids": DummyTensor(), "attention_mask": DummyTensor()}
+                return len(self.tokens)
+
+        return {
+            "input_ids": DummyTensor(tokens),
+            "attention_mask": DummyTensor([1] * len(tokens))
+        }
 
     def count_tokens(self, text):
         return len(self.encode(text))
-
 
 class ChatContext:
     """

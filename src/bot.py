@@ -19,9 +19,9 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer
 
-tokenizer = None # FiXME
+tokenizer = DummyTokenizer() # FiXME
 
 class StringStreamer:
     def __init__(self):
@@ -578,4 +578,39 @@ class ChatBot:
         self.log_interaction_to_history(owner=identifier, username=username, user_input=user_input, botname=self.name, response=response)
         self.mood = "neutral" # FIXME change to per user mood, and have a mood history
         self.mood_sentence = "I feel neutral and composed at the moment."
+        
+        context_token_count = len(tokenizer.encode(context)) if context else 0
+        # Manual pretty print personality
+        personality = list_personality(identifier)
+        personality_str = f"Bot Name: {get_user_botname(identifier)}\n"
+
+        for section in ["traits", "likes", "dislikes", "goals"]:
+            entries = personality.get(section, [])
+            if entries:
+                personality_str += f"- {section.capitalize()}:\n"
+                for entry in entries:
+                    personality_str += f"  • {entry}\n"
+            else:
+                personality_str += f"- {section.capitalize()}: (none)\n"
+
+
+        # DO PROCESDSING HERE
+        print("\n\n\n\n\n")
+        log("DEBUG", "---------- FINAL CHAT STATE DUMP ----------")
+        log("DEBUG", f"username: {username}")
+        log("DEBUG", f"user_input: {user_input}")
+        log("DEBUG", f"identifier: {identifier}")
+        log("DEBUG", f"category: {category}")
+        log("DEBUG", f"mood: {self.mood}")
+        log("DEBUG", f"mood_sentence: {self.mood_sentence}")
+        log("DEBUG", f"usertone: {usertone}")
+        log("DEBUG", f"tiny_mode: {tiny_mode}")
+        log("DEBUG", f"moods: {moods}")
+        log("DEBUG", f"force_recursive: {force_recursive}")
+        log("DEBUG", f"context token count: {context_token_count}")
+        log("DEBUG", "personality:\n" + personality_str.strip())
+        log("DEBUG", f"final response: {response}")
+        log("DEBUG", "------------------------------------------")
+
+
         return response

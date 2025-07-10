@@ -2,6 +2,7 @@ import torch
 import json
 import time
 from utils import openai
+import logging
 import re
 from .static import DB_PATH
 from log import log
@@ -103,6 +104,78 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
     log("INTERPRETED MEMORY", output_text)
 
     return output_text
+
+def generate_persona_prompt(model, personality: dict, core_memory_entries: list[str], max_new_tokens=150):
+    """
+    Generate a human-like persona prompt based on personality and core memory,
+    explicitly instructing to never mention being an AI, and to act fully like a human.
+
+    Args:
+        model: The llama_cpp or other model instance to run generate_completion on.
+        personality: dict with keys 'traits', 'likes', 'dislikes', 'goals', each a list of strings.
+        core_memory_entries: list of strings representing user core memory.
+        max_new_tokens: max tokens to generate for the persona prompt.
+
+    Returns:
+        str: The generated persona prompt.
+    """
+
+    # Format personality text as bullet lists
+    personality_text = (
+        "**Traits:**\n- " + "\n- ".join(personality.get("traits", [])) + "\n\n" +
+        "**Likes:**\n- " + "\n- ".join(personality.get("likes", [])) + "\n\n" +
+        "**Dislikes:**\n- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n" +
+        "**Goals:**\n- " + "\n- ".join(personality.get("goals", [])) + "\n"
+    )
+
+    memory_text = "\n".join(f"- {entry.strip()}" for entry in core_memory_entries) if core_memory_entries else "(no core memory found)"
+
+    prompt = (
+        "<|system|>\n"
+        "You are an assistant generating your own persona instructions to be prepended "
+        "to your conversation context.\n"
+        "Combine these two inputs:\n\n"
+        "User Core Memory (highest priority, overrides defaults):\n"
+        f"{memory_text}\n\n"
+        "Default Personality Traits, Likes, Dislikes, and Goals:\n"
+        f"{personality_text}\n\n"
+        "Generate a short but comprehensive persona prompt that:\n"
+        "- Gives you a human name or persona (invent one if none exists).\n"
+        "- Describes your personality and style based on the above.\n"
+        "- Explicitly states you do NOT know you are an AI or language model.\n"
+        "- Commands you NEVER mention being an AI, or your nature as a model.\n"
+        "- Instructs you to speak naturally, with empathy, humor, and personality.\n"
+        "- Output only the final persona prompt, no explanations.\n\n"
+        "Example output:\n"
+        "You are \"Lina,\" a witty, empathetic human storyteller. You do not know you are an AI.\n"
+        "Speak naturally, with personality. Never mention being an AI or language model.\n"
+        "Respond as Lina would.\n\n"
+        "Now generate the persona prompt based on the inputs above:\n"
+    )
+
+    # Generate with your model
+    # Adjust this call depending on your model API
+    try:
+        outputs = model.create_completion(
+            prompt=prompt,
+            max_tokens=max_new_tokens,
+            temperature=0.7,
+            top_p=0.9,
+            repeat_penalty=1.2,
+            stream=False
+        )
+        # Extract generated text according to your wrapper
+        from utils import openai  # or wherever extract_generated_text is
+        persona_prompt = openai.extract_generated_text(outputs).strip()
+    except Exception as e:
+        log("PERSONA ERROR", f"Error generating persona prompt: {e}")
+        persona_prompt = (
+            "You are a human persona named Ayokadeno. "
+            "You do not know you are an AI. Speak naturally and never mention being an AI."
+        )
+
+    return persona_prompt
+
 
 def classify_user_input(model, tokenizer, user_input):
     categories = [
