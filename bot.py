@@ -432,6 +432,7 @@ class ChatBot(discord.Client):
             "newpersonality": None,
             "category": None,  # New: override input category (e.g., "factual_question")
             "orp": False,  
+            "stream": False
             "tinymode": False,  
 
         }
@@ -457,6 +458,8 @@ class ChatBot(discord.Client):
                     i += 1
             elif token == "!memstore":
                 flags["memstore"] = True
+            elif token == "!stream":
+                flags["stream"] = True
             elif token == "!tiny" or token == "!tinymode":
                 flags["tinymode"] = True
             elif token == "!rawmemstore" or token == "!rms":
