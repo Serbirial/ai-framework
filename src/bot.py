@@ -12,7 +12,6 @@ import json
 import time
 import os
 import sqlite3
-from transformers import AutoTokenizer
 from .recursive import RecursiveThinker
 from . import classify
 from utils import openai
