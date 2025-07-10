@@ -69,7 +69,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
 
         mood = self.bot.mood
-        persona_prompt = bot.get_persona_prompt(identifier)
+        persona_prompt = classify.get_persona_prompt(identifier)
 
         base = (
             f"<|system|>\n"
