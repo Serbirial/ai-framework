@@ -581,11 +581,13 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
         if row:
             botname = row[0]
 
-        
+
         processed_input = self.process_input(message.content)
         flags, processed_input = self.parse_command_flags(processed_input)
         stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
+        if static.CUSTOM_GPT2:
+            await message.reply("CUSTOM GPT2 MODEL IS BEING USED! RECURSIVE THINKING MIGHT BREAK! THIS MODEL IS UNSAFE / NSFW!`")
         if flags["orp"] == True:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
@@ -788,8 +790,6 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
             return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
-                if CUSTOM_GPT2:
-                    await message.reply("CUSTOM GPT2 MODEL IS BEING USED! RECURSIVE THINKING MIGHT BREAK! THIS MODEL IS UNSAFE / NSFW!`")
                 try:
                     if flags["recursive"]:
                         response = await asyncio.to_thread(
