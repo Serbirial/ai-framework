@@ -93,28 +93,27 @@ def build_base_prompt_tiny(bot, username, user_input, identifier, usertone, cont
     p = list_personality(identifier)
 
     lines = [
-        f"{bot.name}:",  # Bot name instead of <|bot|>
+        "<|system|>",
+        f"name: {bot.name}",
         f"traits: {', '.join(p.get('traits', []))}",
         f"likes: {', '.join(p.get('likes', []))}",
         f"dislikes: {', '.join(p.get('dislikes', []))}",
         f"goals: {', '.join(p.get('goals', []))}",
         f"mood: {bot.mood} — {bot.mood_sentence}",
-        "memory:",
+        f"memory:",
     ]
-    if memory_text.strip():
+    if memory_text:
         lines.extend(line for line in memory_text.split("\n") if line.strip())
 
     lines.append(f"user-intent: {usertone['intent']}, tone: {usertone['tone']}, attitude: {usertone['attitude']}, user: {username}")
 
     if context:
-        lines.append("\n" + context.strip())
+        lines.append(f"\n{context.strip()}")
 
-    lines.append(f"\n{username}: {user_input.strip()}")  # user name instead of <|user|>
-    lines.append(f"{bot.name}:")  # bot name for response start
+    lines.append(f"\n<|user|> {username}: {user_input.strip()}")
+    lines.append(f"<|user1|> {bot.name}:")
 
-    prompt = "\n".join(lines)
-    return prompt
-
+    return "\n".join(lines)
 
 def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
     p = list_personality(identifier)
@@ -128,7 +127,8 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
     memory = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
 
     lines = [
-        f"{bot.name}:",  # Bot name instead of <|bot|>
+        "<|system|>",
+        f"name: {bot.name}",
         f"traits: {', '.join(p.get('traits', []))}",
         f"likes: {', '.join(p.get('likes', []))}",
         f"dislikes: {', '.join(p.get('dislikes', []))}",
@@ -144,8 +144,8 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
         lines.append("memory:")
         lines.extend(line for line in memory.split("\n") if line.strip())
 
-    lines.append(f"{username}: {question.strip()}")  # username instead of <|user|>
-    lines.append(f"{bot.name}:")  # bot name for the model to respond from
+    lines.append(f"<|user|> {username}: {question.strip()}")
+    lines.append(f"<|user1|> {bot.name}:")
 
     if extra_context:
         lines.append(f"<ActionResult> {extra_context.strip()}")
@@ -156,7 +156,6 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
         lines.append("- Does this relate to your goals or traits?")
         lines.append("- Typical response?")
         lines.append("- Internal conflict?")
-
         mood_note = {
             "happy": "Joy may lead to idealism.",
             "annoyed": "You might be blunt or impatient.",
@@ -167,5 +166,4 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
         if mood_note:
             lines.append(mood_note)
 
-    prompt = "\n".join(lines)
-    return prompt
+    return "\n".join(lines)

@@ -38,19 +38,35 @@ for url in dataset_urls:
 
 shard_idx = 0
 
-def format_conversation(category, title, messages):
-    lines = [ # category, title, users
+def format_conversation(category, title, messages, max_users=5):
+    lines = [
         f"<|category|> {category.strip()}",
         f"<|thread-title|> {title.strip()}",
     ]
+
+    user_map = {}
+    user_count = 0
+
+    def get_user_token(speaker):
+        nonlocal user_count
+        if speaker not in user_map:
+            if user_count < max_users:
+                user_map[speaker] = f"<|user{user_count + 1}|>" if user_count > 0 else "<|user|>"
+                user_count += 1
+            else:
+                user_map[speaker] = "<|other|>"
+        return user_map[speaker]
+
     for msg in messages:
-        speaker = msg.get("from", "Unknown").replace(" ", "_").strip()
+        speaker = msg.get("from", "Unknown").strip().replace(" ", "_")
         text = msg.get("value", "").strip()
         if len(text) >= 5:
-            lines.append(f"<|{speaker}|> {text}")
-    data = "\n".join(lines)
-    data += "<eos>" # add token to signify end of conversation
-    return data
+            user_token = get_user_token(speaker)
+            lines.append(f"{user_token} {speaker}: {text}")
+
+    return "\n".join(lines) + "\n<|eos|>"
+
+
 
 for parquet_path in parquet_files:
     print(f"🔄 Processing {os.path.basename(parquet_path)}...")
