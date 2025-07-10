@@ -60,7 +60,7 @@ class StopOnSpeakerChange:
         for line in lines:
             if line == "<|assistant|>":
                 continue
-            elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>"):
+            elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>") or line.startswith("<|eos|>"):
                 if self.line_count >= self.min_lines:
                     return True
 
@@ -73,6 +73,49 @@ class StopOnSpeakerChange:
             return True
 
         return False
+
+class AssistantOnlyFilter:
+    def __init__(self, assistant_token="<|assistant|>", other_tokens=None):
+        self.assistant_token = assistant_token
+        # All tokens considered "non-assistant" that signal a switch away
+        self.other_tokens = other_tokens or ["<|user|>", "<|system|>", "<|end|>", "<user>"]
+
+        self.buffer = ""  # buffer partial line(s)
+        self.filtered_output = ""  # accumulated assistant-only output
+
+        # State: are we currently in assistant speaking mode or not?
+        self.in_assistant_mode = False
+
+    def __call__(self, new_text_chunk):
+        self.buffer += new_text_chunk
+
+        lines = self.buffer.split("\n")
+        self.buffer = lines.pop()  # keep incomplete line buffered
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Detect speaker switch tokens exactly matching lines
+            if stripped == self.assistant_token:
+                self.in_assistant_mode = True
+                continue  # don't include token line itself in output
+
+            if stripped in self.other_tokens:
+                self.in_assistant_mode = False
+                continue  # don't include token line itself in output
+
+            # If currently assistant, accumulate the line
+            if self.in_assistant_mode and stripped != "":
+                self.filtered_output += line + "\n"
+
+        return False  # never stop generation by itself
+
+    def get_filtered_output(self):
+        # Flush leftover buffer only if in assistant mode and it doesn't start with a token
+        leftover = self.buffer.strip()
+        if self.in_assistant_mode and leftover and leftover not in self.other_tokens + [self.assistant_token]:
+            return self.filtered_output + leftover
+        return self.filtered_output
 
 
 

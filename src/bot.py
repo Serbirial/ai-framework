@@ -19,7 +19,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, FilterOutRoleTokens
 
 tokenizer = DummyTokenizer() # FiXME
 
@@ -274,9 +274,10 @@ class ChatBot:
 
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
-        output_text = ""
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
+        filtered = FilterOutRoleTokens()
+
 
         for output in self.model.create_completion(
             prompt=prompt,
@@ -288,18 +289,20 @@ class ChatBot:
             stream=True
         ):
             text_chunk = openai.extract_generated_text(output)
-            output_text += text_chunk
+            filtered(text_chunk)
+
 
             # Call stop criteria with the new text chunk; stop if it returns True
             if stop_criteria and stop_criteria(text_chunk):
                 log("STOP FOUND", text_chunk)
-                log("FULL BUFF", output_text)
+                log("FULL BUFF", filtered.get_filtered_output())
                 
                 break
 
             if streamer:
                 streamer.on_text(text_chunk)
 
+        output_text = filtered.get_filtered_output()
         log("RAW OUTPUT BASE", output_text)
 
         prompt_index = output_text.find(_prompt_for_cut)
