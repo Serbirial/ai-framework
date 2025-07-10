@@ -43,6 +43,8 @@ def list_personality(userid):
     Returns a dictionary of personality sections and their entries
     for the user's current bot profile.
     """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     botname = get_user_botname(userid)
     # Fall back to default profile if none is selected
     if not botname:
