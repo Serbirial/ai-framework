@@ -1,4 +1,3 @@
-import torch
 import json
 import time
 from utils import openai
