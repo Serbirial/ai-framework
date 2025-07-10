@@ -1,11 +1,11 @@
 from . import classify
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, CUSTOM_GPT2
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 from utils.openai import translate_llama_prompt_to_chatml
 import json
 import sqlite3
-import tiny_prompts
+import tiny_prompts, custom_gpt2_prompts
 from . import bot
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
@@ -181,7 +181,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
         # Build base prompt first (before context)
         if self.tiny_mode:
-            base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)            
+            base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+        elif CUSTOM_GPT2:
+            prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         else:
             base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
 
@@ -192,6 +194,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         # Build full prompt using the trimmed context
         if self.tiny_mode:
             prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+        elif CUSTOM_GPT2:
+            prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         else:
             prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
         full = prompt
@@ -270,6 +274,11 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             final_prompt = (
                 full
                 + tiny_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
+                )
+        elif CUSTOM_GPT2:
+            final_prompt = (
+                full
+                + custom_gpt2_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
                 )
         else:
             if query_type == "factual_question":

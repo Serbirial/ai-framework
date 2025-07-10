@@ -7,7 +7,7 @@
 from llama_cpp import Llama
 
 import requests
-import tiny_prompts
+import tiny_prompts, custom_gpt2_prompts
 import json
 import time
 import os
@@ -19,7 +19,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2
 
 tokenizer = None # FiXME
 
@@ -453,6 +453,8 @@ class ChatBot:
             self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
         if tiny_mode:
             prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
+        elif CUSTOM_GPT2:
+            prompt = custom_gpt2_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         else:
             prompt = self.build_prompt(username, user_input, identifier, usertone, context if context else None)
 

@@ -11,7 +11,6 @@ from src import classify
 import custom_gpt2_prompts
 DB_PATH = static.DB_PATH
 import asyncio
-CUSTOM_GPT2 = True
 
 import time
 def parse_personality_data(data_str):
@@ -790,24 +789,7 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
                 if CUSTOM_GPT2:
-                    await message.reply("`CUSTOM GPT2 MODEL IS BEING USED! NO RECURSIVE THINKING CAN BE DONE! THIS MODEL IS UNSAFE AND FOR TESTING!`")
-                    usertone = classify.classify_social_tone(self.ai, tokenizer, processed_input)
-
-                    prompt = custom_gpt2_prompts.build_base_prompt_tiny(bot, message.author.display_name, processed_input, message.author.display_name, usertone, history)
-                    response = await asyncio.to_thread(
-                        self.ai._straightforward_generate,
-                        prompt=prompt,
-                        streamer=None,
-                        stop_criteria=stop_criteria,
-                        temperature=0.8,
-                        top_p=0.9,
-                        max_new_tokens=350,
-                        _prompt_for_cut=prompt
-                    )
-                    await message.reply(response)
-                    context.add_line(processed_input, "user")
-                    context.add_line(response, "assistant")
-                    return
+                    await message.reply("CUSTOM GPT2 MODEL IS BEING USED! RECURSIVE THINKING MIGHT BREAK! THIS MODEL IS UNSAFE / NSFW!`")
                 try:
                     if flags["recursive"]:
                         response = await asyncio.to_thread(

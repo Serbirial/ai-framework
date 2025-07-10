@@ -25,7 +25,7 @@ TOKEN = ""
 DB_PATH = "memory.db"
 SCHEMA_PATH = "config/schema.sql"
 
-
+CUSTOM_GPT2 = True
 
 class StopOnSpeakerChange:
     def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
