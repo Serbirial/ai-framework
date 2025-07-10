@@ -19,7 +19,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, FilterOutRoleTokens
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter
 
 tokenizer = DummyTokenizer() # FiXME
 
@@ -276,7 +276,7 @@ class ChatBot:
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
-        filtered = FilterOutRoleTokens()
+        filtered = AssistantOnlyFilter()
 
 
         for output in self.model.create_completion(
@@ -300,7 +300,7 @@ class ChatBot:
                 break
 
             if streamer:
-                streamer.on_text(text_chunk)
+                streamer.update(text_chunk)
 
         output_text = filtered.get_filtered_output()
         log("RAW OUTPUT BASE", output_text)

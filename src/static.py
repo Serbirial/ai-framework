@@ -1,4 +1,6 @@
 
+import asyncio
+import time
 
 mood_instruction = {
     "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",
@@ -73,49 +75,98 @@ class StopOnSpeakerChange:
             return True
 
         return False
+    
+class DiscordTextStreamer:
+    def __init__(self, discord_message, update_interval=5.0):
+        """
+        discord_message: a discord.Message or discord.InteractionResponse object with an edit() coroutine method.
+        update_interval: seconds between edits.
+        """
+        self.message = discord_message
+        self.update_interval = update_interval
+        self.buffer = ""
+        self.last_update_time = 0
+        self._lock = asyncio.Lock()
+        self._task = None
+
+    async def _periodic_update(self):
+        while True:
+            await asyncio.sleep(self.update_interval)
+            async with self._lock:
+                if self.buffer:
+                    try:
+                        await self.message.edit(content=self.buffer)
+                    except Exception as e:
+                        print(f"Error editing Discord message: {e}")
+                    self.buffer = ""
+                    self.last_update_time = time.time()
+
+    def start(self):
+        if self._task is None:
+            self._task = asyncio.create_task(self._periodic_update())
+
+    async def update(self, text_chunk):
+        async with self._lock:
+            self.buffer += text_chunk
+
+        # Start the periodic task if not started
+        self.start()
+
+    async def stop(self):
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+            self._task = None
 
 class AssistantOnlyFilter:
     def __init__(self, assistant_token="<|assistant|>", other_tokens=None):
         self.assistant_token = assistant_token
-        # All tokens considered "non-assistant" that signal a switch away
         self.other_tokens = other_tokens or ["<|user|>", "<|system|>", "<|end|>", "<user>"]
 
-        self.buffer = ""  # buffer partial line(s)
-        self.filtered_output = ""  # accumulated assistant-only output
-
-        # State: are we currently in assistant speaking mode or not?
-        self.in_assistant_mode = False
+        self.buffer = ""
+        self.filtered_output = ""
+        self.saw_any_speaker_change = False  # flag for first detected speaker change
+        self.in_assistant_mode = True  # start accumulating regardless until speaker change
 
     def __call__(self, new_text_chunk):
         self.buffer += new_text_chunk
 
         lines = self.buffer.split("\n")
-        self.buffer = lines.pop()  # keep incomplete line buffered
+        self.buffer = lines.pop()  # incomplete last line
 
         for line in lines:
             stripped = line.strip()
 
-            # Detect speaker switch tokens exactly matching lines
+            # Detect non-assistant speaker tokens
+            if stripped in self.other_tokens:
+                self.saw_any_speaker_change = True
+                self.in_assistant_mode = False
+                continue  # discard token line itself
+
+            # Detect assistant token
             if stripped == self.assistant_token:
                 self.in_assistant_mode = True
-                continue  # don't include token line itself in output
+                self.saw_any_speaker_change = True
+                continue  # discard token line itself
 
-            if stripped in self.other_tokens:
-                self.in_assistant_mode = False
-                continue  # don't include token line itself in output
-
-            # If currently assistant, accumulate the line
-            if self.in_assistant_mode and stripped != "":
+            # Accumulate only if either
+            # - no speaker change seen yet (before first speaker change)
+            # - or currently in assistant mode (after switch back)
+            if (not self.saw_any_speaker_change) or (self.in_assistant_mode and stripped != ""):
                 self.filtered_output += line + "\n"
 
         return False  # never stop generation by itself
 
     def get_filtered_output(self):
-        # Flush leftover buffer only if in assistant mode and it doesn't start with a token
         leftover = self.buffer.strip()
-        if self.in_assistant_mode and leftover and leftover not in self.other_tokens + [self.assistant_token]:
+        if ((not self.saw_any_speaker_change) or
+            (self.in_assistant_mode and leftover and leftover not in self.other_tokens + [self.assistant_token])):
             return self.filtered_output + leftover
         return self.filtered_output
+
 
 
 

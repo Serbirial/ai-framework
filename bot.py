@@ -573,6 +573,9 @@ class ChatBot(discord.Client):
         cursor.execute("SELECT botname FROM BOT_SELECTION WHERE userid = ?", (str(message.author.id),))
         row = cursor.fetchone()
         conn.close()
+        
+        streamer = None
+
 
         if row:
             botname = row[0]
@@ -592,6 +595,10 @@ class ChatBot(discord.Client):
         if flags["help"]:
             await message.reply(processed_input)
             return
+        if flags["stream"]:
+            msg_to_edit = await message.reply("Thinking...")
+            streamer = static.DiscordTextStreamer(msg_to_edit)
+
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
@@ -795,6 +802,7 @@ class ChatBot(discord.Client):
                             user_input=processed_input,
                             identifier=message.author.id,
                             context=history,
+                            streamer=streamer,
                             force_recursive=True,
                             category_override=flags["category"],
                             recursive_depth=flags["depth"],
@@ -812,6 +820,7 @@ class ChatBot(discord.Client):
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
+                            streamer=streamer,
                             context=history,
                             tiny_mode=flags["tinymode"],
                             category_override="instruction_memory",
@@ -828,6 +837,7 @@ class ChatBot(discord.Client):
                             username=message.author.display_name,
                             user_input=processed_input,
                             temperature=0.8,
+                            streamer=streamer,
                             identifier=message.author.id,
                             category_override=flags["category"],
                             tiny_mode=flags["tinymode"],
