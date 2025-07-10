@@ -7,9 +7,11 @@ import aiohttp
 import sqlite3
 from src import bot
 from src import static
-
+from src import classify
+import custom_gpt2_prompts
 DB_PATH = static.DB_PATH
 import asyncio
+CUSTOM_GPT2 = True
 
 import time
 def parse_personality_data(data_str):
@@ -586,9 +588,10 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
         stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
         if flags["orp"] == True:
-            data = self.ai._straightforward_generate(processed_input, 350, 0.8, 0.9, None, stop_criteria, processed_input)
-            return await message.reply(data)
-
+            async with self.generate_lock:  # ✅ Thread-safe section
+                async with message.channel.typing():
+                    data = self.ai._straightforward_generate(processed_input, 350, 0.8, 0.9, None, stop_criteria, processed_input)
+                    return await message.reply(data)
         if flags["help"]:
             await message.reply(processed_input)
             return
@@ -786,6 +789,25 @@ Example: !newpersonality traits: Friendly, Helpful; likes: coffee, coding; disli
             return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
+                if CUSTOM_GPT2:
+                    await message.reply("`CUSTOM GPT2 MODEL IS BEING USED! NO RECURSIVE THINKING CAN BE DONE! THIS MODEL IS UNSAFE AND FOR TESTING!`")
+                    usertone = classify.classify_social_tone(self.ai, tokenizer, processed_input)
+
+                    prompt = custom_gpt2_prompts.build_base_prompt_tiny(bot, message.author.display_name, processed_input, message.author.display_name, usertone, history)
+                    response = await asyncio.to_thread(
+                        self.ai._straightforward_generate,
+                        prompt=prompt,
+                        streamer=None,
+                        stop_criteria=stop_criteria,
+                        temperature=0.8,
+                        top_p=0.9,
+                        max_new_tokens=350,
+                        _prompt_for_cut=prompt
+                    )
+                    await message.reply(response)
+                    context.add_line(processed_input, "user")
+                    context.add_line(response, "assistant")
+                    return
                 try:
                     if flags["recursive"]:
                         response = await asyncio.to_thread(
