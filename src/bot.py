@@ -214,7 +214,7 @@ class ChatBot:
 
         # Generate the persona prompt text
         core_memory_entries = [row[0] for row in rows]
-        persona_prompt = classify.generate_persona_prompt(self.model, personality, core_memory_entries)
+        persona_prompt = self.get_persona_prompt(identifier)
 
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
@@ -376,15 +376,15 @@ class ChatBot:
         conn.commit()
         conn.close()
 
-    def get_persona_prompt(self, userid):
-        personality = list_personality(userid)
+    def get_persona_prompt(self, identifier):
+        personality = list_personality(identifier)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC", (userid,))
+        cursor.execute("SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC", (identifier,))
         rows = cursor.fetchall()
         conn.close()
         core_memory_entries = [row[0] for row in rows]
-        return classify.generate_persona_prompt(self.model, personality, core_memory_entries)
+        return classify.generate_persona_prompt(self.model,self.name, personality, core_memory_entries)
         
     def get_recent_history(self, identifier, limit=10):
         """
