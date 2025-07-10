@@ -69,7 +69,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
 
         mood = self.bot.mood
-        persona_prompt = self.get_persona_prompt(identifier)
+        persona_prompt = bot.get_persona_prompt(identifier)
 
         base = (
             f"<|system|>\n"
@@ -268,6 +268,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         else:
             prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+
         full = f"{prompt}" 
         extra_context_lines = []  # Accumulates all action results
     
