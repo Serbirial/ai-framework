@@ -11,13 +11,6 @@ import re
 
 from ai_tools import VALID_ACTIONS
 
-VALID_ACTIONS = {
-    "do_safe_math": {
-        "help": "Safely evaluates a math expression using +, -, *, /, %, //, and **. No variables or functions allowed.",
-        "callable": safe_math.do_safe_math,
-        "params": {"expression": "23 + (7 * 2) / 3"}
-    }
-}
 
 
 
@@ -104,7 +97,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             "- \"parameters\" contains the arguments for the action.\n"
             "- \"label\" is a unique string you assign to each action to identify it.\n"
             "\n"
-            "If you output MORE THAN ONE action in a single step, you MUST provide a distinct \"label\" for each action.\n"
+            "If you output MORE THAN ONE action in a single step, you MUST provide a distinct and UNIQUE \"label\" for each action.\n"
             "This label will be used to match your action with its results in the next step.\n"
             "\n"
             "If no action is needed, respond with reasoning only.\n"
