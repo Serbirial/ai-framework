@@ -13,6 +13,21 @@ DB_PATH = static.DB_PATH
 import asyncio
 
 import time
+
+temp_data = { # updated per interaction
+    "message": None,
+    "bot": None
+}
+
+
+def custom_debug(**data):
+    if not temp_data["bot"] or not temp_data["message"]:
+        print("CRITICAL: TEMP STATE NOT UPDATED FOR DEBUG")
+    # use message.reply and bot to send pretty-formatted data in a text file attachment
+
+static.DEBUG_FUNC = custom_debug
+
+
 def parse_personality_data(data_str):
     """
     Parses personality data string into dict of lists:
@@ -588,15 +603,21 @@ class ChatBot(discord.Client):
         flags, processed_input = self.parse_command_flags(processed_input)
         stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
+        temp_data["bot"] = self
+        temp_data["message"] = message
         if static.CUSTOM_GPT2:
             await message.reply("CUSTOM GPT2 MODEL IS BEING USED! RECURSIVE THINKING MIGHT BREAK! THIS MODEL IS UNSAFE / NSFW!`")
         if flags["orp"] == True:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
                     data = self.ai._straightforward_generate(processed_input, 350, 0.8, 0.9, None, stop_criteria, processed_input)
+                    temp_data["bot"] = None
+                    temp_data["message"] = None
                     return await message.reply(data)
         if flags["help"]:
             await message.reply(processed_input)
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
         if flags["stream"]:
             msg_to_edit = await message.reply("Thinking...")
@@ -675,6 +696,8 @@ class ChatBot(discord.Client):
                 conn.rollback()
                 conn.close()
                 await message.reply(f"Failed to create new personality: {e}")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             # Set this personality as active for the user
@@ -687,23 +710,32 @@ class ChatBot(discord.Client):
                 conn.close()
             except Exception as e:
                 await message.reply(f"Failed to set active personality: {e}")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
-
+            temp_data["bot"] = None
+            temp_data["message"] = None
             await message.reply(f"New personality '{new_name}' created and set as your active personality.")
             return
 
         elif flags["clearmem"]:
             clear_user_memory_and_history(message.author.id)
             await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
         elif flags["clearlivehistory"]:
             context.lines = []
             await message.reply(f"The AI's live chat history with {message.author.display_name} has been reset (AI wont re-read stored history until its restarted).")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
         elif flags["clearhistory"]:
             clear_user_history(message.author.id)
             context.lines = []
             await message.reply(f"The AI's entire chat history with {message.author.display_name} has been reset. (live+stored)")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
                 
         elif flags["clear_section"] or flags["add_section"]:
@@ -716,6 +748,8 @@ class ChatBot(discord.Client):
 
             if not row:
                 await message.reply("You have no personality selected. Create or select one first.")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             active_botname = row[0]
@@ -723,6 +757,8 @@ class ChatBot(discord.Client):
             # Protect 'default' personality from modifications
             if active_botname.lower() == "default":
                 await message.reply("You cannot modify the 'default' personality.")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             # Validate the section name
@@ -730,16 +766,22 @@ class ChatBot(discord.Client):
             valid_sections = {"likes", "dislikes", "goals", "traits"}
             if section not in valid_sections:
                 await message.reply(f"Invalid section '{section}'. Valid options are: likes, dislikes, goals, traits.")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             if flags["clear_section"]:
                 success, msg = clear_personality_section(message.author.id, section)
                 await message.reply(msg)
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             if flags["add_section"]:
                 success, msg = add_to_personality_section(message.author.id, section, flags["add_text"])
                 await message.reply(msg)
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
 
@@ -749,11 +791,15 @@ class ChatBot(discord.Client):
             if len(listing) > 1900:
                 listing = listing[:1900] + "\n... (truncated)"
             await message.reply(f"**Your Personality Data:**\n{listing}")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
 
         elif flags["rawmemstore"]:
             self.ai.add_to_remember(message.author.id, processed_input)
             await message.reply(f"Added `{processed_input}` to the AI's memory.")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
 
         elif flags["listmem"]:
@@ -768,6 +814,8 @@ class ChatBot(discord.Client):
 
             if not rows:
                 await message.reply("No memory entries found for you.")
+                temp_data["bot"] = None
+                temp_data["message"] = None
                 return
 
             formatted = "\n".join(
@@ -777,6 +825,8 @@ class ChatBot(discord.Client):
             if len(formatted) > 1800:
                 formatted = formatted[:1800] + "\n...and more."
             await message.reply(f"**Stored Memory Entries:**\n{formatted}")
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return
         valid_categories = [
             "greeting",
@@ -788,11 +838,17 @@ class ChatBot(discord.Client):
             "other"]
         if flags["category"] == -1:
             valid_list = ", ".join(valid_categories)
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return await message.reply(f"Valid options are: `{valid_list}`")
         elif flags["category"] and flags["category"] not in valid_categories:
             valid_list = ", ".join(valid_categories)
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return await message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
         if int(flags["depth"]) > 75:
+            temp_data["bot"] = None
+            temp_data["message"] = None
             return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
         async with self.generate_lock:  # ✅ Thread-safe section
             async with message.channel.typing():
@@ -815,6 +871,8 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        temp_data["bot"] = None
+                        temp_data["message"] = None
                         return
                     elif flags["memstore"]:
                         response = await asyncio.to_thread(
@@ -832,6 +890,8 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        temp_data["bot"] = None
+                        temp_data["message"] = None
                         return
                     else:
                         response = await asyncio.to_thread(
@@ -850,6 +910,8 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        temp_data["bot"] = None
+                        temp_data["message"] = None
                         return
 
 

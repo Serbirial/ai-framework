@@ -19,7 +19,7 @@ from . import classify
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter, DEBUG_FUNC
 
 tokenizer = DummyTokenizer() # FiXME
 
@@ -505,6 +505,8 @@ class ChatBot:
 
                 # add data from helper function into prompt before responding
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
+                if debug:
+                    DEBUG_FUNC(prompt=prompt, response=response, memory_data=memory_data)
             else:
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
@@ -523,7 +525,7 @@ class ChatBot:
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
-                final = f"{thoughts}\n{final}"
+                DEBUG_FUNC(thoughts=thoughts, final=final)
             log("DEBUG: FINAL THOUGHTS",final)
             
             response = final
@@ -542,7 +544,7 @@ class ChatBot:
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
-                final = f"{thoughts}\n{final}"
+                    DEBUG_FUNC(thoughts=thoughts, final=final)
             log("DEBUG: FINAL THOUGHTS",final)
             response = final
         elif category == "other":
@@ -562,7 +564,7 @@ class ChatBot:
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
-                    final = f"{thoughts}\n{final}"
+                    DEBUG_FUNC(thoughts=thoughts, final=final)
                 log("DEBUG: FINAL THOUGHTS",final)
                 response = final
             elif force_recursive == False:
@@ -585,7 +587,7 @@ class ChatBot:
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
-                    final = f"{thoughts}\n{final}"
+                    DEBUG_FUNC(thoughts=thoughts, final=final)
                 log("DEBUG: FINAL THOUGHTS",final)
                 response = final
 
@@ -628,5 +630,21 @@ class ChatBot:
         log("DEBUG", f"final response: {response}")
         log("DEBUG", "------------------------------------------")
 
-
+        if debug:
+            DEBUG_FUNC(
+                prompt=prompt,
+                username=username,
+                user_input=user_input,
+                identifier=identifier,
+                category=category,
+                mood=self.mood,
+                mood_sentence=self.mood_sentence,
+                usertone=usertone,
+                tiny_mode=tiny_mode,
+                moods=moods,
+                force_recursive=force_recursive,
+                context_token_count=context_token_count,
+                personality=personality_str.strip(),
+                final_response=response
+            )
         return response

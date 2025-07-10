@@ -400,5 +400,5 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log(f"DEBUG: FINAL TOKEN SIZE:", final_tokens_used)
 
 
-        return full, final_answer
+        return final_prompt, final_answer
 
