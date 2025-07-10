@@ -160,6 +160,7 @@ def generate_persona_prompt(model, personality: dict, core_memory_entries: list[
         )
         from utils import openai
         persona_prompt = openai.extract_generated_text(outputs).strip()
+        log("PERSONA PROMPT", persona_prompt)
     except Exception as e:
         log("PERSONA ERROR", f"Error generating persona prompt: {e}")
         persona_prompt = (
