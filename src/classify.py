@@ -202,8 +202,11 @@ def classify_user_input(model, tokenizer, user_input):
         "Input: I want you to remember...\nCategory: instruction_memory\n"
         "Input: What's the capital of Germany?\nCategory: factual_question\n"
         "Input: Do you like X?\nCategory: preference_query\n"
-        "Input: Whats 1 + 8 * 4?\nCategory: instruction\n"
-        "Input: Whats your local time?\nCategory: instruction\n"
+        "Input: Whats 1 + 8 * 4?\nCategory: task\n"
+        "Input: Whats your local time?\nCategory: task\n"
+        "Input: Execute this math...\nCategory: task\n"
+        "Input: Whats your time...\nCategory: task\n"
+
         "Input: What are your likes / dislikes?\nCategory: preference_query\n"
         "Input: What's your opinion on X?\nCategory: preference_query\n"
         "Input: I love rainy days.\nCategory: statement\n"
