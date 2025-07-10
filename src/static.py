@@ -38,43 +38,49 @@ class StopOnSpeakerChange:
         self.max_lines = max_lines
         self.line_count = 0
         self.buffer = ""
-        self.default_stop_tokens = ["<|user|>", "<|system|>", "<|end|>", "<user>"]
-        self.custom_stops = custom_stops or []  # List of strings that trigger stop
+        self.stopped = False
+
+        self.default_stop_tokens = ["<|user|>", "<|system|>", "<|end|>", "<|eos|>", "<user>"]
+        self.custom_stops = custom_stops or []
 
     def __call__(self, new_text_chunk):
-        self.buffer += new_text_chunk
+        if self.stopped:
+            return True
 
-        # Check all stop tokens in the raw buffer (both default and custom)
-        all_stop_tokens = self.default_stop_tokens + self.custom_stops
-        for stop_token in all_stop_tokens:
-            if stop_token in self.buffer and self.line_count >= self.min_lines:
-                # Stop generation if we see a stop token in raw buffer and min lines passed
-                return True
+        self.buffer += new_text_chunk
 
         lines = []
         while "\n" in self.buffer:
             line, self.buffer = self.buffer.split("\n", 1)
             line = line.strip()
-            if line != "":
-                lines.append(line)
+            lines.append(line)
 
-        assistant_lines = []
+        all_stop_tokens = self.default_stop_tokens + self.custom_stops
+
         for line in lines:
+            print(f"Processing line: {repr(line)} | line_count: {self.line_count}")
+
             if line == "<|assistant|>":
                 continue
-            elif line.startswith("<|user|>") or line.startswith("<|system|>") or line.startswith("<|end|>") or line.startswith("<|eos|>"):
+
+            if any(line.startswith(tok) for tok in all_stop_tokens):
                 if self.line_count >= self.min_lines:
+                    print("STOP: Detected token in linme and min_lines reached.")
+                    self.stopped = True
                     return True
 
             if line and not line.startswith("<|"):
-                assistant_lines.append(line)
+                self.line_count += 1
+                print(f"Assistant line counted → {self.line_count}")
 
-        self.line_count += len(assistant_lines)
-
-        if self.line_count >= self.max_lines:
-            return True
+            if self.line_count >= self.max_lines:
+                print("STOP: Reached max_lines.")
+                self.stopped = True
+                return True
 
         return False
+
+
     
 class DiscordTextStreamer:
     def __init__(self, discord_message, update_interval=5.0):
