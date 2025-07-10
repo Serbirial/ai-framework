@@ -494,7 +494,8 @@ class ChatBot:
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops, min_lines=1)  # NO tokenizer argument
         
-        
+        thoughts = "Blank thoughts string"
+        final = "blank final string"
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
             memory_data = classify.interpret_memory_instruction(user_input, self.model)
@@ -644,6 +645,8 @@ class ChatBot:
                 moods=moods,
                 force_recursive=force_recursive,
                 context_token_count=context_token_count,
+                thoughts=thoughts,
+                final=final,
                 personality=personality_str.strip(),
                 final_response=response
             )
