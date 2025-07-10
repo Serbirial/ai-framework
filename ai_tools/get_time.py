@@ -21,7 +21,7 @@ def get_current_time(parameters: dict) -> dict:
 
 EXPORT = {
     "get_device_time": {
-        "help": "Returns the current device LOCAL time in ISO 8601 format.",
+        "help": "Use this function/action to get your current time (in ISO 8601 format).",
         "callable": get_current_time,
         "params": {}
     }

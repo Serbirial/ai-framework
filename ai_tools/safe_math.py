@@ -62,7 +62,7 @@ def do_safe_math(parameters: dict) -> dict:
 
 EXPORT = {
     "execute_math": {
-        "help": "Inteternal function that evaluates / executes math EXLCUSIVELY using +, -, *, /, %, //, and **.",
+        "help": "Use this function/action to execute and run math EXLCUSIVELY using +, -, *, /, %, //, and **.",
         "callable": do_safe_math,
         "params": {"expression": "23 + (7 * 2) / 3"}
     }}
