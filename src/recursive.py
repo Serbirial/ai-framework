@@ -44,8 +44,11 @@ def check_for_actions_and_run(text):
             label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
             results.append(f"<ActionResult{label}>{json.dumps(error_msg)}</ActionResult{label}>")
 
-    if results:
-        return "\n".join(results)
+    if len(results)>0:
+        if len(results) == 1:
+            return results[0]
+        else:
+            return results
     return False
 
 
