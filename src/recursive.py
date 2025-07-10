@@ -91,23 +91,28 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             f"# Actions\n"
             "You may optionally output up to FIVE <Action> JSON blocks per step.\n"
             "You must output each action in this exact format:\n"
-            '<Action>{"action": "<action_name>", "parameters": { ... }, "label": "<unique_label>"}</Action>\n'
+            '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
             "Where:\n"
-            "- <action_name> must be one of the following actions:\n"
+            "- <action_name> must be one of the following:\n"
             + "\n".join(
                 f'  - "{k}": {v["help"]}\n'
                 f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
                 for k, v in VALID_ACTIONS.items()
             )
-            + "\n" 
-            "- \"parameters\" contains the arguments for the action.\n"
-            "- \"label\" is a unique string you assign to each action to identify it.\n"
-            "\n"
-            "If you output MORE THAN ONE action in a single step, you MUST provide a distinct and UNIQUE \"label\" for each action.\n"
-            "This label will be used to match your action with its results in the next step.\n"
-            "\n"
-            "If no action is needed, respond with reasoning only.\n"
-            "Results of actions will be given back to you next step inside corresponding <ActionResult<label>> blocks, where <label> matches your original action's label.\n"
+            + "\n"
+            "- \"parameters\" are arguments passed to the action.\n"
+            "- \"label\" is a unique string to match actions with results.\n\n"
+
+            "If you output MORE THAN ONE action, each must have a distinct \"label\".\n"
+            "This label is used to connect each action to its returned result in the next step.\n"
+            "If no action is needed, respond with reasoning only.\n\n"
+
+            "# What Actions Actually Do\n"
+            "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
+            "- When you emit an action, you are **calling a real function**.\n"
+            "- The system will run it and give you a result next step as <ActionResult<label>>.\n\n"
+            "You MUST NOT fabricate results. Use only the actual <ActionResult> values returned.\n"
+            "You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
 
         )
 
@@ -259,7 +264,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
         else:
             prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
-        full = prompt
+        full = f"{prompt}" 
         extra_context_lines = []  # Accumulates all action results
     
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt

@@ -529,6 +529,7 @@ class ChatBot:
                 DEBUG_FUNC(thoughts=thoughts, final=final)
             log("DEBUG: FINAL THOUGHTS",final)
             thoughts = thoughts
+            final = final
             
             response = final
         elif category == "preference_query":
