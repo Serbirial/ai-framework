@@ -103,7 +103,7 @@ class ChatBot:
         # New TinyLlama model init
         self.model = Llama(
             model_path=mainLLM,
-            n_ctx=1024,              # TODO use CTX setter 
+            n_ctx=2048,              # TODO use CTX setter 
             n_threads=4,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
@@ -611,6 +611,8 @@ class ChatBot:
         # DO PROCESDSING HERE
         print("\n\n\n\n\n")
         log("DEBUG", "---------- FINAL CHAT STATE DUMP ----------")
+        log("DEBUG", f"prompt:\n {prompt}")
+
         log("DEBUG", f"username: {username}")
         log("DEBUG", f"user_input: {user_input}")
         log("DEBUG", f"identifier: {identifier}")
