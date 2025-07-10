@@ -73,7 +73,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
         base = (
             f"<|system|>\n"
-            f"You are a personality-driven assistant named {self.name}.\n"
+            f"You are a personality-driven assistant named {self.bot.name}.\n"
             f"# {self.bot.name}'s Personality Profile\n"
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
             f"**Your Traits:** {traits}  \n"
