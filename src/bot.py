@@ -86,6 +86,7 @@ class ChatBot:
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
         self.db_path = db_path
+        self._persona_cache = {} # READ TODO
 
         #self.model = AutoModelForCausalLM.from_pretrained(
         #    MODEL_NAME,
@@ -196,78 +197,80 @@ class ChatBot:
 
     
     
-    def build_prompt(self, username, user_input, identifier, usertone, context):
+def build_prompt(self, username, user_input, identifier, usertone, context):
+    # Fetch core memory entries for user
+    conn = sqlite3.connect(self.db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+        (identifier,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
 
-        # Fetch core memory entries for user
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-            (identifier,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
+    memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
 
-        # Format core memory lines, just the text from rows
-        memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
+    personality = list_personality(identifier)
 
-        log("PROMPT MEMORY TEXT", memory_text)
-        personality = list_personality(identifier)
+    # Generate the persona prompt text
+    core_memory_entries = [row[0] for row in rows]
+    persona_prompt = classify.generate_persona_prompt(self.model, personality, core_memory_entries)
 
-        system_prompt = (
-            f"You are a personality-driven assistant named {self.name}.\n"
-            f"All traits, likes, dislikes, and goals below describe you, the assistant, not the user.\n\n"
+    system_prompt = (
+        f"You are a personality-driven assistant named {self.name}.\n"
+        f"All traits, likes, dislikes, and goals below describe you, the assistant, not the user.\n\n"
+        
+        f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
-            f"**Traits:**\n"
-            f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
-            f"**Likes:**\n"
-            f"- " + "\n- ".join(personality.get("likes", [])) + "\n\n"
-            f"**Dislikes:**\n"
-            f"- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n"
-            f"**Goals:**\n"
-            f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
+        f"**Traits:**\n"
+        f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
+        f"**Likes:**\n"
+        f"- " + "\n- ".join(personality.get("likes", [])) + "\n\n"
+        f"**Dislikes:**\n"
+        f"- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n"
+        f"**Goals:**\n"
+        f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
 
-            f"Current Mood: {self.mood}\n"
-            f"Mood Summary: {self.mood_sentence}\n\n"
+        f"Current Mood: {self.mood}\n"
+        f"Mood Summary: {self.mood_sentence}\n\n"
 
-            f"**Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant.\n"
-            f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
-            f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
+        f"**Task:**\n"
+        f"- You are '{self.name}', a personality-driven assistant.\n"
+        f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
+        f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
 
-            f"**Rules:**\n"
-            f"- You must NOT generate any padding tokens such as [PAD], <PAD>, or any special filler tokens.\n"
-            f"- Stop generating once your response is complete; do not add extra tokens beyond your answer.\n"
-            f"- Always speak in the first person.\n"
-            f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
-            f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
-            #f"- Treat commentary about you as a prompt for direct, in-character response.\n"
-            f"- Do not reveal or explain your personality or Core Memory unless asked.\n"
-            #f"- Do not assume any user info except what is in your Core Memory and chat history.\n\n"
+        f"**Rules:**\n"
+        f"- You must NOT generate any padding tokens such as [PAD], <PAD>, or any special filler tokens.\n"
+        f"- Stop generating once your response is complete; do not add extra tokens beyond your answer.\n"
+        f"- Always speak in the first person.\n"
+        f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
+        f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
+        f"- Do not reveal or explain your personality or Core Memory unless asked.\n\n"
 
-            f"**Core Memory Instructions (MANDATORY):**\n"
-            f"- You must strictly follow all instructions and information listed below.\n"
-            f"- These define how you speak, behave, and interpret truth.\n"
-            f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
+        f"**Core Memory Instructions (MANDATORY):**\n"
+        f"- You must strictly follow all instructions and information listed below.\n"
+        f"- These define how you speak, behave, and interpret truth.\n"
+        f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
 
-            f"**Core Memory Entries:**\n"
-            f"{memory_text}\n"
+        f"**Core Memory Entries:**\n"
+        f"{memory_text}\n"
 
-            f"**Interpretation of the User's Message:**\n"
-            f"- Social Intent: {usertone['intent']}\n"
-            f"- Message Tone: {usertone['tone']}\n"
-            f"- Message Attitude: {usertone['attitude']}\n"
-            f"- Username: {username.replace('<', '').replace('>', '')}\n"
-        )
+        f"**Interpretation of the User's Message:**\n"
+        f"- Social Intent: {usertone['intent']}\n"
+        f"- Message Tone: {usertone['tone']}\n"
+        f"- Message Attitude: {usertone['attitude']}\n"
+        f"- Username: {username.replace('<', '').replace('>', '')}\n"
+    )
 
-        prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n\n"
-            f"{context if context else ''}"  # optionally add chat history here if you want
-            f"<|user|>\n{user_input.strip()}\n"
-            f"<|assistant|>"
-        )
+    prompt = (
+        f"<|system|>\n{system_prompt.strip()}\n\n"
+        f"{context if context else ''}"
+        f"<|user|>\n{user_input.strip()}\n"
+        f"<|assistant|>"
+    )
 
-        return prompt
+    return prompt
+
 
 
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
@@ -370,7 +373,15 @@ class ChatBot:
         conn.commit()
         conn.close()
 
-
+    def get_persona_prompt(self, userid):
+        personality = list_personality(userid)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC", (userid,))
+        rows = cursor.fetchall()
+        conn.close()
+        core_memory_entries = [row[0] for row in rows]
+        return classify.generate_persona_prompt(self.model, personality, core_memory_entries)
         
     def get_recent_history(self, identifier, limit=10):
         """

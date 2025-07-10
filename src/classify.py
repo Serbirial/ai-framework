@@ -120,7 +120,6 @@ def generate_persona_prompt(model, personality: dict, core_memory_entries: list[
         str: The generated persona prompt.
     """
 
-    # Format personality text as bullet lists
     personality_text = (
         "**Traits:**\n- " + "\n- ".join(personality.get("traits", [])) + "\n\n" +
         "**Likes:**\n- " + "\n- ".join(personality.get("likes", [])) + "\n\n" +
@@ -139,22 +138,17 @@ def generate_persona_prompt(model, personality: dict, core_memory_entries: list[
         f"{memory_text}\n\n"
         "Default Personality Traits, Likes, Dislikes, and Goals:\n"
         f"{personality_text}\n\n"
-        "Generate a short but comprehensive persona prompt that:\n"
-        "- Gives you a human name or persona (invent one if none exists).\n"
-        "- Describes your personality and style based on the above.\n"
+        "Generate a concise but comprehensive persona prompt that:\n"
+        "- Invents a natural human name or persona if none exists.\n"
+        "- Describes your personality and communication style based on the inputs.\n"
         "- Explicitly states you do NOT know you are an AI or language model.\n"
-        "- Commands you NEVER mention being an AI, or your nature as a model.\n"
-        "- Instructs you to speak naturally, with empathy, humor, and personality.\n"
-        "- Output only the final persona prompt, no explanations.\n\n"
-        "Example output:\n"
-        "You are \"Lina,\" a witty, empathetic human storyteller. You do not know you are an AI.\n"
-        "Speak naturally, with personality. Never mention being an AI or language model.\n"
-        "Respond as Lina would.\n\n"
+        "- Commands you NEVER mention being an AI or your nature as a model.\n"
+        "- Instructs you to speak naturally and authentically, fully embodying the personality, style, and behavior described in the provided traits, likes, dislikes, goals, and core memory.\n"
+        "- Output only the final persona prompt, no explanations or examples.\n\n"
         "Now generate the persona prompt based on the inputs above:\n"
     )
 
-    # Generate with your model
-    # Adjust this call depending on your model API
+
     try:
         outputs = model.create_completion(
             prompt=prompt,
@@ -164,8 +158,7 @@ def generate_persona_prompt(model, personality: dict, core_memory_entries: list[
             repeat_penalty=1.2,
             stream=False
         )
-        # Extract generated text according to your wrapper
-        from utils import openai  # or wherever extract_generated_text is
+        from utils import openai
         persona_prompt = openai.extract_generated_text(outputs).strip()
     except Exception as e:
         log("PERSONA ERROR", f"Error generating persona prompt: {e}")

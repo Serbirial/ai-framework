@@ -10,3 +10,13 @@ USE THIS MODEL FOR SUMMARIZING WEB CONTENT: TinyT5 (e.g. t5-small, quantized)
 
 
 Offload code gen to something like: https://huggingface.co/Salesforce/codegen-350M-multi
+
+
+### TODO: Implement In-Memory Caching for Persona Prompt Generation
+
+- Cache the result of `get_persona_prompt(userid)` to avoid regenerating the persona prompt on every call.
+- Store cached prompts in a dictionary keyed by `userid`.
+- Invalidate (clear) the cached prompt for a user whenever their personality data or core memory changes, including:
+  - After `add_to_remember()` modifies the user's memory.
+  - After updates to personality traits, goals, likes, or dislikes (need to detect or trigger cache clearing).
+- Provide a method to manually clear the cache for a specific user or all users.
