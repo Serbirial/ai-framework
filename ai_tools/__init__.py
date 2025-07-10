@@ -1,5 +1,5 @@
 
-from safe_math import EXPORT as SAFE_MATH_EXPORT
+from .safe_math import EXPORT as SAFE_MATH_EXPORT
 
 VALID_ACTIONS = {}
 

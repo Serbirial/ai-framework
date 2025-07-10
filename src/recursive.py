@@ -19,7 +19,7 @@ def check_for_actions_and_run(text):
 
     matches = re.findall(r"<Action>(.*?)</Action>", text, re.DOTALL)
     if not matches:
-        return False  # no actions found
+        return "NOACTION"  # no actions found
 
     for raw in matches:
         try:
@@ -49,7 +49,7 @@ def check_for_actions_and_run(text):
             return results[0]
         else:
             return results
-    return False
+    return "NOACTION"
 
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
@@ -95,8 +95,11 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             "Where:\n"
             "- <action_name> must be one of the following actions:\n"
             + "\n".join(
-                f"  - \"{k}\": {v['help']}" for k, v in VALID_ACTIONS.items()
-            ) + "\n"
+                f'  - "{k}": {v["help"]}\n'
+                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
+                for k, v in VALID_ACTIONS.items()
+            )
+            + "\n" 
             "- \"parameters\" contains the arguments for the action.\n"
             "- \"label\" is a unique string you assign to each action to identify it.\n"
             "\n"
