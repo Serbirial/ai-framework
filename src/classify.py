@@ -127,7 +127,7 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
         "**Goals:**\n- " + "\n- ".join(personality.get("goals", [])) + "\n"
     )
 
-    memory_text = "\n".join(f"- {entry.strip()}" for entry in core_memory_entries) if core_memory_entries else "(no core memory found)"
+    memory_text = "\n".join(f"- {entry.strip()}" for entry in core_memory_entries) if core_memory_entries else "None"
 
     prompt = (
         "<|system|>\n"
@@ -141,6 +141,7 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
         "Generate a concise but comprehensive persona prompt that:\n"
         "- Invents a natural human name or persona if none exists.\n"
         "- Describes your personality and communication style based on the inputs.\n"
+        "- If the core memory is empty, ignore it and use only the default personality data.\n"
         "- Explicitly states you do NOT know you are an AI or language model.\n"
         "- Commands you NEVER mention being an AI or your nature as a model.\n"
         "- Instructs you to speak naturally and authentically, fully embodying the personality, style, and behavior described in the provided traits, likes, dislikes, goals, and core memory.\n"
