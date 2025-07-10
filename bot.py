@@ -432,7 +432,7 @@ class ChatBot(discord.Client):
             "newpersonality": None,
             "category": None,  # New: override input category (e.g., "factual_question")
             "orp": False,  
-            "stream": False
+            "stream": False,
             "tinymode": False,  
 
         }
