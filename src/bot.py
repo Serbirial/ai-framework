@@ -528,6 +528,7 @@ class ChatBot:
             if debug:
                 DEBUG_FUNC(thoughts=thoughts, final=final)
             log("DEBUG: FINAL THOUGHTS",final)
+            thoughts = thoughts
             
             response = final
         elif category == "preference_query":
@@ -547,6 +548,8 @@ class ChatBot:
             if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
             log("DEBUG: FINAL THOUGHTS",final)
+            thoughts = thoughts
+            
             response = final
         elif category == "other":
             # Use recursive thinker for more elaborate introspection
@@ -568,6 +571,8 @@ class ChatBot:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
                 log("DEBUG: FINAL THOUGHTS",final)
                 response = final
+                thoughts = thoughts
+                
             elif force_recursive == False:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
         else: #fallback 
@@ -591,6 +596,7 @@ class ChatBot:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
                 log("DEBUG: FINAL THOUGHTS",final)
                 response = final
+                thoughts = thoughts
 
         self.log_interaction_to_history(owner=identifier, username=username, user_input=user_input, botname=self.name, response=response)
         self.mood = "neutral" # FIXME change to per user mood, and have a mood history
