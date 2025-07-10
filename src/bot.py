@@ -118,7 +118,7 @@ class ChatBot:
             use_mmap=False,
             n_gpu_layers=0,
             low_vram=True,
-            n_batch=64,
+            n_batch=32,
             numa=False
         )
 
