@@ -645,9 +645,9 @@ class ChatBot:
                 moods=moods,
                 force_recursive=force_recursive,
                 context_token_count=context_token_count,
-                thoughts=thoughts,
                 final=final,
                 personality=personality_str.strip(),
+                thoughts=thoughts,
                 final_response=response
             )
         return response
