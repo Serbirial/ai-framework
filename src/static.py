@@ -13,7 +13,7 @@ mood_instruction = {
     "neutral": "Use a calm and balanced tone if not stated otherwise."
 }
 MODEL_NAME = ""
-mainLLM = "~/SmolLM2-360M-Instruct-Q4_K_M.gguf" # TEMP while running on PI
+mainLLM = "/data/data/com.termux/files/home/tinyllama-1.1b-chat-v1.0.Q4_K_S.gguf" # TEMP while running on PI
 #actual good model vvv
 #mainLLM = "/home/koya/models/llama-2-7b-chat.Q4_K_S.gguf" # TEMP while running on dedi VM
 
@@ -30,7 +30,7 @@ TOKEN = ""
 DB_PATH = "memory.db"
 SCHEMA_PATH = "config/schema.sql"
 
-CUSTOM_GPT2 = True
+CUSTOM_GPT2 = False
 
 WEB_ACCESS = False # This is what enables or disables the AI having internet access
 

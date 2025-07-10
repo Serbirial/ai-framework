@@ -13,6 +13,8 @@ import time
 import os
 import sqlite3
 from .recursive import RecursiveThinker
+from .stepped_work import RecursiveWork
+
 from . import classify
 from utils import openai
 
@@ -517,6 +519,23 @@ class ChatBot:
                     DEBUG_FUNC(prompt=prompt, response=response, memory_data=memory_data)
             else:
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
+
+        elif category == "instruction": # The user wants the AI to do something task based- and it will be done step by step.
+            if not context:
+                short_context = self.get_recent_history(identifier, limit=10)
+            else:
+                short_context = context
+
+            thinker = RecursiveWork(self, depth=recursive_depth, streamer=streamer)
+            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            log("DEBUG: GENERATED TASK STEPS",thoughts)
+            if debug:
+                DEBUG_FUNC(thoughts=thoughts, final=final)
+            log("DEBUG: FINAL THOUGHTS",final)
+            thoughts = thoughts
+            final = final
+            
+            response = final
 
         elif category == "factual_question":
             # Use recursive thinker for more elaborate introspection

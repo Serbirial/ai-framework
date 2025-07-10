@@ -275,7 +275,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
         for step in range(self.depth):
-            # start with the system prompt or base context (not shown in your snippet)
+            # start with the system prompt or base context
             step_prompt = f"{prompt}"
 
             # include prior steps content only (no "### Thought step" headers)
