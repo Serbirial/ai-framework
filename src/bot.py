@@ -614,7 +614,7 @@ class ChatBot:
         # Manual pretty print personality
         personality = list_personality(identifier)
         botname = get_user_botname(identifier)
-        personality_str = f"Bot Name: {botname if botname != None else self.namw}\n"
+        personality_str = f"Bot Name: {botname if botname != None else self.name}\n"
         for section in ["traits", "likes", "dislikes", "goals"]:
             entries = personality.get(section, [])
             if entries:
