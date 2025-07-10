@@ -31,6 +31,11 @@ CUSTOM_GPT2 = True
 
 WEB_ACCESS = False # This is what enables or disables the AI having internet access
 
+def default_debug(**data):
+    print()
+
+DEBUG_FUNC = default_debug
+
 class StopOnSpeakerChange:
     def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
         self.bot_name = bot_name
