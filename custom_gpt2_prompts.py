@@ -12,6 +12,7 @@ def get_user_botname(userid):
         return row[0]
     return "default"
 
+
 def list_personality(userid):
     """
     Returns a dictionary of personality sections and their entries
@@ -54,12 +55,13 @@ def list_personality(userid):
 
 def build_recursive_checkpoint_prompt(bot):
     string = (
-    f"checkpoint:\n"
-    f"- Are your steps leading toward the answer?\n"
-    f"- Summarize progress + next action.\n"
-    f"- Stay focused. Think as {bot.name}.\n"
+        f"checkpoint:\n"
+        f"- Are your steps leading toward the answer?\n"
+        f"- Summarize progress + next action.\n"
+        f"- Stay focused. Think as {bot.name}.\n"
     )
     return string
+
 
 def build_recursive_final_answer_prompt_tiny(query_type: str, bot_name: str) -> str:
     if query_type == "factual_question":
@@ -90,32 +92,32 @@ def build_base_prompt_tiny(bot, username, user_input, identifier, usertone, cont
 
     p = list_personality(identifier)
 
-    system = (
-        f"name: {bot.name} .\n"
-        f"traits:\n- " + "\n- ".join(p.get("traits", [])) + "\n"
-        f"likes:\n- " + "\n- ".join(p.get("likes", [])) + "\n"
-        f"dislikes:\n- " + "\n- ".join(p.get("dislikes", [])) + "\n"
-        f"goals:\n- " + "\n- ".join(p.get("goals", [])) + "\n"
-        f"mood: {bot.mood} — {bot.mood_sentence}\n"
-        f"memory:\n{memory_text}\n"
-        f"user-intent: {usertone['intent']}, tone: {usertone['tone']}, attitude: {usertone['attitude']}, user: {username.replace('<','').replace('>','')}"
-    )
+    lines = [
+        f"{bot.name}:",  # Bot name instead of <|bot|>
+        f"traits: {', '.join(p.get('traits', []))}",
+        f"likes: {', '.join(p.get('likes', []))}",
+        f"dislikes: {', '.join(p.get('dislikes', []))}",
+        f"goals: {', '.join(p.get('goals', []))}",
+        f"mood: {bot.mood} — {bot.mood_sentence}",
+        "memory:",
+    ]
+    if memory_text.strip():
+        lines.extend(line for line in memory_text.split("\n") if line.strip())
 
-    prompt = (
-        f"<|system|>\n{system.strip()}\n"
-        f"{context if context else ''}"
-        f"<|user|>\n{user_input.strip()}\n"
-        f"<|assistant|>"
-    )
+    lines.append(f"user-intent: {usertone['intent']}, tone: {usertone['tone']}, attitude: {usertone['attitude']}, user: {username}")
 
+    if context:
+        lines.append("\n" + context.strip())
+
+    lines.append(f"\n{username}: {user_input.strip()}")  # user name instead of <|user|>
+    lines.append(f"{bot.name}:")  # bot name for response start
+
+    prompt = "\n".join(lines)
     return prompt
+
 
 def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=""):
     p = list_personality(identifier)
-    traits = "\n- " + "\n- ".join(p.get("traits", [])) if p.get("traits") else ""
-    goals = "\n- " + "\n- ".join(p.get("goals", [])) if p.get("goals") else ""
-    likes = "\n- " + "\n- ".join(p.get("likes", [])) if p.get("likes") else ""
-    dislikes = "\n- " + "\n- ".join(p.get("dislikes", [])) if p.get("dislikes") else ""
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -125,59 +127,45 @@ def build_recursive_prompt_tiny(bot, question, username, query_type, usertone, c
 
     memory = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
 
-    base = (
-        f"<|system|>\n"
-        f"{bot.name}: assistant\n"
-        f"traits:{traits}\nlikes:{likes}\ndislikes:{dislikes}\ngoals:{goals}\n"
-        f"mood: {bot.mood} — {bot.mood_sentence}\n"
-        f"user: {username}, intent: {usertone['intent']}, tone: {usertone['tone']}, attitude: {usertone['attitude']}\n"
-    )
+    lines = [
+        f"{bot.name}:",  # Bot name instead of <|bot|>
+        f"traits: {', '.join(p.get('traits', []))}",
+        f"likes: {', '.join(p.get('likes', []))}",
+        f"dislikes: {', '.join(p.get('dislikes', []))}",
+        f"goals: {', '.join(p.get('goals', []))}",
+        f"mood: {bot.mood} — {bot.mood_sentence}",
+        f"user: {username}, intent: {usertone['intent']}, tone: {usertone['tone']}, attitude: {usertone['attitude']}",
+    ]
 
     if context:
-        base += f"history:\n{context}\n"
-
+        lines.append("context:")
+        lines.append(context.strip())
     if memory:
-        base += f"memory:\n{memory}\n"
+        lines.append("memory:")
+        lines.extend(line for line in memory.split("\n") if line.strip())
 
-    base += (
-        f"question: {question}\n"
-        f"task: respond as {bot.name}, reasoning step-by-step with traits, mood, and personality. Match user's tone. Only generate the current step.\n"
-        f"rule: Do not skip steps. Do not narrate. Do not guess future turns.\n"
-    )
+    lines.append(f"{username}: {question.strip()}")  # username instead of <|user|>
+    lines.append(f"{bot.name}:")  # bot name for the model to respond from
 
     if extra_context:
-        base += f"<ActionResult>{extra_context}</ActionResult>\n"
-
-    guidance = {
-        "factual_question": "- Be objective. Clear. Answer only the asked question. Code if needed.\n",
-        "preference_query": "- Focus on your likes/dislikes. Share personal opinion clearly.\n",
-        "statement": "- Reflect on how this connects to your mood, identity, goals.\n",
-        "greeting": "- Respond warmly. Briefly introduce or ask follow-up.\n",
-        "goodbye": "- End sincerely. Reflect briefly.\n",
-        "other": "- Use mood and identity to shape thoughtful response.\n"
-    }
-
-    if query_type in guidance:
-        base += "guidance:\n" + guidance[query_type]
+        lines.append(f"<ActionResult> {extra_context.strip()}")
 
     if include_reflection:
-        base += "reflect:\n"
-        base += (
-            "- Emotional reaction?\n"
-            "- Relevant to your goals or traits?\n"
-            "- How would you typically respond?\n"
-            "- Any inner conflict?\n"
-        )
-        mood_reflect = {
-            "happy": "- Joy may make you idealistic.\n",
-            "annoyed": "- Might be blunt or impatient.\n",
-            "angry": "- Check for overreaction.\n",
-            "sad": "- Are you being overly negative?\n",
-            "anxious": "- Overthinking? Reground in values.\n"
+        lines.append("reflection:")
+        lines.append("- Emotional reaction?")
+        lines.append("- Does this relate to your goals or traits?")
+        lines.append("- Typical response?")
+        lines.append("- Internal conflict?")
+
+        mood_note = {
+            "happy": "Joy may lead to idealism.",
+            "annoyed": "You might be blunt or impatient.",
+            "angry": "Be careful not to overreact.",
+            "sad": "Are you being too negative?",
+            "anxious": "Reground in your values.",
         }.get(bot.mood, "")
+        if mood_note:
+            lines.append(mood_note)
 
-        if mood_reflect:
-            base += mood_reflect
-
-    print("RECURSIVE PROMPT TINY" + base)
-    return base
+    prompt = "\n".join(lines)
+    return prompt
