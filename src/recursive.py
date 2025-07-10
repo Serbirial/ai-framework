@@ -7,6 +7,54 @@ import json
 import sqlite3
 import tiny_prompts, custom_gpt2_prompts
 from . import bot
+import re
+
+from ai_tools import VALID_ACTIONS
+
+VALID_ACTIONS = {
+    "do_safe_math": {
+        "help": "Safely evaluates a math expression using +, -, *, /, %, //, and **. No variables or functions allowed.",
+        "callable": safe_math.do_safe_math,
+        "params": {"expression": "23 + (7 * 2) / 3"}
+    }
+}
+
+
+
+def check_for_actions_and_run(text):
+    results = []
+
+    matches = re.findall(r"<Action>(.*?)</Action>", text, re.DOTALL)
+    if not matches:
+        return False  # no actions found
+
+    for raw in matches:
+        try:
+            action_json = json.loads(raw)
+            action_name = action_json.get("action")
+            action_params = action_json.get("parameters", {})
+            action_label = action_json.get("label", None)  # AI-provided label
+
+            if not action_label:
+                # If no label given, fallback to generic
+                action_label = f"action_{len(results) + 1}"
+
+            if action_name in VALID_ACTIONS:
+                log(f"DEBUG: Executing action: {action_name} with {action_params}")
+                result = VALID_ACTIONS[action_name]["callable"](action_params)
+                results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
+            else:
+                error_msg = {"error": f"Unknown action: {action_name}"}
+                results.append(f"<ActionResult{action_label}>{json.dumps(error_msg)}</ActionResult{action_label}>")
+        except Exception as e:
+            error_msg = {"error": f"Failed to execute action: {str(e)}"}
+            label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
+            results.append(f"<ActionResult{label}>{json.dumps(error_msg)}</ActionResult{label}>")
+
+    if results:
+        return "\n".join(results)
+    return False
+
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
     def __init__(self, bot, depth=3, streamer=None, tiny_mode = False):
@@ -43,11 +91,25 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             f"**User Intent:** {usertone['intent']}  \n"
             f"**User Attitude:** {usertone['attitude']}  \n"
             f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
-            #f"# Info"
-            #"You may optionally output ONE <Action> JSON block per step:\n"
-            #'<Action>{"action":"action_name","parameters":{...}}</Action>\n'
-            #"If no action needed, respond with reasoning only.\n"
-            #"Results of actions will be given next step in <ActionResult> block.\n"
+            
+            f"# Actions\n"
+            "You may optionally output up to FIVE <Action> JSON blocks per step.\n"
+            "You must output each action in this exact format:\n"
+            '<Action>{"action": "<action_name>", "parameters": { ... }, "label": "<unique_label>"}</Action>\n'
+            "Where:\n"
+            "- <action_name> must be one of the following actions:\n"
+            + "\n".join(
+                f"  - \"{k}\": {v['help']}" for k, v in VALID_ACTIONS.items()
+            ) + "\n"
+            "- \"parameters\" contains the arguments for the action.\n"
+            "- \"label\" is a unique string you assign to each action to identify it.\n"
+            "\n"
+            "If you output MORE THAN ONE action in a single step, you MUST provide a distinct \"label\" for each action.\n"
+            "This label will be used to match your action with its results in the next step.\n"
+            "\n"
+            "If no action is needed, respond with reasoning only.\n"
+            "Results of actions will be given back to you next step inside corresponding <ActionResult<label>> blocks, where <label> matches your original action's label.\n"
+
         )
 
         # Get interpreted to_remember facts for the user
@@ -214,10 +276,10 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             # add the current step header only for clarity in logs and generation
             step_prompt += f"### Thought step {step+1} of {self.depth}\n"
-
-            # add any extra context lines
+            # insert previous action result just before generation (but after thought header)
             if extra_context_lines:
                 step_prompt += "\n".join(extra_context_lines) + "\n"
+                extra_context_lines.clear()
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
@@ -232,8 +294,18 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 _prompt_for_cut=step_prompt,
             )
             step_content = response.strip()
-
             log(f"DEBUG: THOUGHT STEP {step}", step_content)
+            
+            action_result = check_for_actions_and_run(response)
+            
+            # queue action result for next step input
+            if action_result != "NOACTION":
+                if type(action_result) == list: # multiple actions = multiple results
+                    for result in action_result:
+                        extra_context_lines.append(result)
+                else:
+                    extra_context_lines.append(action_result)
+                        
 
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)

@@ -20,3 +20,20 @@ Offload code gen to something like: https://huggingface.co/Salesforce/codegen-35
   - After `add_to_remember()` modifies the user's memory.
   - After updates to personality traits, goals, likes, or dislikes (need to detect or trigger cache clearing).
 - Provide a method to manually clear the cache for a specific user or all users.
+
+
+
+### TODO: Implement Chunk Summarization and Step Compression in RecursiveThinker
+
+- Enable `RecursiveThinker` to handle inputs larger than the model’s context window by summarizing in chunks.
+- When analyzing large documents (e.g., research papers or codebases), recursively:
+  - Split the input into chunks small enough to fit the context window. (if too big)
+  - Summarize each chunk separately using existing prompt structure.
+  - Load summaries and use them as the context.
+- Track total token usage during recursive steps:
+  - If the combined token size of all prior steps approaches the model limit (e.g., 85% of context window), summarize all prior steps into a condensed block.
+- Inject the summary seamlessly and continue generating new thought steps based on it.
+
+Optional:
+- Add recursive summarization
+- Tag summarized blocks clearly so the final answer prompt can interpret them appropriately.
