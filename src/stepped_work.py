@@ -184,6 +184,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
                 
+            step_prompt += "<|assistant|>"
+                
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             # generate step output
