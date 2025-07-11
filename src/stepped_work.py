@@ -247,12 +247,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full
             #+ "<|assistant|>\n"
             + "### Final Answer\n"
-            + "_Now summarize your task results to the user. If the task is unfinished, explain what progress has been made and what steps remain._\n"
+            + "_Now summarize your steps to the user. If the task is unfinished, explain what progress has been made and what steps remain._\n"
             + "**Rules**:\n"
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- Present the answer directly and concisely.\n"
-            + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
             + "<|assistant|>\n"
         )
 
