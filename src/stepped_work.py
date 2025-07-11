@@ -133,7 +133,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"### Task Prompt\n"
             f"**User Given Task:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
-            f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actual steps, not assumptions.\n"
+            f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
 
             f"**Rules:** Only generate content for the current step. Do not generate any future step numbers. You must stop after completing the current step.\n"
             f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
@@ -163,11 +163,16 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
         full = f"{prompt}" 
         extra_context_lines = []  # Accumulates all action results
+        prior_steps = []  # to store steps to seperate them from step generation and the full prompt
+
     
         for step in range(self.depth):
             # start with the system prompt or base context
             step_prompt = f"{full}"
-
+            # include prior steps content only (no "### Thought step" headers)
+            if prior_steps:
+                step_prompt += "**Prior Thoughts:**\n"
+                step_prompt += "\n".join(prior_steps) + "\n\n"
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
             step_prompt += "You must either:\n"
@@ -192,8 +197,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 _prompt_for_cut=step_prompt,
             )
             step_content = response.strip()
+            prior_steps.append(step_content)
+
             full += step_content
-            log(f"DEBUG: THOUGHT STEP {step}", step_content)
+            log(f"DEBUG: WORK STEP {step}", step_content)
             
             action_result = check_for_actions_and_run(response)
             
