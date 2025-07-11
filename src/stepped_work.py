@@ -88,6 +88,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
 
+            "## Action Usage Rules"
+
+            "- You may never perform arithmetic yourself."
+            "- For *any* math expressions (even simple ones), you must use the \"execute_math\" action."
+            "- Math must be executed with the following action:"
+            "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only."
+            "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>"
+
             f"## Action Execution Format\n"
             f"You may output up to THREE <Action> JSON blocks per step.\n"
             f"Each <Action> must use this format:\n"
@@ -99,6 +107,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 for k, v in VALID_ACTIONS.items()
             )
             + "\n"
+            
             "- Use <ActionResult<label>> results in the next step — never guess them.\n"
             "- If no action is needed, reason forward logically toward the task goal.\n"
         )
@@ -117,7 +126,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         memory_text = ""
         if context:
             memory_text += "\n## Chat History\n"
-            memory_text += "- This section contains prior messages between the user and assistant.\n"
             memory_text += "- Use chat history only to understand recurring topics, context, or prior misunderstandings.\n"
             memory_text += context
 
