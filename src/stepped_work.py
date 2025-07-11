@@ -171,7 +171,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt = f"{full}"
             # include prior steps content only (no "### Thought step" headers)
             if prior_steps:
-                step_prompt += "**Prior Thoughts:**\n"
+                step_prompt += "**Prior Steps:**\n"
                 step_prompt += "\n".join(prior_steps) + "\n\n"
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
@@ -216,7 +216,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
 
             # append the full step (header + content) to the full conversation log
-            full += f"### Thought step {step+1} of {self.depth}\n{step_content}\n\n"
+            full += f"### Step {step+1} of {self.depth}\n{step_content}\n\n"
 
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
