@@ -87,29 +87,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"# Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
-
-            "## Action Usage Rules"
-
-            "- You may never perform arithmetic yourself."
-            "- For *any* math expressions (even simple ones), you must use the \"execute_math\" action."
-            "- Math must be executed with the following action:"
-            "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only."
-            "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>"
-
-            f"## Action Execution Format\n"
-            f"You may output up to THREE <Action> JSON blocks per step.\n"
-            f"Each <Action> must use this format:\n"
-            '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
-            f"Where:\n"
-            + "\n".join(
-                f'  - "{k}": {v["help"]}\n'
-                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
-                for k, v in VALID_ACTIONS.items()
-            )
-            + "\n"
-            
-            "- Use <ActionResult<label>> results in the next step — never guess them.\n"
-            "- If no action is needed, reason forward logically toward the task goal.\n"
         )
 
 
@@ -181,12 +158,30 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             if prior_steps:
                 step_prompt += "**Prior Steps:**\n"
                 step_prompt += "\n".join(prior_steps) + "\n\n"
+            step_prompt += "## Action Usage Rules"
+
+            step_prompt += "- You may never perform arithmetic yourself."
+            step_prompt += "- For *any* math expressions (even simple ones), you must use the \"execute_math\" action."
+            step_prompt += "- Math must be executed with the following action:"
+            step_prompt += "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only."
+            step_prompt += "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>"
+
+            step_prompt += f"## Action Execution Format\n"
+            step_prompt += f"You may output up to THREE <Action> JSON blocks per step.\n"
+            step_prompt += f"Each <Action> must use this format:\n"
+            step_prompt += '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
+            step_prompt += f"Where:\n"
+            step_prompt += "\n".join(
+                f'  - "{k}": {v["help"]}\n'
+                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
+                for k, v in VALID_ACTIONS.items()
+            )
+            step_prompt += "\n"
+            
+            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
+            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
-            step_prompt += "You must either:\n"
-            step_prompt += "- Emit one or more <Action> blocks to continue the task, OR\n"
-            step_prompt += "- Reason forward with what has been learned to complete the task.\n"
-            step_prompt += "If all needed data is already available, begin constructing your final result logic now.\n\n"
             # insert previous action result just before generation (but after thought header)
             if extra_context_lines:
                 step_prompt += "\n".join(extra_context_lines) + "\n"
