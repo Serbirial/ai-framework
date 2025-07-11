@@ -122,7 +122,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             memory_text += context
 
         if rows:
-            memory_text += "\n## **Binding Instructions / Assistant Core Memory:**\n"
+            memory_text += "\n## **Binding Instructions / Memory:**\n"
             memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
             memory_text += "\n"
 
