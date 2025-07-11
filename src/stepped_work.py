@@ -177,6 +177,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 for k, v in VALID_ACTIONS.items()
             )
             step_prompt += "\n"
+            step_prompt += f"**Task:** {question}\n"
             
             step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
             step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
