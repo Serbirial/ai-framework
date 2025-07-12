@@ -222,9 +222,13 @@ def classify_user_input(model, tokenizer, user_input, history=None):
     )
 
 
-    inputs = tokenizer(prompt, return_tensors="pt")
-    outputs = model.generate(**inputs, max_new_tokens=10, do_sample=False)
-    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=10,
+        temperature=0,
+        stream=False,
+    )
+    result = openai.extract_generated_text(output).strip()
 
     # Extract category from result
     result = result.strip().lower()
