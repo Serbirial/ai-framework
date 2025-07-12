@@ -188,7 +188,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_content = response.strip()
             prior_steps.append(step_content)
 
-            full += step_content
             log(f"DEBUG: WORK STEP {step}", step_content)
             
             # append the full step (header + content) to the full conversation log
@@ -202,10 +201,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
-                        full += result # add result to full prompt 
+                        full += f"\n{result}" # add result to full prompt
                 else:
                     extra_context_lines.append(action_result)
-                    full += result # add result to full prompt
+                    full += f"\n{result}" # add result to full prompt
 
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:

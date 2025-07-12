@@ -269,22 +269,21 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             log(f"DEBUG: THOUGHT STEP {step}", step_content)
             
             action_result = check_for_actions_and_run(response)
-            
-            # queue action result for next step input
-            if action_result != "NOACTION":
-                if type(action_result) == list: # multiple actions = multiple results
-                    for result in action_result:
-                        extra_context_lines.append(result)
-                else:
-                    extra_context_lines.append(action_result)
-                        
 
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)
 
             # append the full step (header + content) to the full conversation log
             full += f"### Thought step {step+1} of {self.depth}\n{step_content}\n\n"
-
+            # queue action result for next step input
+            if action_result != "NOACTION":
+                if type(action_result) == list: # multiple actions = multiple results
+                    for result in action_result:
+                        extra_context_lines.append(result)
+                        full += f"\n{result}" # add result to full prompt
+                else:
+                    extra_context_lines.append(action_result)
+                    full += f"\n{result}" # add result to full prompt
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 # add checkpoint step_prompt
