@@ -263,11 +263,13 @@ class ChatBot:
             f"**Core Memory Entries:**\n"
             f"{memory_text}\n"
 
+            f"# {username}'s Personality Profile\n"
+
             f"**Interpretation of the User's Message:**\n"
             f"- Social Intent: {usertone['intent']}\n"
             f"- Message Tone: {usertone['tone']}\n"
             f"- Message Attitude: {usertone['attitude']}\n"
-            f"- Username: {username.replace('<', '').replace('>', '')}\n"
+            f"- Name: {username.replace('<', '').replace('>', '')}\n"
         )
 
         prompt = (
