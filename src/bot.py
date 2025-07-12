@@ -287,7 +287,7 @@ class ChatBot:
             if streamer:
                 streamer.update(text_chunk)
 
-        output_text = stop_criteria.buffer
+        output_text = stop_criteria.output
         log("RAW OUTPUT BASE", output_text)
 
         prompt_index = output_text.find(_prompt_for_cut)

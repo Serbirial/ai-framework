@@ -48,6 +48,7 @@ class StopOnSpeakerChange:
         self.max_lines = max_lines
         self.line_count = 0
         self.buffer = ""
+        self.output = ""
         self.stopped = False
 
         self.default_stop_tokens = ["<|user|>", "<|system|>", "<|end|>", "<|eos|>", "<user>"]
@@ -98,7 +99,7 @@ class StopOnSpeakerChange:
                 print("STOP: Reached max_lines.")
                 self.stopped = True
                 return True
-
+        self.output += new_text_chunk
         return False
 
 
