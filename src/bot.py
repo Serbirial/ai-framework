@@ -263,7 +263,7 @@ class ChatBot:
             f"**Core Memory Entries:**\n"
             f"{memory_text}\n"
 
-            f"# {username}'s Personality Profile\n"
+            f"# {username}'s (user) Personality Profile\n"
 
             f"**Interpretation of the User's Message:**\n"
             f"- Social Intent: {usertone['intent']}\n"
