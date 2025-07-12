@@ -10,49 +10,55 @@ import sqlite3
 
 def build_memory_confirmation_prompt(interpreted_data):
     prompt = (
-        f"<|system|>\n"
+        "<|start_of_text|>"
+        "<|start_header_id|>system<|end_header_id|>\n"
         "You are a helpful assistant.\n"
         "The user just told you some information to remember.\n"
         "Confirm back to the user that their information has been saved, and show them exactly what you saved.\n"
         f"Here is the saved information:\n"
         f"{interpreted_data.strip()}\n"
-        "<|user|>\n"
+        "<|start_header_id|>user<|end_header_id|>\n"
         "Please write a friendly confirmation message to the user.\n"
-        "<|assistant|>\n"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
     )
     return prompt
 
 
-def interpret_memory_instruction(user_input, model, max_new_tokens=150):
+
+def interpret_memory_instruction(user_input, model, history=None, max_new_tokens=150):
     """
-    Reformulates user input into a concise memory instruction and stores it in the MEMORY table.
+    Reformulates user input into a concise memory instruction using full chat history context.
+    Accepts history in LLaMA 3.2 formatted string.
     """
 
+    history_block = history.strip() if history else "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
+
     prompt = (
-        "<|system|>\n"
+        f"{history_block}\n"
+        "<|start_header_id|>system<|end_header_id|>\n"
         "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
-        "Your job is to turn the user's message into a clear, short sentence starting with 'User wants...'.\n"
-        "All outputs must start exactly with 'User wants'.\n"
+        "Your job is to convert the user's message into a clear, short sentence starting with 'User wants...'.\n"
+        "All outputs must start **exactly** with 'User wants'.\n"
         "Assume anything might be worth remembering, even if informal or emotional.\n"
         "Avoid disclaimers. Keep output under 35 words.\n"
-        "Only infer what is reasonably implied.\n\n"
-        f"User Input: \"{user_input}\"\n"
-        "Output:"
+        "Only infer what is reasonably implied from the conversation.\n"
+        "<|eot_id|>\n"
+        f"<|start_header_id|>user<|end_header_id|>\n{user_input.strip()}\n<|eot_id|>\n"
+        "<|start_header_id|>assistant<|end_header_id|>\nUser wants"
     )
 
     response = model.create_completion(
         prompt=prompt,
         max_tokens=max_new_tokens,
         temperature=0,
-        stop=["\n"], # Fixes hallucinations and continuations
+        stop=["\n", "<|eot_id|>"],
         stream=False,
     )
 
-    interpreted = openai.extract_generated_text(response).strip()
-
-
+    interpreted = "User wants" + openai.extract_generated_text(response).strip()
     log("INTERPRET MEMORY", interpreted)
     return interpreted
+
 
 def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
     """
@@ -76,9 +82,10 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
     # 2. Join memory entries into newline-separated block
     raw_text = "\n".join([row[0] for row in rows])
 
-    # 3. Build the summarization prompt
+    # 3. Build the summarization prompt in LLaMA 3.2 style
     prompt = (
-        "<|system|>\n"
+        "<|start_of_text|>"
+        "<|start_header_id|>system<|end_header_id|>\n"
         "You are an AI assistant. Your task is to read the raw memory instructions provided by the user, "
         "and rewrite them into a clear, flat list of concise memory facts.\n\n"
         "Each fact should begin with a dash and be **bolded** like this:\n"
@@ -88,6 +95,8 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
         "Raw Memory:\n"
         f"{raw_text}\n\n"
         "Formatted Memory:\n"
+        "<|eot|>\n"
+        "<|start_header_id|>assistant<|end_header_id|>"
     )
 
     # 4. Run the model
@@ -215,6 +224,9 @@ def classify_user_input(model, tokenizer, user_input, history=None):
         "Input: What's your opinion on X?\nCategory: preference_query\n"
         "Input: I love rainy days.\nCategory: statement\n"
         "Input: Goodbye!\nCategory: goodbye\n\n"
+        "Input: I want you to save that.\nCategory: instruction_memory\n\n"
+        "Input: Remember that.\nCategory: instruction_memory\n\n"
+
         "<|eot|>\n"
         f"<|start_header_id|>user<|end_header_id|>\n{history if history else '**No Conversation History.**'}<|eot|>\n"
         f"<|start_header_id|>user<|end_header_id|>\n{user_input.strip()}\n<|eot|>\n"
