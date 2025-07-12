@@ -136,6 +136,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
+                "- Do NOT include any '### Step' headings or numbering in your response; output only the content for the current step.\n"
+
             )
 
                 
@@ -218,7 +220,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n"
             + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
             + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
-            "- Do NOT include any '### Step' headings or numbering in your response; output only the content for the current step.\n\n"
+            "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
 
             + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
