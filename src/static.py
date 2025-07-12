@@ -289,9 +289,15 @@ class ChatContext:
         Args:
             line (str): A single line string representing a user or bot message,
                         usually formatted with timestamp and speaker label.
+            role (str): The speaker role, e.g. "system", "user", "assistant".
         """
-        self.lines.append(f"<{role}> {line}\n")
+        self.lines.append(
+            f"<|start_header_id|>{role}<|end_header_id|>\n"
+            f"{line.strip()}\n"
+            f"<|eot_id|>\n"
+        )
         self._trim_to_token_limit()
+
 
     def remove_line(self):
         """
