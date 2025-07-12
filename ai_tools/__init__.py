@@ -6,13 +6,15 @@ from .get_weather import EXPORT as WEATHER_API_EXPORT
 from .get_latlot import EXPORT as LATLOT_API_EXPORT
 from .safe_web_query import EXPORT as SEARCH_ENGINE_API_EXPORT
 from .get_time import EXPORT as GET_TIME_LIVE
+from .safe_get_sysinfo import EXPORT as GET_DEVICE_INFO
+from .safe_live_crypto import EXPORT as GET_CRYPTO_LIVE
 
 VALID_ACTIONS = {}
 
 VALID_ACTIONS.update(SAFE_MATH_EXPORT)
 VALID_ACTIONS.update(SAFE_CALC_EXPORT)
 
-
+VALID_ACTIONS.update(GET_CRYPTO_LIVE)
 VALID_ACTIONS.update(CAT_FACT_EXPORT)
 VALID_ACTIONS.update(WEATHER_API_EXPORT)
 VALID_ACTIONS.update(LATLOT_API_EXPORT)
@@ -21,6 +23,7 @@ VALID_ACTIONS.update(SEARCH_ENGINE_API_EXPORT)
 
 
 VALID_ACTIONS.update(LOCAL_TIME_EXPORT)
+VALID_ACTIONS.update(GET_DEVICE_INFO)
 
 # If you add more tool modules, import their EXPORT dict and update VALID_ACTIONS similarly
 
