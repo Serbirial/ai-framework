@@ -154,18 +154,18 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
 
             if extra_context_lines:
-                step_prompt += "### <ActionResult> blocks from previous step:\n"
+                step_prompt += "### Previous Steps <ActionResult> blocks:\n"
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
                 
-            step_prompt += f"### Step {step+1} of {self.depth}\n"
+            step_prompt += f"### Current Step:\n"
 
             step_prompt += (
-                "### **Step Rules:**\n"
+                "**Step Rules:**\n"
                 "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
                 "- Actions must be executed using this exact format:\n"
                 f'  <Action>{{"action": "execute_math", "parameters": {{"expression": "5 * 20 + 3"}}, "label": "math{step+1}"}}</Action>\n'
-                "- Do NOT simulate or guess action results — only use <ActionResult> from Current Step Action Results.\n"
+                "- Do NOT simulate or guess action results — only use <ActionResult> from Previous Steps <ActionResult> blocks.\n"
                 "- If no action is needed, reason forward logically toward completing the task.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
             )
