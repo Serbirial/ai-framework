@@ -14,7 +14,6 @@ def build_capability_explanation_to_itself(): # this might be useful to use ever
         )
     prompt += (
         "If the user asks you about your capabilities, or what you can do, clearly list these tools and explain briefly what each one does.\n"
-        "Remember: Your goal is to assist the user by combining your own reasoning with these powerful tools.\n"
     )
     return prompt
 
