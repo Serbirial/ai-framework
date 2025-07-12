@@ -112,6 +112,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 extra_context_lines.clear()
                 
             step_prompt += f"### Current Step\n"
+            step_prompt += f"**User Given Task:**\n    - {question}\n" # Reinforce the task every step
 
             step_prompt += (
                 "**Step Rules:**\n"
@@ -136,6 +137,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
             )
+
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
 
