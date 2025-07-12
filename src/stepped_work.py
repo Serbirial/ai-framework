@@ -127,8 +127,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Do NOT anticipate or simulate later outputs. Stay entirely within the scope of this one step.\n"
                 "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
-                "- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
-                "- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
+                #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
+                #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
 
                 "- Actions must be emitted using this exact format:\n"
                 f'  <Action>{{ "action": "<action_name>", "parameters": {{ ... }}, "label": "<unique_label>" }}</Action>\n'
