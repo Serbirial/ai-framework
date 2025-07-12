@@ -83,7 +83,32 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
             f"# Base User Info\n"
             f"**Username:** {username}  \n\n"
-            
+            f"# Actions\n"
+            "You may output up to THREE <Action> JSON blocks per step.\n"
+            "You must output actions in this exact format:\n"
+            '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
+            "Where:\n"
+            "- <action_name> must be one of the following:\n"
+            + "\n".join(
+                f'  - "{k}": {v["help"]}\n'
+                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
+                for k, v in VALID_ACTIONS.items()
+            )
+            + "\n"
+            "- \"parameters\" are arguments passed to the action.\n"
+            "- \"label\" is a unique string to match actions with results.\n\n"
+
+            "If you output MULTIPLE actions, each must have a distinct \"label\".\n"
+            "This label is used to connect each action to its returned result in the next step.\n"
+            "If no action is needed, respond with reasoning only.\n\n"
+
+            "# What Actions Actually Do\n"
+            "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
+            "- When you emit an action, you are **calling a real function**.\n"
+            "- The system will run it and give you a result next step as <ActionResult<label>>.\n\n"
+            "Do NOT invent or guess action results. Use only the actual <ActionResult> values returned.\n"
+            "You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
+
             f"# Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
@@ -115,7 +140,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         
         base += (
             #f"\n<|user|>\n"
-            f"### Task Prompt\n"
+            f"### Task Info\n"
             f"**User Given Task:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
             f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
@@ -160,7 +185,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 step_prompt += "\n".join(prior_steps) + "\n\n"
             step_prompt += "## Action Usage Rules"
 
-            step_prompt += "- You may never perform arithmetic yourself."
             step_prompt += "- For *any* math expressions (even simple ones), you must use the \"execute_math\" action."
             step_prompt += "- Math must be executed with the following action:"
             step_prompt += "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only."
@@ -177,12 +201,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 for k, v in VALID_ACTIONS.items()
             )
             step_prompt += "\n"
-            step_prompt += f"**Task:** {question}\n"
-            
-            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
-            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
+            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
+            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
+
             # insert previous action result just before generation (but after thought header)
             if extra_context_lines:
                 step_prompt += "\n".join(extra_context_lines) + "\n"
@@ -215,8 +238,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
+                        full += result
                 else:
                     extra_context_lines.append(action_result)
+                    full += result
 
 
             # append the full step (header + content) to the full conversation log
@@ -255,6 +280,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "**Rules**:\n"
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
+            + "- Do not use Actions, you are no longer allowed to execute actions, only use previous data.\n"
+            
             + "- Present the answer directly and concisely.\n"
             + "<|assistant|>\n"
         )

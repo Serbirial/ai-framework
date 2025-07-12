@@ -326,7 +326,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
-                    "**Task Alignment Checkpoint:**\n"
+                    "**Thought Step Alignment Checkpoint:**\n"
                     "- Reflect on your progress so far.\n"
                     "- Ask: Are your steps clearly building toward answering the question?\n"
                     "- Briefly summarize what you've accomplished and what remains.\n"

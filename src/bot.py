@@ -226,7 +226,7 @@ class ChatBot:
 
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
-            f"# {self.name}'s Personality Profile\n"
+            f"# **{self.name}'s Personality Profile:**\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
@@ -241,6 +241,7 @@ class ChatBot:
 
             f"**Current Mood:** {self.mood}\n"
             f"**Mood Summary:** {self.mood_sentence}\n\n"
+            
             f"# **Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant.\n"
             f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
@@ -262,13 +263,11 @@ class ChatBot:
             f"# **Core Memory Entries:**\n"
             f"{memory_text}\n\n"
 
-            f"# {username}'s (user) Personality Profile\n"
-
-            f"**Interpretation of the User's Message:**\n"
-            f"- Social Intent: {usertone['intent']}\n"
-            f"- Message Tone: {usertone['tone']}\n"
-            f"- Message Attitude: {usertone['attitude']}\n"
-            f"- Name: {username.replace('<', '').replace('>', '')}\n"
+            f"# **{username}'s Personality Profile*:*\n"
+            f"**Name:** {username.replace('<', '').replace('>', '')}\n"
+            f"**Message Social Intent:** {usertone['intent']}\n"
+            f"**Message Tone:** {usertone['tone']}\n"
+            f"**Message Attitude:** {usertone['attitude']}\n"
         )
 
         prompt = (
