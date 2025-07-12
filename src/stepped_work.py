@@ -204,7 +204,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- Do not use Actions, you are no longer allowed to execute actions, only use previous data.\n"
             + "- Do NOT output a <force_done> token until you have summarized your steps or explained what progress has been made and what steps remain.\n"
-            + "- Present the answer directly and concisely.\n\n"
+            + "- Present the answer directly and concisely- speak in the first person as if you are directly replying to the user.\n\n"
             + discord_formatting_prompt
             + "<|assistant|>\n"
         )
