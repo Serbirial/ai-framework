@@ -234,24 +234,23 @@ class ChatBot:
             f"You are a personality-driven assistant named \"{self.name}\", talking to a user named \"{username}\".\n\n"
             f"{persona_section}"
             f"{user_section}"
-            
-
             f"{memory_instructions_section}"
             f"{memory_section}"
-
             f"{history_section}"
-            
             f"{task_section}"
             f"{rules_section}"
-
             f"{self_capabilities}"
-
-        )
+        ).strip()
 
         prompt = (
-            f"<|system|>\n{system_prompt.strip()}\n\n"
-            f"<|user|>\n{user_input.strip()}\n"
-            f"<|assistant|>"
+            "<|begin_of_text|>"
+            "<|start_header_id|>system<|end_header_id|>\n"
+            f"{system_prompt}\n"
+            "<|eot_id|>"
+            "<|start_header_id|>user<|end_header_id|>\n"
+            f"{user_input.strip()}\n"
+            "<|eot_id|>"
+            "<|start_header_id|>assistant<|end_header_id|>\n"
         )
 
         return prompt

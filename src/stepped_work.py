@@ -44,43 +44,41 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
         
         base = (
-            f"<|system|>\n"
+            "<|begin_of_text|>"
+            "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
-
+            
             f"{persona_section}"
-            
             f"{user_info_section}"
-            
             f"{memory_instructions_section}"
-            
             f"{memory_section}"
-            
             f"{history_section}"
-
             f"{rules_section}"
-
-
+            
             f"### Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
-
+            
             f"{actions_section}"
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
+
+            "<|eot_id|>"
         )
 
-        
-        
         base += (
+            "<|start_header_id|>user<|end_header_id|>\n"
             f"### Task Info\n"
             f"**User Given Task:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
             f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
-
         )
+
         if extra_context:
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
-        
+
+
+                
         # Add specific guidance based on query_type
 
         log("INSTRUCT PROMPT", base)
@@ -110,7 +108,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             # start with the system prompt or base context
             step_prompt = f"{full}"
 
-
             if extra_context_lines:
                 step_prompt += "### Previous Steps <ActionResult> blocks:\n"
                 for actionresult in extra_context_lines:
@@ -139,11 +136,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
             )
-            #step_prompt += "<|assistant|>"
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
+
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             # generate step output
+            step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
+            # response begins here
+
             response = self.bot._straightforward_generate(
                 step_prompt,
                 max_new_tokens=WORK_MAX_TOKENS_PER_STEP,
@@ -166,7 +166,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             
             # queue action result for next step input
             if action_result != "NOACTION":
-                full += f"Action Results for step {step+1}:\n"
+                full += f"### Action Results for step {step+1}:\n"
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
@@ -213,7 +213,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- You may NOT execute any new actions — only use previously obtained data.\n"
             + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n\n"
-            + "<|assistant|>\n"
+            + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+
         )
 
 
