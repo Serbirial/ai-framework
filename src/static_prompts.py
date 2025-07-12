@@ -86,7 +86,7 @@ def build_memory_instructions_prompt(force_factual=False):
         f"- These define how you speak, behave, and interpret truth.\n"
     )
     if force_factual == False:
-        prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
+        prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n"
     elif force_factual == True:
         prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances other than:\n"
         prompt += f"    - Actions and ActionResults must never be influenced by the Core Memory or Chat History\n"
