@@ -2,6 +2,23 @@ from ai_tools import VALID_ACTIONS
 import json
 from .static import mood_instruction
 
+def build_capability_explanation_to_itself(): # this might be useful to use everywhere honestly
+    prompt = (
+        "### Your Available Tools\n\n"
+        "You have access to a set of special tools called Actions. These Actions allow you to perform tasks that need real data or complex processing that you can't do on your own.\n\n"
+        "Below is a list of all your available Actions with descriptions.\n\n"
+    )
+    for name, info in VALID_ACTIONS.items():
+        prompt += (
+            f"- **{name}**: {info['help'].strip()}\n"
+        )
+    prompt += (
+        "If the user asks you about your capabilities, or what you can do, clearly list these tools and explain briefly what each one does.\n"
+        "Remember: Your goal is to assist the user by combining your own reasoning with these powerful tools.\n"
+    )
+    return prompt
+
+
 def build_base_actions_prompt():
     prompt = (
         f"### Actions\n"
@@ -160,3 +177,19 @@ def build_discord_formatting_prompt():
         "- You may use actual formatting (e.g. **bold**, *italic*) only when appropriate and intended.\n\n"
     )
     return prompt
+
+
+def build_calculus_tool_prompt():
+    return (
+        "### Calculus Tool Usage (Advanced Math):\n"
+        "- If the user asks for anything involving derivatives, integrals, limits, or instantaneous change, use the `run_calculus` action.\n"
+        "- Do **not** attempt to calculate these manually or approximate them — always use the Action.\n"
+        "- Valid types: `derivative`, `integral`, `limit`\n"
+        "- Format:\n"
+        '  <Action>{ "action": "run_calculus", "parameters": { "type": "<type>", "expression": "<formula>", "variable": "<var>", "at": <optional point> }, "label": "calc1" }</Action>\n'
+        "- Examples:\n"
+        '  <Action>{ "action": "run_calculus", "parameters": { "type": "derivative", "expression": "x^2 + 3x", "variable": "x" }, "label": "calc1" }</Action>\n'
+        '  <Action>{ "action": "run_calculus", "parameters": { "type": "integral", "expression": "sin(x)", "variable": "x", "at": [0, 3.14] }, "label": "calc2" }</Action>\n'
+        "- Wait for the <ActionResult> before continuing reasoning.\n"
+        "- Use only when the user’s request requires it — such as computing slopes, area under curves, or behavior as values approach limits.\n"
+    )

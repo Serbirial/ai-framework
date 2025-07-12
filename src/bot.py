@@ -228,22 +228,25 @@ class ChatBot:
         task_section = static_prompts.build_base_chat_task_prompt(self.name, username)
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
         history_section = static_prompts.build_history_prompt(context)
+        self_capabilities = static_prompts.build_capability_explanation_to_itself()
 
         system_prompt = (
             f"You are a personality-driven assistant named \"{self.name}\", talking to a user named \"{username}\".\n\n"
             f"{persona_section}"
             f"{user_section}"
             
-            f"{task_section}"
-
-            f"{rules_section}"
 
             f"{memory_instructions_section}"
-
             f"{memory_section}"
+
+            f"{self_capabilities}"
 
             f"{history_section}"
             
+            f"{task_section}"
+            f"{rules_section}"
+
+
         )
 
         prompt = (
