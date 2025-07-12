@@ -42,7 +42,7 @@ def default_debug(**data):
 DEBUG_FUNC = discord_debug.custom_debug
 
 class StopOnSpeakerChange:
-    def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=20, custom_stops=None):
+    def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=100, custom_stops=None):
         self.bot_name = bot_name
         self.min_lines = min_lines
         self.max_lines = max_lines
@@ -55,17 +55,13 @@ class StopOnSpeakerChange:
         self.hard_stop = "<force_done>"
         self.custom_stops = custom_stops or []
 
-        self.waiting_for_assistant = None  # None = undecided, True = waiting, False = not waiting
-
     def __call__(self, new_text_chunk):
         if self.stopped:
             return True
         if new_text_chunk.strip() == "":
             return False  # Don't process empty chunks at all
-
-        # Check hard stop immediately
         if self.hard_stop in self.buffer or self.hard_stop in new_text_chunk:
-            if self.line_count >= 1:  # refuse to stop until 1 line has been collected
+            if self.line_count >= 1: # refuse to stop until 1 line has been collected
                 return True
             else:
                 return False
@@ -78,53 +74,11 @@ class StopOnSpeakerChange:
             line = line.strip()
             lines.append(line)
 
-        # Determine if we should wait for assistant token (only once)
-        if self.waiting_for_assistant is None:
-            # Find first non-blank line in this batch
-            for line in lines:
-                if line == "":
-                    continue
-                if line.startswith("<|system|>"):
-                    self.waiting_for_assistant = True
-                    break
-                else:
-                    self.waiting_for_assistant = False
-                    break
-            # If all lines blank, undecided yet, just return and wait for more
-            if self.waiting_for_assistant is None:
-                return False
-
-            # If waiting, try to find <|assistant|> now
-            if self.waiting_for_assistant:
-                combined = "\n".join(lines)
-                if "<|assistant|>" in combined:
-                    _, after = combined.split("<|assistant|>", 1)
-                    self.buffer = after + ("\n" + self.buffer if self.buffer else "")
-                    lines = []
-                    self.waiting_for_assistant = False
-                else:
-                    # Still waiting for assistant token, discard output so far
-                    return False
-
-        # If currently waiting for assistant token
-        elif self.waiting_for_assistant:
-            combined = "\n".join(lines)
-            if "<|assistant|>" in combined:
-                _, after = combined.split("<|assistant|>", 1)
-                self.buffer = after + ("\n" + self.buffer if self.buffer else "")
-                lines = []
-                self.waiting_for_assistant = False
-            else:
-                # Still waiting, discard current lines output
-                return False
-
         all_stop_tokens = self.default_stop_tokens + self.custom_stops
 
-        # Check if any stop tokens are present and line_count >= min_lines
         for token in all_stop_tokens:
             if token in self.buffer and self.line_count >= self.min_lines:
                 return True
-
         for line in lines:
             print(f"Processing line: {repr(line)} | line_count: {self.line_count}")
 
@@ -145,10 +99,8 @@ class StopOnSpeakerChange:
                 print("STOP: Reached max_lines.")
                 self.stopped = True
                 return True
-
         self.output += new_text_chunk
         return False
-
 
 
     
