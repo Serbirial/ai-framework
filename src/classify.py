@@ -224,7 +224,7 @@ def classify_user_input(model, tokenizer, user_input, history=None):
 
     output = model.create_completion(
         prompt=prompt,
-        max_tokens=10,
+        max_tokens=6,
         temperature=0,
         stream=False,
     )
