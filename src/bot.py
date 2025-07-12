@@ -236,10 +236,11 @@ class ChatBot:
             f"{user_section}"
             f"{memory_instructions_section}"
             f"{memory_section}"
-            f"{history_section}"
             f"{task_section}"
             f"{rules_section}"
             f"{self_capabilities}"
+            f"{history_section}"
+
         ).strip()
 
         prompt = (

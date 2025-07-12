@@ -47,12 +47,12 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             "<|begin_of_text|>"
             "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
-            
+            f"{history_section}" # low priority for large chat history
+
             f"{persona_section}"
             f"{user_info_section}"
             f"{memory_instructions_section}"
             f"{memory_section}"
-            f"{history_section}"
             f"{rules_section}"
             
             f"### Task Completion Framework\n"
