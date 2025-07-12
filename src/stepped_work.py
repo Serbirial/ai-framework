@@ -117,7 +117,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     step_content += f"{actionresult}\n"
                 extra_context_lines.clear()
                 
-            step_prompt += f"### Current Step:\n"
+            step_prompt += f"### Current Step\n"
 
             step_prompt += (
                 "**Step Rules:**\n"
@@ -142,7 +142,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
             )
-            step_prompt += "<|assistant|>"
+            #step_prompt += "<|assistant|>"
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
