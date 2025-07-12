@@ -76,7 +76,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         conn.close()        
         
         user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.persona_prompt, personality, self.bot.mood)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)

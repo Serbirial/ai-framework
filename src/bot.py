@@ -221,7 +221,7 @@ class ChatBot:
 
         personality = list_personality(identifier)
 
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.name, persona_prompt, personality, self.mood)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.name, persona_prompt, personality, self.mood, self.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         user_section = static_prompts.build_user_profile_prompt(username, usertone)

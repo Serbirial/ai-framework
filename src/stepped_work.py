@@ -67,7 +67,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         persona_prompt = self.persona_prompt
         
         user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
@@ -90,12 +90,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             
             f"{history_section}"
 
+            f"{rules_section}"
+
+
             f"# Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
-            
-            f"{rules_section}"
-            
+
             f"{actions_section}"
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
