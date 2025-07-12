@@ -58,22 +58,22 @@ def run_calculus(params: dict) -> dict:
 EXPORT = {
     "run_calculus": {
         "help": (
-            "Use this to compute calculus-based expressions such as:\n"
-            "- Derivatives (e.g., slope of x^2 + 3x)\n"
-            "- Integrals (e.g., area under sin(x) from 0 to pi)\n"
-            "- Limits (e.g., limit of 1/x as x → 0)\n"
-            "Required parameters:\n"
-            "- type: one of 'derivative', 'integral', or 'limit'\n"
-            "- expression: the formula\n"
-            "- variable: the symbol (e.g., 'x')\n"
-            "- at: value (for limits) or [lower, upper] bounds (for definite integrals)\n"
+            "Use this to compute calculus-based expressions such as Derivatives (e.g., slope of x^2 + 3x) Integrals (e.g., area under sin(x) from 0 to pi) or Limits (e.g., limit of 1/x as x → 0).\n"
         ),
         "callable": run_calculus,
         "params": {
-            "type": "derivative | integral | limit",
-            "expression": "required formula",
-            "variable": "symbol like x",
-            "at": "point or [start, end] (optional depending on type)"
+            "type": (
+                "string, required — one of 'derivative', 'integral', or 'limit', specifies the calculus operation to perform."
+            ),
+            "expression": (
+                "string, required — the symbolic expression to evaluate, such as 'x^2 + 3*x', must be a valid **sympy-compatible** formula."
+            ),
+            "variable": (
+                "string, required — the variable symbol in the expression, e.g., 'x', used as the differentiation/integration/limit variable."
+            ),
+            "at": (
+                "optional — for limits: a value (e.g., 0) or a dict {'value': x, 'dir': '+' or '-'}, for definite integrals: a list of two bounds [lower, upper], omit for indefinite integrals and basic derivatives."
+            )
         }
     }
 }

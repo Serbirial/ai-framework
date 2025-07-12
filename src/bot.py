@@ -113,7 +113,7 @@ class ChatBot:
         # New TinyLlama model init
         self.model = Llama(
             model_path=mainLLM,
-            n_ctx=4096,              # TODO use CTX setter 
+            n_ctx=6028,              # TODO use CTX setter 
             n_threads=12,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
@@ -502,7 +502,6 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-
             thinker = RecursiveWork(self, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
@@ -514,27 +513,6 @@ class ChatBot:
             
             response = final
 
-        elif category == "factual_question":
-            # Use recursive thinker for more elaborate introspection
-            # TODO: query internet sources for facts
-            # Extract just memory lines for context
-
-            # Join last 5 pairs (user + bot responses) into context
-            if not context:
-                short_context = self.get_recent_history(identifier, limit=10)
-            else:
-                short_context = context
-
-            thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
-            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
-            log("DEBUG: GENERATED THOUGHTS",thoughts)
-            if debug:
-                DEBUG_FUNC(thoughts=thoughts, final=final)
-            log("DEBUG: FINAL THOUGHTS",final)
-            thoughts = thoughts
-            final = final
-            
-            response = final
         elif category == "preference_query":
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
@@ -568,7 +546,6 @@ class ChatBot:
                 
             if force_recursive == True:
                 thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
-
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:

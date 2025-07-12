@@ -123,7 +123,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
         
         # Add specific guidance based on query_type
-        if query_type == "factual_question":
+        if query_type == "task":
             base += (
                 "\n**[Factual Question Guidance]**\n"
                 "- Focus on clarity, accuracy, and logic.  \n"
