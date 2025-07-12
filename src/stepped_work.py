@@ -128,6 +128,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
                 "- Actions must be emitted using this exact format:\n"
                 f'  <Action>{{ "action": "<action_name>", "parameters": {{ ... }}, "label": "<unique_label>" }}</Action>\n'
+                "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current reasoning step logically requires real data you cannot guess.\n"
+                "- NEVER guess or assume an action is needed unless it is required to get real data.\n"
+
                 "- If no action is needed, reason forward logically toward completing the task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
                 "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
