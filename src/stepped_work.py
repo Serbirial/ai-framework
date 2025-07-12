@@ -117,7 +117,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
             f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
 
-            f"**Rules:** Only generate content for the current step. Do not generate any future step numbers. You must stop after completing the current step.\n"
         )
         if extra_context:
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
@@ -161,6 +160,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
             step_prompt += (
                 "**Step Rules:**\n"
+                "- You must STAY WITHIN the current step, you are not allowed to generate future steps in the current step- only give yourself instructions for the next step."
                 "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
                 "- Actions must be executed using this exact format:\n"
                 f'  <Action>{{"action": "execute_math", "parameters": {{"expression": "5 * 20 + 3"}}, "label": "math{step+1}"}}</Action>\n'

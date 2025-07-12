@@ -21,7 +21,7 @@ def get_current_time(parameters: dict) -> dict:
 
 EXPORT = {
     "get_local_time": {
-        "help": "Use this function/action to get your current time (in ISO 8601 format).",
+        "help": "Use this function/action to get your current time in ISO 8601 format (this is the ASSISTANTS current time, not the users).",
         "callable": get_current_time,
         "params": {}
     }
