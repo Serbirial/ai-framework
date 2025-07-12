@@ -3,6 +3,7 @@ from log import log
 from . import classify
 from ai_tools import VALID_ACTIONS
 
+
 import json
 import re
 
@@ -49,8 +50,8 @@ def check_for_actions_and_run(text):
             close_tag_end = close_match.end()
 
             # Extract JSON payload between tags
-            json_str = text[end_tag_pos + 1 : close_tag_start].strip()
-
+            json_str = text[end_tag_pos + 1 : close_tag_start]
+            json_str = json_str[json_str.find('{') : json_str.rfind('}') + 1].strip()
             try:
                 action_json = json.loads(json_str)
                 action_name = action_json.get("action")
