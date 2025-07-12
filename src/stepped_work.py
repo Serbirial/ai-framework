@@ -151,26 +151,24 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         for step in range(self.depth):
             # start with the system prompt or base context
             step_prompt = f"{full}"
-            # include prior steps content only (no "### Thought step" headers)
-            if prior_steps:
-                step_prompt += "**Prior Steps:**\n"
-                step_prompt += "\n".join(prior_steps) + "\n\n"
-            step_prompt += "### **Rules:**\n"
 
-            step_prompt += "- For *any* math expressions (even simple ones), you MUST use the \"execute_math\" action.\n"
-            step_prompt += "- Math must be executed with the following action, using execute_math as the \"action\" key :\n"
-            step_prompt += "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>\n"
-            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess or generate them.\n"
-            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
 
-            # add the current step header for clarity when doing tasks
-            step_prompt += f"### Step {step+1} of {self.depth}\n"
-
-            # insert previous action result just before generation (but after thought header)
             if extra_context_lines:
+                step_prompt += "### <ActionResult> blocks from previous step:\n"
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
                 
+            step_prompt += f"### Step {step+1} of {self.depth}\n"
+
+            step_prompt += (
+                "### **Rules:**\n"
+                "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
+                "- Actions must be executed using this exact format:\n"
+                '  <Action>{"action": "execute_math", "parameters": {"expression": "5 * 20 + 3"}, "label": "math1"}</Action>\n'
+                "- Do NOT simulate or guess action results — only use <ActionResult> from Current Step Action Results.\n"
+                "- If no action is needed, reason forward logically toward completing the task.\n"
+                "- Output the action first, then optionally explain your reasoning.\n"
+            )
             step_prompt += "<|assistant|>"
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]

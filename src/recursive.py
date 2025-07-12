@@ -241,17 +241,14 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             # start with the system prompt or base context
             step_prompt = f"{prompt}"
 
-            # include prior steps content only (no "### Thought step" headers)
-            if prior_steps:
-                step_prompt += "**Prior Thoughts:**\n"
-                step_prompt += "\n".join(prior_steps) + "\n\n"
+            if extra_context_lines:
+                step_prompt += "### <ActionResult> blocks from previous step:\n"
+                step_prompt += "\n".join(extra_context_lines) + "\n"
+                extra_context_lines.clear()
 
             # add the current step header only for clarity in logs and generation
             step_prompt += f"### Thought step {step+1} of {self.depth}\n"
             # insert previous action result just before generation (but after thought header)
-            if extra_context_lines:
-                step_prompt += "\n".join(extra_context_lines) + "\n"
-                extra_context_lines.clear()
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
