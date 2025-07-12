@@ -182,7 +182,6 @@ def classify_user_input(model, tokenizer, user_input):
     categories = [
         "greeting",
         "goodbye",
-        "factual_question",
         "preference_query",
         "statement",
         "instruction_memory",
@@ -195,18 +194,17 @@ def classify_user_input(model, tokenizer, user_input):
         "You are a classifier that assigns one of the following categories to the user's message:\n"
         "- greeting: A simple hello or salutation\n"
         "- goodbye: A farewell or parting phrase\n"
-        "- factual_question: A request for information, instructions, or code\n"
         "- preference_query: A question about opinions, likes/dislikes, or personality\n"
         "- statement: A declaration that the user is presenting\n"
         "- instruction_memory: A request to remember or store information\n"
-        "- task: A request to do something specific, or an instruction to do a task.\n"
+        "- task: A request to do something specific, or an instruction to do a task, like searching the web, doing math, anything that might need access to internal tools..\n"
         "- other: Anything that doesn't clearly fit\n\n"
         "Reply with just the category name.\n\n"
         "Examples:\n"
         "Input: Hello there!\nCategory: greeting\n"
         "Input: Please remember that I live in X.\nCategory: instruction_memory\n"
         "Input: I want you to remember...\nCategory: instruction_memory\n"
-        "Input: What's the capital of Germany?\nCategory: factual_question\n"
+        "Input: What's the capital of Germany?\nCategory: task\n"
         "Input: Do you like X?\nCategory: preference_query\n"
         "Input: Whats 1 + 8 * 4?\nCategory: task\n"
         "Input: Whats your local time?\nCategory: task\n"
