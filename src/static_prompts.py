@@ -29,7 +29,7 @@ def build_base_actions_rule_prompt():
         '- Actions MUST:\n'
         "   - Start with <Action>\n"
         "   - End with </Action>\n\n"
-        "- Actions MUST Start AND End with the above, or they will not be recognized by the system."
+        "- Actions MUST Start AND End with the above, or they will not be recognized by the system.\n\n"
     )
     return prompt
 
