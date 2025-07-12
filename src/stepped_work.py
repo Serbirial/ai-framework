@@ -160,7 +160,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
             step_prompt += (
                 "**Step Rules:**\n"
-                "- You must STAY WITHIN the current step, you are not allowed to generate future steps in the current step- only give yourself instructions for the next step."
+                "- You must ONLY generate content for the **current step**.\n"
+                f"- You are currently on **Step {step+1} of {self.depth}** — DO NOT generate or refer to future steps (like Step {step+2} or Step {step+3}).\n"
+                "- You may leave yourself instructions or a plan for the *next* step, but do NOT write its contents.\n"
+                "- Do NOT anticipate or simulate later outputs. Stay entirely within the scope of this one step.\n"
                 "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
                 "- Actions must be executed using this exact format:\n"
                 f'  <Action>{{"action": "execute_math", "parameters": {{"expression": "5 * 20 + 3"}}, "label": "math{step+1}"}}</Action>\n'
