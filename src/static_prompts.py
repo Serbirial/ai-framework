@@ -38,9 +38,9 @@ def build_base_actions_explanation_prompt():
         "### What Actions Actually Do\n"
         "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
         "- When you emit an action, you are **queueing a real functions execution**.\n"
-        "- The system will run it and give you a result after the current step as <ActionResult<label>>.\n"
+        "- The system will run it and give you a result as <ActionResult<label>>.\n"
         "- Do NOT invent, guess or generate action results. Wait until it the system gives you the action result section.\n"
-        "- You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
+        "- You may explain your intent in calling an action, but never assume or generate an ActionResult.\n\n"
     )
     return prompt
 
