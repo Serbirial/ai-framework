@@ -215,7 +215,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- You may NOT execute any new actions — only use previously obtained data.\n"
             + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n"
             + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
-            + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n\n"
+            + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
+            "- Do NOT include any ‘### Step’ headings or numbering in your response; output only the content for the current step.\n\n"
 
             + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
