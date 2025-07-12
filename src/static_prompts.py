@@ -114,7 +114,11 @@ def build_core_memory_prompt(rows):
     prompt = (
     f"### **Core Memory Entries:**\n"
     )
-    if len(rows) == 0 or rows == None:
+    if rows == None:
+        prompt += "Core Memory is EMPTY." 
+        return prompt 
+    
+    if len(rows) == 0:
         prompt += "Core Memory is EMPTY." 
         return prompt 
     for row in rows:
