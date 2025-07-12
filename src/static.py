@@ -267,7 +267,7 @@ class ChatContext:
             line (str): A single line string representing a user or bot message,
                         usually formatted with timestamp and speaker label.
         """
-        self.lines.append(f"<{role}> {line}")
+        self.lines.append(f"<{role}> {line}\n")
         self._trim_to_token_limit()
 
     def remove_line(self):
