@@ -136,3 +136,27 @@ def build_history_prompt(history):
         f"\n\n"
     )
     return prompt
+
+def build_discord_formatting_prompt():
+    prompt = (
+        "### **Discord Formatting Rules (Important)**\n"
+        "- Avoid accidental formatting from special characters like `*`, `_`, `~`, `|`, and `` ` ``.\n"
+        "- In Discord:\n"
+        "  - `*text*` = *italic*\n"
+        "  - `**text**` = **bold**\n"
+        "  - `***text***` = ***bold italic***\n"
+        "  - `__text__` = underline\n"
+        "  - `~~text~~` = strikethrough\n"
+        "  - `` `code` `` = inline code\n"
+        "  - ```` ```code block``` ```` = multi-line code\n\n"
+
+        "### **Markdown Safety Rules (Follow These Strictly)**\n"
+        "- If you must use `*`, `_`, `~`, `` ` ``, or `|`, escape them with a backslash (`\\`), e.g., `\\*` or ``\\` ``.\n"
+        "- NEVER format regular responses using `*`, `**`, or `` ` `` unless you are deliberately using Discord styles.\n"
+        "- NEVER cause unintentional formatting by combining more than one `*`, `_`, or `` ` `` in a row unless you mean to format.\n\n"
+
+        "### **Output Policy**\n"
+        "- Escape any unintentional special characters using `\\` so Discord does not render them as formatting.\n"
+        "- You may use actual formatting (e.g. **bold**, *italic*) only when appropriate and intended.\n\n"
+    )
+    return prompt

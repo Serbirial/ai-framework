@@ -305,6 +305,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 )
                 full += f"{response.strip()}\n"
 
+        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
 
         if self.tiny_mode:
             final_prompt = (
@@ -329,6 +330,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
                     + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
                     + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
+                    + discord_formatting_prompt
                     + "<|assistant|>\n"
                 )
             else:
@@ -343,6 +345,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     + "- Do not include disclaimers or third-person analysis.\n"
                     + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
                     + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
+                    + discord_formatting_prompt
                     + "<|assistant|>\n"
                 )
 

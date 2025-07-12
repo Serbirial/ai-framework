@@ -231,7 +231,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 )
                 full += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
 
-
+        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
         final_prompt = (
             full
             #+ "<|assistant|>\n"
@@ -243,6 +243,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Do not use Actions, you are no longer allowed to execute actions, only use previous data.\n"
             
             + "- Present the answer directly and concisely.\n"
+            + discord_formatting_prompt
             + "<|assistant|>\n"
         )
 
