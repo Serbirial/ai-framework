@@ -167,6 +167,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 f'  <Action>{{"action": "execute_math", "parameters": {{"expression": "5 * 20 + 3"}}, "label": "math{step+1}"}}</Action>\n'
                 "- Do NOT simulate or guess action results — only use <ActionResult> from Previous Steps <ActionResult> blocks.\n"
                 "- If no action is needed, reason forward logically toward completing the task.\n"
+                "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
+                "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
+                "- Only execute new actions when necessary.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
             )
             step_prompt += "<|assistant|>"
