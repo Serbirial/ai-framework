@@ -115,14 +115,15 @@ def build_core_memory_prompt(rows):
     f"### **Core Memory Entries:**\n"
     )
     if rows == None:
-        prompt += "Core Memory is EMPTY." 
+        prompt += "Core Memory is EMPTY.\n\n" 
         return prompt 
     
     if len(rows) == 0:
-        prompt += "Core Memory is EMPTY." 
+        prompt += "Core Memory is EMPTY.\n\n" 
         return prompt 
     for row in rows:
-        prompt += f"- {row[0].strip()}"
+        prompt += f"- {row[0].strip()}\n"
+        prompt += "\n\n"
     return prompt
 
 def build_history_prompt(history):

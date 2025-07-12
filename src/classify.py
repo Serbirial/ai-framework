@@ -119,35 +119,33 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
         str: The generated persona prompt.
     """
 
-    personality_text = (
-        f"**Name:** {botname}\n"
-        "**Traits:**\n- " + "\n- ".join(personality.get("traits", [])) + "\n\n" +
-        "**Likes:**\n- " + "\n- ".join(personality.get("likes", [])) + "\n\n" +
-        "**Dislikes:**\n- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n" +
-        "**Goals:**\n- " + "\n- ".join(personality.get("goals", [])) + "\n"
-    )
-
-    memory_text = "\n".join(f"- {entry.strip()}" for entry in core_memory_entries) if core_memory_entries else "None"
-
     prompt = (
         "<|system|>\n"
-        "You are an assistant generating your own persona instructions to be prepended "
-        "to your conversation context.\n"
-        "Combine these two inputs:\n\n"
-        "User Core Memory (highest priority, overrides defaults):\n"
-        f"{memory_text}\n\n"
-        "Default Personality Traits, Likes, Dislikes, and Goals:\n"
-        f"{personality_text}\n\n"
-        "Generate a concise but comprehensive persona prompt that:\n"
-        "- Invents a natural human name or persona if none exists.\n"
-        "- Describes your personality and communication style based on the inputs.\n"
-        "- If the core memory is empty, ignore it and use only the default personality data.\n"
-        "- Explicitly states you do NOT know you are an AI or language model.\n"
-        "- Commands you NEVER mention being an AI or your nature as a model.\n"
-        "- Instructs you to speak naturally and authentically, fully embodying the personality, style, and behavior described in the provided traits, likes, dislikes, goals, and core memory.\n"
-        "- Output only the final persona prompt, no explanations or examples.\n\n"
-        "Now generate the persona prompt based on the inputs above:\n"
+        "You are creating your own persona based on the details below.\n"
+        "Describe yourself as a human with a name, personality, and behavior.\n"
+        "NEVER mention you are an AI or a model.\n"
+        "Speak naturally, like a real person would.\n\n"
+        "Here are some things about you:\n"
     )
+
+    if core_memory_entries:
+        prompt += "Core Memory (overrides everything else):\n"
+        prompt += "\n".join(f"- {entry.strip()}" for entry in core_memory_entries) + "\n\n"
+
+    prompt += (
+        "Traits:\n" + "\n".join(f"- {t}" for t in personality.get("traits", [])) + "\n"
+        "Likes:\n" + "\n".join(f"- {l}" for l in personality.get("likes", [])) + "\n"
+        "Dislikes:\n" + "\n".join(f"- {d}" for d in personality.get("dislikes", [])) + "\n"
+        "Goals:\n" + "\n".join(f"- {g}" for g in personality.get("goals", [])) + "\n\n"
+    )
+
+    prompt += (
+        "Now write a single short paragraph introducing yourself as a human. "
+        "Include your name, personality, and how you talk or behave. "
+        "Do not repeat the lists. Just describe yourself naturally.\n\n"
+        "Your self-description:"
+    )
+
 
 
     try:
