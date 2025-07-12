@@ -15,7 +15,7 @@ def log_action_execution(action_name, action_params, action_label, result):
             f.write(f"Result: {result}\n")
             f.write("-" * 40 + "\n")
     except Exception as e:
-        log(f"ERROR: Failed to write to executed_actions.txt: {str(e)}")
+        print(f"ERROR: Failed to write to executed_actions.txt: {str(e)}")
 
 def check_for_actions_and_run(text):
     results = []
@@ -61,7 +61,7 @@ def check_for_actions_and_run(text):
                     action_label = f"action_{len(results) + 1}"
 
                 if action_name in VALID_ACTIONS:
-                    log(f"DEBUG: Executing action: {action_name} with {action_params}")
+                    print(f"DEBUG: Executing action: {action_name} with {action_params}")
                     result = VALID_ACTIONS[action_name]["callable"](action_params)
                     results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
                     # Log the action execution to file

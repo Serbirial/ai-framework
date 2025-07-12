@@ -1,7 +1,6 @@
 import datetime
-from log import log
 
-def get_current_time(parameters: dict) -> dict:
+def get_current_time(parameters: dict = {}) -> dict:
     """
     Returns the current device time in ISO 8601 format.
 
