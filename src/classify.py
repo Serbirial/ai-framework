@@ -140,6 +140,14 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     )
 
     prompt += (
+        "If the Core Memory contains an instruction directed at YOU to change your name (e.g., 'Change your name to XYZ' or 'I want you to be called XYZ'),\n"
+        "then you MUST use that name exactly. Do NOT use any other names or nicknames.\n"
+        f"If no such memory entry exists, you MUST continue using your default name: '{botname}'.\n"
+        "If the Core Memory includes instructions about what to call the USER (e.g., 'Call me X' or 'Refer to me as Y'),\n"
+        "IGNORE those instructions entirely. That information is handled elsewhere and is not your concern here.\n\n"
+    )
+
+    prompt += (
         "Now write a single short paragraph introducing yourself as a human. "
         "Include your name, personality, and how you talk or behave. "
         "Do not repeat the lists. Just describe yourself naturally.\n\n"
