@@ -63,10 +63,6 @@ EXPORT = {
     "coingecko_price": {
         "help": (
             "Fetch real-time crypto prices from CoinGecko. Supports multiple coins.\n"
-            "Params:\n"
-            "- coins: list of coin IDs (e.g., ['bitcoin', 'ethereum'])\n"
-            "- vs_currency: fiat currency to compare against (e.g., 'usd', 'eur')\n"
-            "- include_market_data: true to include market cap, 24h volume, change"
         ),
         "callable": coingecko_price,
         "params": {

@@ -109,9 +109,7 @@ def duckduckgo_query(query: str) -> dict:
 EXPORT = {
     "duckduckgo_query": {
         "help": (
-            "Perform a DuckDuckGo Instant Answer query and return the top answer or summary. "
-            "If no instant answer, fetch first 10 organic links, score by domain importance, "
-            "and pick highest weighted link. If Wikipedia, fetch page summary automatically."
+            "Perform a DuckDuckGo Instant Answer query and return the top answer or summary."
         ),
         "callable": duckduckgo_query,
         "params": {
