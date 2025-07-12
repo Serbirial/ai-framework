@@ -89,7 +89,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         mood = self.bot.mood
 
         base = (
-            f"<|system|>\n"
+            "<|begin_of_text|>"
+
+            "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
             f"{persona_section}"
 
@@ -245,6 +247,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 step_prompt += "### <ActionResult> blocks from previous step:\n"
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
+            "<|eot_id|>"
+            step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
 
             # add the current step header only for clarity in logs and generation
             step_prompt += f"### Thought step {step+1} of {self.depth}\n"
@@ -252,6 +256,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
+            
             # generate step output
             response = self.bot._straightforward_generate(
                 step_prompt,
@@ -311,11 +316,15 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             final_prompt = (
                 full
                 + tiny_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
+                + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+                
                 )
         elif CUSTOM_GPT2:
             final_prompt = (
                 full
                 + custom_gpt2_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
+                + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+                
                 )
         else:
             if query_type == "factual_question":
@@ -331,7 +340,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
                     + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
                     + discord_formatting_prompt
-                    + "<|assistant|>\n"
+                    + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
                 )
             else:
                 final_prompt = (
@@ -346,7 +355,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
                     + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
                     + discord_formatting_prompt
-                    + "<|assistant|>\n"
+                    + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
                 )
 
         tokenizer = DummyTokenizer()

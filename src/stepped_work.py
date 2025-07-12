@@ -62,12 +62,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"{actions_section}"
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
-
-            "<|eot_id|>"
         )
 
         base += (
-            "<|start_header_id|>user<|end_header_id|>\n"
             f"### Task Info\n"
             f"**User Given Task:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
@@ -141,6 +138,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             # generate step output
+            "<|eot_id|>"
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
 
