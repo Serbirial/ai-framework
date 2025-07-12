@@ -178,7 +178,7 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     return persona_prompt
 
 
-def classify_user_input(model, tokenizer, user_input):
+def classify_user_input(model, tokenizer, user_input, history=None):
     categories = [
         "greeting",
         "goodbye",
@@ -190,8 +190,9 @@ def classify_user_input(model, tokenizer, user_input):
     ]
 
     prompt = (
-        "<|system|>\n"
-        "You are a classifier that assigns one of the following categories to the user's message:\n"
+        "<|start_of_text|><|start_header_id|>system<|end_header_id|>\n"
+        "You are a classifier that assigns one of the following categories to the user's last message,\n"
+        "considering the recent conversation history for context:\n"
         "- greeting: A simple hello or salutation\n"
         "- goodbye: A farewell or parting phrase\n"
         "- preference_query: A question about opinions, likes/dislikes, or personality\n"
@@ -210,36 +211,28 @@ def classify_user_input(model, tokenizer, user_input):
         "Input: Whats your local time?\nCategory: task\n"
         "Input: Execute this math...\nCategory: task\n"
         "Input: Whats your time...\nCategory: task\n"
-
         "Input: What are your likes / dislikes?\nCategory: preference_query\n"
         "Input: What's your opinion on X?\nCategory: preference_query\n"
         "Input: I love rainy days.\nCategory: statement\n"
         "Input: Goodbye!\nCategory: goodbye\n\n"
-        f"Input: {user_input.strip()}\nCategory:"
+        "<|eot|>\n"
+        f"<|start_header_id|>user<|end_header_id|>\n{history if history else '**No Conversation History.**'}<|eot|>\n"
+        f"<|start_header_id|>user<|end_header_id|>\n{user_input.strip()}\n<|eot|>\n"
+        "Category:"
     )
 
 
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=10,
-        temperature=0.3, # slight temperature increase to allow for better detection
-        top_p=1.0,
-        stop=["\n"],
-        stream=False,
-    )
+    inputs = tokenizer(prompt, return_tensors="pt")
+    outputs = model.generate(**inputs, max_new_tokens=10, do_sample=False)
+    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    log("RAW CATEGORY OUTPUT", output)
-
-    text = openai.extract_generated_text(output).strip().lower()
-
-    # Strip non-category words (e.g. "category: X")
+    # Extract category from result
+    result = result.strip().lower()
     for cat in categories:
-        if cat in text:
-            log("INPUT CLASSIFICATION", cat)
+        if cat in result:
             return cat
-
-    log("INPUT CLASSIFICATION", "other")
     return "other"
+
 
 
 

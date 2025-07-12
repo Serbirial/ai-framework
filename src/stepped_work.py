@@ -132,6 +132,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- You MUST WAIT for the real <ActionResult> of any actions emitted to be provided in the next generation.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
+                f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
+                f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
+                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
             )
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
@@ -210,7 +213,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- You may NOT execute any new actions — only use previously obtained data.\n"
-            + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n\n"
+            + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n"
+            + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
+            + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n\n"
+
             + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
         )
