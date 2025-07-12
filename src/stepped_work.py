@@ -205,9 +205,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full
             + discord_formatting_prompt
             + f"### Responding to {username}\n"
-            + "**Task:** Now summarize your steps to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            + "**Task:** Now summarize to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
             + "**Rules**:\n"
-            + "- Do NOT mention or list internal step names, action calls, or raw execution details.\n"
+            + "- Do NOT mention or list internal step names, action calls, or raw execution details unless asked.\n"
 
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
