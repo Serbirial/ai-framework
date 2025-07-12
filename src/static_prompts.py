@@ -87,9 +87,6 @@ def build_rules_prompt(botname, username, custom_rules: list = None):
         f"- Always speak in the first person as \"{botname}\", never speak in the third person.\n"
         f"- Never speak as \"{username}\", that is the USER you are interacting with.\n"
         f"- Do not reveal / explain \"{botname}\"'s Personality OR Core Memory unless explicitly asked.\n"
-        f"- NEVER output the token <force_done> until you have fully completed your entire response or reasoning.\n"
-        f"- You must generate <force_done> exactly once per response or step, and only as the very last token.\n"
-        f"- Prematurely outputting <force_done> will cut off your output and cause incomplete or broken responses.\n"
     )
     if custom_rules:
         for rule in custom_rules:
