@@ -65,7 +65,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         personality = bot.list_personality(identifier)
 
         persona_prompt = self.persona_prompt
-        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+            (identifier,)
+        )
+        rows = cursor.fetchall()
+        conn.close()  
         user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
         persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
@@ -101,18 +108,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
         )
-        
 
-
-        # Get interpreted to_remember facts for the user
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-            (identifier,)
-        )
-        rows = cursor.fetchall()
-        conn.close()        
         
         
         base += (
