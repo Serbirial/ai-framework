@@ -13,7 +13,7 @@ def get_current_time(parameters: dict = {}) -> dict:
     try:
         now = datetime.datetime.now()
         iso_time = now.isoformat()
-        return {"current_time": iso_time}
+        return {"result": iso_time}
     except Exception as e:
         return {"error": str(e)}
 
