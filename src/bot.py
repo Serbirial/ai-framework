@@ -217,7 +217,7 @@ class ChatBot:
         rows = cursor.fetchall()
         conn.close()
 
-        memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else ""
+        memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else "No memory entries found!"
 
         personality = list_personality(identifier)
 
@@ -226,7 +226,7 @@ class ChatBot:
 
         system_prompt = (
             f"You are a personality-driven assistant named {self.name}.\n"
-            f"# **{self.name}'s Personality Profile:**\n"
+            f"# **{self.name}'s Personality Profile:**\n\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
@@ -267,12 +267,15 @@ class ChatBot:
             f"**Name:** {username.replace('<', '').replace('>', '')}\n"
             f"**Message Social Intent:** {usertone['intent']}\n"
             f"**Message Tone:** {usertone['tone']}\n"
-            f"**Message Attitude:** {usertone['attitude']}\n"
+            f"**Message Attitude:** {usertone['attitude']}\n\n"
+            
+            f"# **Chat History:**\n"
+            f"{context if context else 'No chat history found!'}"
+            
         )
 
         prompt = (
             f"<|system|>\n{system_prompt.strip()}\n\n"
-            f"{context if context else ''}"
             f"<|user|>\n{user_input.strip()}\n"
             f"<|assistant|>"
         )
