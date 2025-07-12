@@ -70,6 +70,7 @@ class StopOnSpeakerChange:
         all_stop_tokens = self.default_stop_tokens + self.custom_stops
         if self.hard_stop in self.buffer or self.hard_stop in new_text_chunk:
             return True
+
         for token in all_stop_tokens:
             if token in self.buffer and self.line_count >= self.min_lines:
                 return True
