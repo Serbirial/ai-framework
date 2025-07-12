@@ -225,8 +225,8 @@ class ChatBot:
         core_memory_entries = [row[0] for row in rows]
 
         system_prompt = (
-            f"**You are a personality driven assistant named {self.name}:**\n"
-            f"- All traits, likes, dislikes, and goals below describe you, the assistant, NOT the user.\n\n"
+            f"You are a personality-driven assistant named {self.bot.name}.\n"
+            f"# {self.bot.name}'s Personality Profile\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
