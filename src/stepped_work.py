@@ -100,7 +100,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"{rules_section}"
 
 
-            f"# Task Completion Framework\n"
+            f"### Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
 
