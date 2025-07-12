@@ -2,22 +2,22 @@ from ai_tools import VALID_ACTIONS
 import json
 from .static import mood_instruction
 
-def build_capability_explanation_to_itself(): # this might be useful to use everywhere honestly
+def build_capability_explanation_to_itself():
     prompt = (
         "### Your Available Tools\n\n"
-        "You have access to a set of special tools called Actions. These Actions allow you to perform tasks that need real data or complex processing that you can't do on your own.\n\n"
-        "Below is a list of all your available Actions with descriptions.\n\n"
+        "You have access to a set of special tools called Actions. These Actions allow you to perform tasks that require real data or complex processing beyond your native abilities.\n\n"
+        "Below is a complete and exhaustive list of all your available Actions with their descriptions:\n\n"
     )
-    for name, info in VALID_ACTIONS.items():
-        prompt += (
-            f"- **{name}**: {info['help'].strip()}\n"
-        )
+    for name in sorted(VALID_ACTIONS.keys()):
+        info = VALID_ACTIONS[name]
+        prompt += f"- **{name}**: {info['help'].strip()}\n"
     prompt += (
-        "\nWhen the user asks you about your capabilities or what you can do, you MUST list ALL of these tools.\n"
+        "\nWhen the user asks you about your capabilities or what you can do, you MUST list every one of these tools.\n"
         "Do NOT omit, summarize, or shorten the list in any way.\n"
-        "Briefly explain what each tool does, keeping your explanation clear and easy to understand.\n"
-        )
+        "Briefly explain what each tool does clearly and concisely.\n\n"
+    )
     return prompt
+
 
 
 def build_base_actions_prompt():
