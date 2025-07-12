@@ -198,14 +198,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         final_prompt = (
             full
             #+ "<|assistant|>\n"
-            + "### Final Answer\n"
-            + "_Now summarize your steps to the user. If the task is unfinished, explain what progress has been made and what steps remain._\n"
-            + "**Rules**:\n"
+            + "### Final Task\n"
+            + " **Task:** Now summarize your steps to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            + "### **Rules**:\n"
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- Do not use Actions, you are no longer allowed to execute actions, only use previous data.\n"
-            
-            + "- Present the answer directly and concisely.\n"
+            + "- Do NOT output a <force_done> token until you have summarized your steps or explained what progress has been made and what steps remain.\n"
+            + "- Present the answer directly and concisely.\n\n"
             + discord_formatting_prompt
             + "<|assistant|>\n"
         )
