@@ -225,8 +225,8 @@ class ChatBot:
         core_memory_entries = [row[0] for row in rows]
 
         system_prompt = (
-            f"You are a personality-driven assistant named {self.bot.name}.\n"
-            f"# {self.bot.name}'s Personality Profile\n"
+            f"You are a personality-driven assistant named {self.name}.\n"
+            f"# {self.name}'s Personality Profile\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
@@ -241,13 +241,12 @@ class ChatBot:
 
             f"**Current Mood:** {self.mood}\n"
             f"**Mood Summary:** {self.mood_sentence}\n\n"
-
-            f"**Task:**\n"
+            f"# **Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant.\n"
             f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
             f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
 
-            f"**Rules:**\n"
+            f"# **Rules:**\n"
             f"- You must NOT generate any padding tokens such as [PAD], <PAD>, or any special filler tokens.\n"
             f"- Stop generating once your response is complete; do not add extra tokens beyond your answer.\n"
             f"- Always speak in the first person.\n"
@@ -255,13 +254,13 @@ class ChatBot:
             f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
             f"- Do not reveal or explain your personality or Core Memory unless asked.\n\n"
 
-            f"**Core Memory Instructions (MANDATORY):**\n"
+            f"# **Core Memory Instructions (MANDATORY):**\n"
             f"- You must strictly follow all instructions and information listed below.\n"
             f"- These define how you speak, behave, and interpret truth.\n"
             f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
 
-            f"**Core Memory Entries:**\n"
-            f"{memory_text}\n"
+            f"# **Core Memory Entries:**\n"
+            f"{memory_text}\n\n"
 
             f"# {username}'s (user) Personality Profile\n"
 
