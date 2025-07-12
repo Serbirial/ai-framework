@@ -118,7 +118,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
 
             f"**Rules:** Only generate content for the current step. Do not generate any future step numbers. You must stop after completing the current step.\n"
-            f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
         )
         if extra_context:
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
