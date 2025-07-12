@@ -14,7 +14,7 @@ def get_current_time(parameters: dict) -> dict:
     try:
         now = datetime.datetime.now(datetime.timezone.utc).astimezone()
         iso_time = now.isoformat()
-        log("GET-CURRENT-TIME", iso_time)
+        log(prefix="CURRENT TIME", data=iso_time)
         return {"current_time": iso_time}
     except Exception as e:
         return {"error": str(e)}

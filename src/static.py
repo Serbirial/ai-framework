@@ -57,7 +57,8 @@ class StopOnSpeakerChange:
     def __call__(self, new_text_chunk):
         if self.stopped:
             return True
-
+        if new_text_chunk.strip() == "":
+            return False  # Don't process empty chunks at all
         self.buffer += new_text_chunk
 
         lines = []
