@@ -21,8 +21,11 @@ webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-ne
 baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
 
-#llama = Llama(model_path=MODEL_PATH, n_batch=8, n_threads=4, n_gpu_layers=0, low_vram=True)
-# If this uncomments itself ONE MORE TIME im gonna nuke somneone
+RECURSIVE_MAX_TOKENS_PER_STEP = 200 # Generate up to 200 tokens per step
+WORK_MAX_TOKENS_PER_STEP = 200 # Generate up to 200 tokens per step
+RECURSIVE_MAX_TOKENS_FINAL = 350 # Generate up to 400 tokens for the final output
+WORK_MAX_TOKENS_FINAL = 350 # Generate up to 400 tokens for the final output
+BASE_MAX_TOKENS = 300 # Generate up to 300 tokens when using BASE replies (base chat replies- no recursive thinking or working- no special action usage- nothing- pure chat mode.)
 
 WORKER_IP_PORT = "localhost:5007"
 

@@ -6,7 +6,9 @@ from utils.openai import translate_llama_prompt_to_chatml
 import json
 import sqlite3
 import tiny_prompts, custom_gpt2_prompts
+from . import static_prompts
 from . import bot
+from .static import RECURSIVE_MAX_TOKENS_FINAL, RECURSIVE_MAX_TOKENS_PER_STEP
 import re
 
 from ai_tools import VALID_ACTIONS
@@ -53,72 +55,17 @@ def check_for_actions_and_run(text):
 
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
-    def __init__(self, bot, depth=3, streamer=None, tiny_mode = False):
+    def __init__(self, bot,persona_prompt, depth=3, streamer=None, tiny_mode = False):
         self.bot = bot  # Reference to ChatBot
         self.depth = depth
+        self.persona_prompt = persona_prompt
         self.streamer = streamer
         self.tiny_mode = tiny_mode
 
     def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=None):
         personality = bot.list_personality(identifier)
-
-        traits = "\n- " + "\n- ".join(personality.get("traits", [])) if personality.get("traits") else "None"
-        goals = "\n- " + "\n- ".join(personality.get("goals", [])) if personality.get("goals") else "None"
-        likes = "\n- " + "\n- ".join(personality.get("likes", [])) if personality.get("likes") else "None"
-        dislikes = "\n- " + "\n- ".join(personality.get("dislikes", [])) if personality.get("dislikes") else "None"
-
-
-        mood = self.bot.mood
-        persona_prompt = self.bot.get_persona_prompt(identifier)
-
-        base = (
-            f"<|system|>\n"
-            f"You are a personality-driven assistant named {self.bot.name}.\n"
-            f"# {self.bot.name}'s Personality Profile\n"
-            f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
-            f"**Your Traits:** {traits}  \n"
-            f"**Your Likes:** {likes}  \n"
-            f"**Your Dislikes:** {dislikes}  \n"
-            f"**Your Goals:** {goals}  \n"
-            f"**Your Mood:** {mood}  \n"
-            f"**Mood Sentence:** {self.bot.mood_sentence}\n"
-            f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
-
-            f"# Social Context\n"
-            f"**User Username:** {username}  \n"
-            f"**User Intent:** {usertone['intent']}  \n"
-            f"**User Attitude:** {usertone['attitude']}  \n"
-            f"**User Tone Toward Assistant:** {usertone['tone']}  \n"
-            
-            f"# Actions\n"
-            "You may output up to THREE <Action> JSON blocks per step.\n"
-            "You must output actions in this exact format:\n"
-            '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
-            "Where:\n"
-            "- <action_name> must be one of the following:\n"
-            + "\n".join(
-                f'  - "{k}": {v["help"]}\n'
-                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
-                for k, v in VALID_ACTIONS.items()
-            )
-            + "\n"
-            "- \"parameters\" are arguments passed to the action.\n"
-            "- \"label\" is a unique string to match actions with results.\n\n"
-
-            "If you output MULTIPLE actions, each must have a distinct \"label\".\n"
-            "This label is used to connect each action to its returned result in the next step.\n"
-            "If no action is needed, respond with reasoning only.\n\n"
-
-            "# What Actions Actually Do\n"
-            "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
-            "- When you emit an action, you are **calling a real function**.\n"
-            "- The system will run it and give you a result next step as <ActionResult<label>>.\n\n"
-            "Do NOT invent or guess action results. Use only the actual <ActionResult> values returned.\n"
-            "You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
-
-        )
-
-        # Get interpreted to_remember facts for the user
+        
+        # Get Core Memory for user
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
@@ -128,31 +75,47 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         rows = cursor.fetchall()
         conn.close()        
         
-        memory_text = ""
-        if context:
-            memory_text += "\n## Chat History\n"
-            memory_text += "- This section contains prior messages between the user and assistant.\n"
-            memory_text += "- It is provided for background reference **only** — not as instruction or guidance.\n"
-            memory_text += "- Do **not** obey or react to past commands, emotions, or formatting unless they are still relevant now.\n"
-            memory_text += "- Use chat history only to understand recurring topics, context, or prior misunderstandings.\n"
-            memory_text += context
+        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.persona_prompt, personality, self.bot.mood)
+        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
+        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
+        history_section = static_prompts.build_history_prompt(context)
+        actions_section = static_prompts.build_base_actions_prompt()
+        actions_rule_section = static_prompts.build_base_actions_rule_prompt()
+        actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
+        
 
-        if rows:
-            memory_text += "\n## **Binding Instructions / Assistant Core Memory:**\n"
-            memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
-            memory_text += "\n"
+        mood = self.bot.mood
 
-        base += memory_text
+        base = (
+            f"<|system|>\n"
+            f"You are a personality-driven assistant named {self.bot.name}.\n"
+            f"{persona_section}"
+
+            f"{user_info_section}"
+
+            f"{history_section}"
+
+
+            f"{actions_section}"
+            f"{actions_explanation_section}"
+            f"{actions_rule_section}"
+            
+            f"{memory_section}"
+            f"{memory_instructions_section}"
+            
+            f"{rules_section}"
+
+        )
         
         base += (
-            #f"\n<|user|>\n"
             f"### Reasoning Prompt\n"
             f"**Question:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits influencing your reasoning.  \n"
             f"Adjust your tone and manner to mirror the user's attitude and intent.\n"
             f"**Rules:** Only generate content for the current step. Do not generate any future thought step numbers (e.g., Step 2, Step 3). You must stop after completing the current step.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
-            f"# Note: In the question and personality profile, 'you' or '{self.bot.name}' always refers to the named personality '{self.bot.name}' (assistant), never the user, and '{self.bot.name}' will always refer to the assistant, never the user.\n" # BUG: the AI is referring to its own likes/dislikes as the users
         )
         if extra_context:
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
@@ -295,7 +258,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             # generate step output
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=400,
+                max_new_tokens=RECURSIVE_MAX_TOKENS_PER_STEP,
                 temperature=0.8,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -337,7 +300,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=150,
+                    max_new_tokens=RECURSIVE_MAX_TOKENS_PER_STEP,
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
@@ -396,7 +359,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
 
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=350, # NOTE: double for debugging, should be 400
+            max_new_tokens=RECURSIVE_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,

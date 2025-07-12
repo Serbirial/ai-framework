@@ -16,10 +16,11 @@ from .recursive import RecursiveThinker
 from .stepped_work import RecursiveWork
 
 from . import classify
+from . import static_prompts
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter, DEBUG_FUNC
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter, DEBUG_FUNC, BASE_MAX_TOKENS
 
 tokenizer = DummyTokenizer() # FiXME
 
@@ -217,60 +218,31 @@ class ChatBot:
         rows = cursor.fetchall()
         conn.close()
 
-        memory_text = "\n".join(f"- {row[0].strip()}" for row in rows) if rows else "No memory entries found!"
 
         personality = list_personality(identifier)
 
-        # Generate the persona prompt text
-        core_memory_entries = [row[0] for row in rows]
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.name, persona_prompt, personality, self.mood)
+        rules_section = static_prompts.build_rules_prompt(self.name, username, None)
+        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
+        user_section = static_prompts.build_user_profile_prompt(username, usertone)
+        task_section = static_prompts.build_base_chat_task_prompt(self.name, username)
+        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
+        history_section = static_prompts.build_history_prompt(context)
 
         system_prompt = (
-            f"You are a personality-driven assistant named {self.name}.\n"
-            f"# **{self.name}'s Personality Profile:**\n\n"
+            f"You are a personality-driven assistant named \"{self.name}\", talking to a user named \"{username}\".\n\n"
+            f"{persona_section}"
+            f"{user_section}"
             
-            f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
+            f"{task_section}"
 
-            f"**Traits:**\n"
-            f"- " + "\n- ".join(personality.get("traits", [])) + "\n\n"
-            f"**Likes:**\n"
-            f"- " + "\n- ".join(personality.get("likes", [])) + "\n\n"
-            f"**Dislikes:**\n"
-            f"- " + "\n- ".join(personality.get("dislikes", [])) + "\n\n"
-            f"**Goals:**\n"
-            f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
+            f"{rules_section}"
 
-            f"**Current Mood:** {self.mood}\n"
-            f"**Mood Summary:** {self.mood_sentence}\n\n"
-            
-            f"# **Task:**\n"
-            f"- You are '{self.name}', a personality-driven assistant.\n"
-            f"- You must obey and incorporate all instructions and information from your Core Memory below.\n"
-            f"- The Core Memory entries define your behavior, personality, speaking style, and facts you accept as true.\n\n"
+            f"{memory_instructions_section}"
 
-            f"# **Rules:**\n"
-            f"- You must NOT generate any padding tokens such as [PAD], <PAD>, or any special filler tokens.\n"
-            f"- Stop generating once your response is complete; do not add extra tokens beyond your answer.\n"
-            f"- Always speak in the first person.\n"
-            f"- Never refer to yourself (the assistant, {self.name}) in the third person.\n"
-            f"- Respond only as yourself ({self.name}), never as a narrator or user.\n"
-            f"- Do not reveal or explain your personality or Core Memory unless asked.\n\n"
+            f"{memory_section}"
 
-            f"# **Core Memory Instructions (MANDATORY):**\n"
-            f"- You must strictly follow all instructions and information listed below.\n"
-            f"- These define how you speak, behave, and interpret truth.\n"
-            f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n\n"
-
-            f"# **Core Memory Entries:**\n"
-            f"{memory_text}\n\n"
-
-            f"# **{username}'s Personality Profile*:*\n"
-            f"**Name:** {username.replace('<', '').replace('>', '')}\n"
-            f"**Message Social Intent:** {usertone['intent']}\n"
-            f"**Message Tone:** {usertone['tone']}\n"
-            f"**Message Attitude:** {usertone['attitude']}\n\n"
-            
-            f"# **Chat History:**\n"
-            f"{context if context else 'No chat history found!'}"
+            f"{history_section}"
             
         )
 
@@ -422,7 +394,7 @@ class ChatBot:
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
 
-    def chat(self, username, user_input, identifier, max_new_tokens=200, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False):
+    def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False):
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_social_tone",

@@ -8,8 +8,10 @@ import sqlite3
 import tiny_prompts, custom_gpt2_prompts
 from . import bot
 import re
+from .static import WORK_MAX_TOKENS_FINAL, WORK_MAX_TOKENS_PER_STEP
 
 from ai_tools import VALID_ACTIONS
+from . import static_prompts
 
 
 
@@ -62,59 +64,43 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
     def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=None):
         personality = bot.list_personality(identifier)
 
-        traits = "\n- " + "\n- ".join(personality.get("traits", [])) if personality.get("traits") else "None"
-        goals = "\n- " + "\n- ".join(personality.get("goals", [])) if personality.get("goals") else "None"
-        likes = "\n- " + "\n- ".join(personality.get("likes", [])) if personality.get("likes") else "None"
-        dislikes = "\n- " + "\n- ".join(personality.get("dislikes", [])) if personality.get("dislikes") else "None"
-
-
-        mood = self.bot.mood
         persona_prompt = self.persona_prompt
-
+        
+        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood)
+        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
+        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
+        history_section = static_prompts.build_history_prompt(context)
+        actions_section = static_prompts.build_base_actions_prompt()
+        actions_rule_section = static_prompts.build_base_actions_rule_prompt()
+        actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
+        
         base = (
             f"<|system|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
-            f"# {self.bot.name}'s Personality Profile\n"
-            f"{persona_prompt}\n\n"
-            f"**Your Traits:** {traits}  \n"
-            f"**Your Goals:** {goals}  \n"
-            f"**Your Mood:** {mood}  \n"
-            f"**Mood Sentence:** {self.bot.mood_sentence}\n"
-            f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n\n"
-            
-            f"# Base User Info\n"
-            f"**Name:** {username}  \n\n"
-            
-            f"# Actions\n"
-            "You may output up to THREE <Action> JSON blocks per step.\n"
-            "You must output actions in this exact format:\n"
-            '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
-            "Where:\n"
-            "- <action_name> must be one of the following:\n"
-            + "\n".join(
-                f'  - "{k}": {v["help"]}\n'
-                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
-                for k, v in VALID_ACTIONS.items()
-            )
-            + "\n"
-            "- \"parameters\" are arguments passed to the action.\n"
-            "- \"label\" is a unique string to match actions with results.\n\n"
 
-            "If you output MULTIPLE actions, each must have a distinct \"label\".\n"
-            "This label is used to connect each action to its returned result in the next step.\n"
-            "If no action is needed, respond with reasoning only.\n\n"
-
-            "# What Actions Actually Do\n"
-            "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
-            "- When you emit an action, you are **calling a real function**.\n"
-            "- The system will run it and give you a result next step as <ActionResult<label>>.\n\n"
-            "Do NOT invent or guess action results. Use only the actual <ActionResult> values returned.\n"
-            "You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
+            f"{persona_section}"
+            
+            f"{user_info_section}"
+            
+            f"{memory_instructions_section}"
+            
+            f"{memory_section}"
+            
+            f"{history_section}"
 
             f"# Task Completion Framework\n"
             f"You are completing a task for the user using real external tools when needed.\n"
             f"Tasks must be executed using Actions — they are not simulated, they are real code and functions.\n"
+            
+            f"{rules_section}"
+            
+            f"{actions_section}"
+            f"{actions_explanation_section}"
+            f"{actions_rule_section}"
         )
+        
 
 
         # Get interpreted to_remember facts for the user
@@ -127,21 +113,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         rows = cursor.fetchall()
         conn.close()        
         
-        memory_text = ""
-        if context:
-            memory_text += "\n## Chat History\n"
-            memory_text += "- Use chat history only to understand recurring topics, context, or prior misunderstandings.\n"
-            memory_text += context
-
-        if rows:
-            memory_text += "\n## **Binding Instructions / Memory:**\n"
-            memory_text += "\n".join(f"- {row[0].strip()}" for row in rows)
-            memory_text += "\n"
-
-        base += memory_text
         
         base += (
-            #f"\n<|user|>\n"
             f"### Task Info\n"
             f"**User Given Task:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
@@ -188,15 +161,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "### **Rules:**\n"
 
             step_prompt += "- For *any* math expressions (even simple ones), you MUST use the \"execute_math\" action.\n"
-            step_prompt += "- Math must be executed with the following action:\n"
-            step_prompt += "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only.\n"
+            step_prompt += "- Math must be executed with the following action, using execute_math as the \"action\" key :\n"
             step_prompt += "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>\n"
-            step_prompt += f"- Each <Action> MUST use this format:\n"
-            step_prompt += '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n\n'
+            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess or generate them.\n"
+            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
+
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
-            step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
-            step_prompt +="- If no action is needed, reason forward logically toward the task goal.\n"
 
             # insert previous action result just before generation (but after thought header)
             if extra_context_lines:
@@ -210,7 +181,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             # generate step output
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=150,
+                max_new_tokens=WORK_MAX_TOKENS_PER_STEP,
                 temperature=0.7,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -223,6 +194,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full += step_content
             log(f"DEBUG: WORK STEP {step}", step_content)
             
+            # append the full step (header + content) to the full conversation log
+            full += f"### Step {step+1} of {self.depth}\n{step_content}\n\n"
+            
+            # Check for and run any actions
             action_result = check_for_actions_and_run(response)
             
             # queue action result for next step input
@@ -230,14 +205,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
-                        full += result
+                        full += result # add result to full prompt 
                 else:
                     extra_context_lines.append(action_result)
-                    full += result
-
-
-            # append the full step (header + content) to the full conversation log
-            full += f"### Step {step+1} of {self.depth}\n{step_content}\n\n"
+                    full += result # add result to full prompt
 
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
@@ -254,14 +225,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=150,
+                    max_new_tokens=WORK_MAX_TOKENS_PER_STEP,
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
                     stop_criteria=stop_criteria,
                     _prompt_for_cut=step_prompt,
                 )
-                full += f"{response.strip()}\n"
+                full += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
 
 
         final_prompt = (
@@ -288,7 +259,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
 
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=350, # NOTE: double for debugging, should be 400
+            max_new_tokens=WORK_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,
