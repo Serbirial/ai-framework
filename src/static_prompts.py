@@ -13,8 +13,10 @@ def build_capability_explanation_to_itself(): # this might be useful to use ever
             f"- **{name}**: {info['help'].strip()}\n"
         )
     prompt += (
-        "If the user asks you about your capabilities, or what you can do, clearly list these tools and explain briefly what each one does.\n"
-    )
+        "\nWhen the user asks you about your capabilities or what you can do, you MUST list ALL of these tools.\n"
+        "Do NOT omit, summarize, or shorten the list in any way.\n"
+        "Briefly explain what each tool does, keeping your explanation clear and easy to understand.\n"
+        )
     return prompt
 
 
