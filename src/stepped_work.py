@@ -80,9 +80,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"**Your Goals:** {goals}  \n"
             f"**Your Mood:** {mood}  \n"
             f"**Mood Sentence:** {self.bot.mood_sentence}\n"
-            f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n"
+            f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n\n"
+            
             f"# Base User Info\n"
-            f"**Username:** {username}  \n\n"
+            f"**Name:** {username}  \n\n"
+            
             f"# Actions\n"
             "You may output up to THREE <Action> JSON blocks per step.\n"
             "You must output actions in this exact format:\n"
@@ -183,24 +185,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             if prior_steps:
                 step_prompt += "**Prior Steps:**\n"
                 step_prompt += "\n".join(prior_steps) + "\n\n"
-            step_prompt += "## Action Usage Rules"
+            step_prompt += "### **Rules:**\n"
 
-            step_prompt += "- For *any* math expressions (even simple ones), you must use the \"execute_math\" action."
-            step_prompt += "- Math must be executed with the following action:"
-            step_prompt += "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only."
-            step_prompt += "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>"
-
-            step_prompt += f"## Action Execution Format\n"
-            step_prompt += f"You may output up to THREE <Action> JSON blocks per step.\n"
-            step_prompt += f"Each <Action> must use this format:\n"
-            step_prompt += '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
-            step_prompt += f"Where:\n"
-            step_prompt += "\n".join(
-                f'  - "{k}": {v["help"]}\n'
-                f'    Example: <Action>{{"action": "{k}", "parameters": {json.dumps(v["params"])}, "label": "{k}_example1"}}</Action>'
-                for k, v in VALID_ACTIONS.items()
-            )
-            step_prompt += "\n"
+            step_prompt += "- For *any* math expressions (even simple ones), you MUST use the \"execute_math\" action.\n"
+            step_prompt += "- Math must be executed with the following action:\n"
+            step_prompt += "  - \"execute_math\": Use this to run math using +, -, *, /, %, //, or ** only.\n"
+            step_prompt += "    Example: <Action>{\"action\": \"execute_math\", \"parameters\": {\"expression\": \"10 * 11 + 3\"}, \"label\": \"math1\"}</Action>\n"
+            step_prompt += f"- Each <Action> MUST use this format:\n"
+            step_prompt += '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n\n'
             # add the current step header for clarity when doing tasks
             step_prompt += f"### Step {step+1} of {self.depth}\n"
             step_prompt +="- Use <ActionResult<label>> results in the next or current step — never guess them.\n"
