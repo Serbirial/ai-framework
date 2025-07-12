@@ -24,9 +24,12 @@ def build_base_actions_prompt():
 def build_base_actions_rule_prompt():
     prompt = (
         "### Action Rules\n"
-        "Each must have a distinct \"label\".\n"
-        "This label is used to connect each action to its returned result in the next step.\n"
-        "If no action is needed, respond with reasoning only.\n\n"
+        "- Each must have a distinct \"label\".\n"
+        "- The label is used to connect each action to its returned result in the next step.\n"
+        '- Actions MUST:\n'
+        "   - Start with <Action>\n"
+        "   - End with </Action>\n\n"
+        "- Actions MUST Start AND End with the above, or they will not be recognized by the system."
     )
     return prompt
 
@@ -34,7 +37,7 @@ def build_base_actions_explanation_prompt():
     prompt = (
         "### What Actions Actually Do\n"
         "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
-        "- When you emit an action, you are **calling a real function**.\n"
+        "- When you emit an action, you are **queueing a real functions execution**.\n"
         "- The system will run it and give you a result next step as <ActionResult<label>>.\n"
         "Do NOT invent or guess action results. Use only the actual <ActionResult> values returned.\n"
         "You may explain your intent in calling an action, but never assume or generate its outcome.\n\n"
