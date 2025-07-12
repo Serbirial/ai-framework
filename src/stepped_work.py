@@ -122,23 +122,20 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += (
                 "**Step Rules:**\n"
                 "- You must ONLY generate content for the **current step**.\n"
-                f"- DO NOT generate or refer to future steps (like Step {step+2} or Step {step+3}).\n"
                 "- You may leave yourself instructions or a plan for the *next* step, but do NOT write its contents.\n"
-                "- Do NOT anticipate or simulate later outputs. Stay entirely within the scope of this one step.\n"
+                "- Stay entirely within the scope of this current step, you are NOT ALLOWED to create new numbered steps.\n"
                 "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
 
-                "- Actions must be emitted using this exact format:\n"
-                f'  <Action>{{ "action": "<action_name>", "parameters": {{ ... }}, "label": "<unique_label>" }}</Action>\n'
                 "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current reasoning step logically requires real data you cannot guess.\n"
                 "- NEVER guess or assume an action is needed unless it is required to get real data.\n"
 
                 "- If no action is needed, reason forward logically toward completing the task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
                 "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
-                "- You MUST WAIT for the real <ActionResult> of any actions emitted to be provided in the next step’s prompt.\n"
+                "- You MUST WAIT for the real <ActionResult> of any actions emitted to be provided in the next generation.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then optionally explain your reasoning.\n"
             )
