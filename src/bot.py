@@ -259,7 +259,7 @@ class ChatBot:
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
-        filtered = AssistantOnlyFilter()
+        #filtered = AssistantOnlyFilter()
 
 
         for output in self.model.create_completion(
@@ -272,20 +272,20 @@ class ChatBot:
             stream=True
         ):
             text_chunk = openai.extract_generated_text(output)
-            filtered(text_chunk)
+            #filtered(text_chunk)
 
 
             # Call stop criteria with the new text chunk; stop if it returns True
             if stop_criteria and stop_criteria(text_chunk):
                 log("STOP FOUND", text_chunk)
-                log("FULL BUFF", filtered.get_filtered_output())
+                log("FULL BUFF", stop_criteria.buffer)
                 
                 break
 
             if streamer:
                 streamer.update(text_chunk)
 
-        output_text = filtered.get_filtered_output()
+        output_text = stop_criteria.buffer
         log("RAW OUTPUT BASE", output_text)
 
         prompt_index = output_text.find(_prompt_for_cut)

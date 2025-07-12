@@ -125,7 +125,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 f"- DO NOT generate or refer to future steps (like Step {step+2} or Step {step+3}).\n"
                 "- You may leave yourself instructions or a plan for the *next* step, but do NOT write its contents.\n"
                 "- Do NOT anticipate or simulate later outputs. Stay entirely within the scope of this one step.\n"
-                "- For *any* math expressions (even simple ones), you MUST use the `execute_math` action.\n"
+                "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
+                "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
+                "- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
+                "- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
+
                 "- Actions must be emitted using this exact format:\n"
                 f'  <Action>{{ "action": "<action_name>", "parameters": {{ ... }}, "label": "<unique_label>" }}</Action>\n'
                 "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current reasoning step logically requires real data you cannot guess.\n"
@@ -202,16 +206,17 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
         final_prompt = (
             full
-            #+ "<|assistant|>\n"
+            + discord_formatting_prompt
             + "### Final Task\n"
             + " **Task:** Now summarize your steps to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
             + "### **Rules**:\n"
             + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
             + "- Include disclaimers when accessing the web through actions.\n"
             + "- Do not use Actions, you are no longer allowed to execute actions, only use previous data.\n"
-            + "- Do NOT output a <force_done> token until you have summarized your steps or explained what progress has been made and what steps remain.\n"
-            + "- Present the answer directly and concisely- speak in the first person as if you are directly replying to the user.\n\n"
-            + discord_formatting_prompt
+            + "- Do NOT output a <force_done> token before any summary text or explanation is given.\n"
+            + "- The <force_done> token must come immediately after your final summary or explanation.\n"
+            + "- Never output <force_done> as the very first output.\n"
+            + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n\n"
             + "<|assistant|>\n"
         )
 
