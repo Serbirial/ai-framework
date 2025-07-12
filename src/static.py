@@ -51,7 +51,15 @@ class StopOnSpeakerChange:
         self.output = ""
         self.stopped = False
 
-        self.default_stop_tokens = ["<|user|>", "<|system|>", "<|end|>", "<|eos|>", "<user>"]
+        self.default_stop_tokens = [
+            "<|start_header_id|>user<|end_header_id|>",
+            "<|start_header_id|>system<|end_header_id|>",
+            "<|eot_id|>",
+            "<|end|>",
+            "<|user|>",  # optional legacy fallback
+            "<|system|>",
+            "<user>"
+        ]
         self.hard_stop = "<force_done>"
         self.custom_stops = custom_stops or []
 
