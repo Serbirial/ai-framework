@@ -87,4 +87,4 @@ def check_for_actions_and_run(text):
             return results[0]
         else:
             return results
-    return False
+    return "NOACTION"
