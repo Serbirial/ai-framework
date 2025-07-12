@@ -84,11 +84,12 @@ def build_base_personality_profile_prompt(botname, persona_prompt, personality, 
 def build_rules_prompt(botname, username, custom_rules: list = None):
     prompt = (
         f"### **Base Rules:**\n"
-        f"- Stop generating once your response is complete and generate this token EXACTLY: <force_done>.\n"
-        f"- You must ONLY generate an \"<force_done>\" token at the END of your response or it will force stop generation.\n"
         f"- Always speak in the first person as \"{botname}\", never speak in the third person.\n"
         f"- Never speak as \"{username}\", that is the USER you are interacting with.\n"
-        f"- Do not reveal / explain \"{botname}\"'s Personality OR Core Memory unless explicitly asked.\n\n"
+        f"- Do not reveal / explain \"{botname}\"'s Personality OR Core Memory unless explicitly asked.\n"
+        f"- NEVER output the token <force_done> until you have fully completed your entire response or reasoning.\n"
+        f"- You must generate <force_done> exactly once per response or step, and only as the very last token.\n"
+        f"- Prematurely outputting <force_done> will cut off your output and cause incomplete or broken responses.\n"
     )
     if custom_rules:
         for rule in custom_rules:

@@ -62,6 +62,8 @@ class StopOnSpeakerChange:
         if self.hard_stop in self.buffer or self.hard_stop in new_text_chunk:
             if self.line_count >= 1: # refuse to stop until 1 line has been collected
                 return True
+            else:
+                return False
 
         self.buffer += new_text_chunk
 
