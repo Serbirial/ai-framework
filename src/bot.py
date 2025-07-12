@@ -479,7 +479,7 @@ class ChatBot:
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops, min_lines=1)  # NO tokenizer argument
         
-        thoughts = "Blank thoughts string"
+        thoughts = None
         final = "blank final string"
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
@@ -623,7 +623,7 @@ class ChatBot:
         # DO PROCESDSING HERE
         print("\n\n\n\n\n")
         log("DEBUG", "---------- FINAL CHAT STATE DUMP ----------")
-        log("DEBUG", f"prompt:\n {prompt}")
+        log("DEBUG", f"prompt:\n {prompt if thoughts == None else thoughts}")
 
         log("DEBUG", f"username: {username}")
         log("DEBUG", f"user_input: {user_input}")
