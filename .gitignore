@@ -5,5 +5,5 @@ api.py
 hugtoken.txt
 latest.py
 /quant-env
-/models
 *.pyc
+/models

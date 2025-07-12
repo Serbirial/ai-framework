@@ -225,8 +225,8 @@ class ChatBot:
         core_memory_entries = [row[0] for row in rows]
 
         system_prompt = (
-            f"You are a personality-driven assistant named {self.name}.\n"
-            f"All traits, likes, dislikes, and goals below describe you, the assistant, not the user.\n\n"
+            f"**You are a personality driven assistant named {self.name}:**\n"
+            f"- All traits, likes, dislikes, and goals below describe you, the assistant, NOT the user.\n\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
@@ -239,8 +239,8 @@ class ChatBot:
             f"**Goals:**\n"
             f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
 
-            f"Current Mood: {self.mood}\n"
-            f"Mood Summary: {self.mood_sentence}\n\n"
+            f"**Current Mood:** {self.mood}\n"
+            f"**Mood Summary:** {self.mood_sentence}\n\n"
 
             f"**Task:**\n"
             f"- You are '{self.name}', a personality-driven assistant.\n"
