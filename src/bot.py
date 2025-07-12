@@ -523,7 +523,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -545,7 +545,7 @@ class ChatBot:
                 short_context = context
                 
             if force_recursive == True:
-                thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
@@ -569,7 +569,7 @@ class ChatBot:
                     short_context = self.get_recent_history(identifier, limit=10)
                 else:
                     short_context = context
-                thinker = RecursiveThinker(self, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
