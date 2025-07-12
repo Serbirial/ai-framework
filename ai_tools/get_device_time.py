@@ -2,24 +2,25 @@ import datetime
 
 def get_current_time(parameters: dict = {}) -> dict:
     """
-    Returns the current device time in ISO 8601 format.
+    Returns the current device time in a user-friendly format:
+    'MM/DD/YYYY : HH:MM AM/PM'.
 
     Args:
         parameters: (optional) can be empty or ignored.
 
     Returns:
-        A dict with the current ISO timestamp as "current_time".
+        A dict with the current time as "current_time".
     """
     try:
         now = datetime.datetime.now()
-        iso_time = now.isoformat()
-        return {"result": iso_time}
+        formatted_time = now.strftime("%m/%d/%Y : %I:%M %p")
+        return {"current_time": formatted_time}
     except Exception as e:
         return {"error": str(e)}
 
 EXPORT = {
     "get_local_time": {
-        "help": "Use this function/action to get your current time in ISO 8601 format (this is the ASSISTANTS current time, not the users).",
+        "help": "Use this action to get your current time in MM/DD/YYYY : HH:MM AM/PM format (this is the ASSISTANT'S local time, not the user's).",
         "callable": get_current_time,
         "params": {}
     }
