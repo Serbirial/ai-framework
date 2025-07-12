@@ -202,7 +202,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                         full += f"\n{result}" # add result to full prompt
                 else:
                     extra_context_lines.append(action_result)
-                    full += f"\n{result}" # add result to full prompt
+                    full += f"\n{action_result}" # add result to full prompt
 
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
