@@ -113,7 +113,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
             if extra_context_lines:
                 step_prompt += "### Previous Steps <ActionResult> blocks:\n"
-                step_prompt += "\n".join(extra_context_lines) + "\n"
+                for actionresult in extra_context_lines:
+                    step_content += f"{actionresult}\n"
                 extra_context_lines.clear()
                 
             step_prompt += f"### Current Step:\n"
@@ -154,20 +155,22 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             log(f"DEBUG: WORK STEP {step}", step_content)
             
             # append the full step (header + content) to the full conversation log
-            full += f"### Step {step+1} of {self.depth}\n{step_content}\n\n"
+            full += f"### Step {step+1} of {self.depth}:\n{step_content}\n\n"
             
             # Check for and run any actions
             action_result = check_for_actions_and_run(response)
             
             # queue action result for next step input
             if action_result != "NOACTION":
+                full += f"Action Results for step {step+1}:\n"
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
-                        full += f"\n{result}" # add result to full prompt
+                        full += f"{result}\n" # add result to full prompt
                 else:
                     extra_context_lines.append(action_result)
-                    full += f"\n{action_result}" # add result to full prompt
+                    full += f"{action_result}\n" # add result to full prompt
+                full += "\n"
 
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
