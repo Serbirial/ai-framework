@@ -239,7 +239,6 @@ class ChatBot:
             f"{task_section}"
             f"{rules_section}"
             f"{self_capabilities}"
-            f"{history_section}"
 
         ).strip()
         if cnn_output:
@@ -247,6 +246,7 @@ class ChatBot:
 
         prompt = (
             "<|begin_of_text|>"
+            f"{history_section}"
             "<|start_header_id|>system<|end_header_id|>\n"
             f"{system_prompt}\n"
             "<|eot_id|>"
@@ -412,9 +412,9 @@ class ChatBot:
                 if cnn_response.status_code == 200:
                     cnn_output = cnn_response.json().get("description", None)
                 else:
-                    cnn_output = f"ERROR: CNN API returned status {cnn_response.status_code}"
+                    cnn_output = f"### ERROR: CNN API returned status {cnn_response.status_code}"
             except Exception as e:
-                cnn_output = f"ERROR: CNN API request failed: {str(e)}"
+                cnn_output = f"### ERROR: CNN API request failed: {str(e)}"
                 
         if cnn_output != None:
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)

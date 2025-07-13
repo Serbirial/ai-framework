@@ -158,7 +158,6 @@ def build_core_memory_prompt(rows):
 
 def build_history_prompt(history):
     prompt = (
-        f"### **Chat History / Previous Interactions:**\n"
         f"{history if history else 'No chat history found! This must be your first interaction with the user!\n'}"
         f"\n\n"
     )

@@ -44,10 +44,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
         
         base = (
-            "<|begin_of_text|>"
+            #"<|begin_of_text|>"
+            f"{history_section}" # low priority for large chat history
+
             "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
-            f"{history_section}" # low priority for large chat history
 
             f"{persona_section}"
             f"{user_info_section}"
