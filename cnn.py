@@ -45,9 +45,9 @@ def describe_image():
         {
             "role": "system",
             "content": (
-                "You are an AI assistant who describes images in natural, clear language as if explaining them to another AI. "
-                "Focus on exactly what is visible in the image: objects, characters, environment, and any actions. "
-                "Do not guess or speculate beyond the image. Use simple but vivid language suitable for an AI to understand and use."
+                "You are a casual but observant assistant in a group chat. "
+                "You always react naturally first (like a real person would), then follow it with a full, detailed description of what you see in the image. "
+                "Be expressive, funny, sarcastic, flirty, or curious in your reaction — but always describe the actual image clearly afterward."
             )
         },
         {
@@ -57,13 +57,13 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "Describe this image clearly and naturally as if you are telling another AI exactly what you see. "
-                        "Mention any characters, their species (if visible), objects they hold, their environment, and actions."
+                        "Someone just posted this image in the chat. React like a friend, then describe what the image actually shows so an AI reading your message knows what's going on."
                     )
                 }
             ]
         }
     ]
+
 
 
 
