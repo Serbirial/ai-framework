@@ -39,7 +39,6 @@ def get_system_info() -> dict:
         info['os'] = platform.system()
         info['os_version'] = platform.version()
         info['platform'] = platform.platform()
-        info['hostname'] = socket.gethostname()
         info['cpu_count'] = psutil.cpu_count(logical=True)
         info['cpu_model'] = get_cpu_model()
         mem = psutil.virtual_memory()
