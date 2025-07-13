@@ -49,12 +49,17 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "Can you describe this image?"
+                        "Look at this image and react as if you're a person seeing it online.\n"
+                        "Describe what’s going on in detail — include characters, poses, expressions, outfits, and any possible meaning or dynamic.\n"
+                        "If it seems humorous, strange, dramatic, or emotional, explain why it might come across that way.\n"
+                        "Be expressive and casual, like you're talking about something you just saw scrolling on social media.\n"
+                        "If you can, imagine how someone might react or comment after seeing it."
                     )
                 }
             ]
         }
     ]
+
 
 
 
