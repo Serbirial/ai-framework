@@ -22,7 +22,7 @@ def describe_image():
     prompt_text = request.form.get("prompt", "Describe this image as if you're chatting with a friend online.")
 
     # Save image temporarily
-    temp_path = os.path.join("/tmp", image_file.filename)
+    temp_path = image_file.filename
     image_file.save(temp_path)
 
     # Compose prompt
