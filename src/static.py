@@ -332,15 +332,30 @@ class ChatContext:
 
     def get_context_text(self) -> str:
         """
-        Returns the entire chat context as a single string, with each line
-        separated by a newline character.
-
-        This is ready to be inserted into the prompt.
+        Returns the chat context as a single string, ensuring that only one
+        <|begin_of_text|> token appears at the beginning. All other instances
+        are removed, even if repeated multiple times later in the text.
 
         Returns:
-            str: Concatenated chat context text.
+            str: Concatenated chat context text with only one <|begin_of_text|>.
         """
-        return "\n".join(self.lines)
+        full = "\n".join(self.lines)
+
+        # Find all occurrences
+        parts = full.split("<|begin_of_text|>")
+
+        if len(parts) <= 1:
+            return full.strip()  # Either 0 or 1 occurrence — no cleanup needed
+
+        # Keep the first part before the first token, and add only one token at the top
+        first = parts[0].strip()
+        rest = "".join(parts[1:])  # Drop all duplicate tokens
+
+        # Reconstruct with a single <|begin_of_text|> at the top
+        cleaned = f"<|begin_of_text|>\n{first}\n{rest}"
+        return cleaned.strip()
+
+
 
 
 
