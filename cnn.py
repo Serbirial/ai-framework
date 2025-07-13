@@ -43,21 +43,22 @@ def describe_image():
 
     messages = [
         {
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": image_data_uri}},
-                {
-                    "type": "text",
-                    "text": (
-                        "Look at this image and react as if you're a person seeing it online.\n"
-                        "Describe what’s going on in detail — include characters, poses, expressions, outfits, and any possible meaning or dynamic.\n"
-                        "If it seems humorous, strange, dramatic, or emotional, explain why it might come across that way.\n"
-                        "Be expressive and casual, like you're talking about something you just saw scrolling on social media.\n"
-                        "If you can, imagine how someone might react or comment after seeing it."
-                    )
-                }
-            ]
+        "role": "user",
+        "content": [
+            {"type": "image_url", "image_url": {"url": image_data_uri}},
+            {
+            "type": "text",
+            "text": (
+                "You are reacting to an image like a person online.\n"
+                "Do not just describe it factually — describe any strange or unexpected behavior, relationships, jokes, power dynamics, or humor.\n"
+                "Assume this image was posted online to be funny, shocking, or strange. Try to interpret why.\n"
+                "Use casual, expressive language. If the image involves people in odd situations, react like a viewer might.\n"
+                "End with a few short possible comments someone might post."
+            )
+            }
+        ]
         }
+
     ]
 
 
