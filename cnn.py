@@ -17,7 +17,7 @@ ocr_reader = easyocr.Reader(['en'], gpu=False)
 # Initialize your LLaMA.cpp model
 llm = Llama(
     model_path="SmolVLM-500M-Instruct-f16.gguf",
-    n_ctx=2048,
+    n_ctx=1400,
     n_threads=4,
     verbose=True
 )
