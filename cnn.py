@@ -75,41 +75,68 @@ def describe_video():
         return jsonify({"error": "No video file provided"}), 400
 
     video_file = request.files["video"]
+    filename = video_file.filename.lower()
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
             video_path = tmp.name
             video_file.save(video_path)
     except Exception as e:
         return jsonify({"error": f"Failed to save video: {e}"}), 400
 
+    selected_frames = []
+
     try:
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS) or 10
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        duration_sec = total_frames / fps
-        frame_interval = int(fps * 1.5)  # Grab 1 frame every ~1.5 seconds
+        if filename.endswith(".gif"):
+            # Extract frames from GIF using Pillow
+            gif = Image.open(video_path)
+            frames = []
+            try:
+                while True:
+                    frames.append(gif.copy().convert("RGB"))
+                    gif.seek(gif.tell() + 1)
+            except EOFError:
+                pass  # End of sequence
 
-        max_frames = 6  # limit for performance
-        selected_frames = []
-        frame_indices = [int(i * frame_interval) for i in range(min(max_frames, int(duration_sec // 1.5)))]
+            total_frames = len(frames)
+            max_frames = 6
+            step = max(1, total_frames // max_frames)
+            frames_to_use = frames[::step][:max_frames]
 
-        for idx in frame_indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if not ret:
-                continue
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as frame_file:
-                frame_path = frame_file.name
-                cv2.imwrite(frame_path, frame)
-                selected_frames.append(frame_path)
+            for idx, frame in enumerate(frames_to_use):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_frame:
+                    frame.save(tmp_frame.name)
+                    selected_frames.append(tmp_frame.name)
 
-        cap.release()
+        elif filename.endswith(".mp4") or filename.endswith(".webm"):
+            # Extract frames from video using OpenCV
+            cap = cv2.VideoCapture(video_path)
+            fps = cap.get(cv2.CAP_PROP_FPS) or 10
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            duration_sec = total_frames / fps
+            frame_interval = int(fps * 1.5)  # Every ~1.5 seconds
+
+            max_frames = 6
+            frame_indices = [int(i * frame_interval) for i in range(min(max_frames, int(duration_sec // 1.5)))]
+
+            for idx in frame_indices:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                ret, frame = cap.read()
+                if not ret:
+                    continue
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as frame_file:
+                    cv2.imwrite(frame_file.name, frame)
+                    selected_frames.append(frame_file.name)
+
+            cap.release()
+        else:
+            return jsonify({"error": "Unsupported file type"}), 400
+
         os.remove(video_path)
 
         if not selected_frames:
             return jsonify({"error": "No usable frames found"}), 400
 
-        # Convert all frames to base64
+        # Convert frames to base64
         images_json = []
         for path in selected_frames:
             uri = image_to_base64_data_uri(path)
@@ -119,7 +146,6 @@ def describe_video():
     except Exception as e:
         return jsonify({"error": f"Failed to process video: {e}"}), 500
 
-    # Build full prompt with all sampled frames
     messages = [
         {"role": "system", "content": "You are in a casual chat reacting to videos. Be expressive and human."},
         {
@@ -147,6 +173,7 @@ def describe_video():
         reply = f"Error: {e}"
 
     return jsonify({"result": reply})
+
 
 
 if __name__ == "__main__":
