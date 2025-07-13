@@ -27,16 +27,24 @@ def describe_image():
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
 
-    # Construct input messages
     messages = [
         {
             "role": "user",
             "content": [
                 {"type": "image"},
-                {"type": "text", "text": "You're in a group chat and someone sent this picture. What would you say?"}
+                {
+                    "type": "text",
+                    "text": (
+                        "You're in a lively, informal group chat where someone just dropped this image with no explanation. "
+                        "It might be a photo, selfie, meme, or something random. React like a real person would—funny, sarcastic, curious, flirty, whatever fits. "
+                        "If it's a meme, try to understand the joke and respond naturally, as if you're talking to close friends. "
+                        "Be descriptive, expressive, and human. Mention what stands out, what the vibe is, and how you'd reply in the chat."
+                    )
+                }
             ]
         }
     ]
+
 
     # Prepare prompt
     prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
