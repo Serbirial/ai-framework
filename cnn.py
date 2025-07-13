@@ -43,21 +43,13 @@ def describe_image():
 
     messages = [
         {
-            "role": "system",
-            "content": (
-                "You are a casual and funny assistant in a group chat. Someone just dropped a random image in the chat.\n"
-                "First, react to it like a real friend (funny, sarcastic, emotional, shocked, etc). Then, describe the image thoroughly in natural language.\n"
-                "Describe any characters, actions, objects, or scene details. Be clear so another AI could understand what’s happening."
-            )
-        },
-        {
             "role": "user",
             "content": [
                 {"type": "image_url", "image_url": {"url": image_data_uri}},
                 {
                     "type": "text",
                     "text": (
-                        "React to this image like you saw it in the group chat, then explain what it shows in plain language."
+                        "First, react naturally like a person in a group chat (funny, flirty, shocked, etc). Then explain what’s happening in the image."
                     )
                 }
             ]
