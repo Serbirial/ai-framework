@@ -10,6 +10,8 @@ from .safe_get_sysinfo import EXPORT as GET_DEVICE_INFO
 from .safe_live_crypto import EXPORT as GET_CRYPTO_LIVE
 from .safe_wikipedia import EXPORT as GET_WIKIPEDIA
 from .safe_python_sandbox import EXPORT as SAFE_PYTHON_SANDBOX
+from .unsafe_youtube_scraper import EXPORT as UNSANFE_YOUTUBE_SCRAPE
+from .website_ping import EXPORT as WEBSITE_PING
 
 VALID_ACTIONS = {}
 
@@ -26,6 +28,8 @@ VALID_ACTIONS.update(LOCAL_TIME_EXPORT)
 VALID_ACTIONS.update(WEATHER_API_EXPORT)
 VALID_ACTIONS.update(GET_WIKIPEDIA)
 VALID_ACTIONS.update(SEARCH_ENGINE_API_EXPORT)
+VALID_ACTIONS.update(UNSANFE_YOUTUBE_SCRAPE)
+VALID_ACTIONS.update(WEBSITE_PING)
 
 
 VALID_ACTIONS.update(GET_TIME_LIVE)
