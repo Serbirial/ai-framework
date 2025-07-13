@@ -2,11 +2,17 @@ import requests
 
 SANDBOX_API_URL = "http://192.168.0.9:5000/run_code"  # Adjust port/path as needed
 
-def run_code_sandboxed(user_code: str) -> dict:
+def run_code_sandboxed(user_code) -> dict:
     """
-    Sends user_code to a remote sandbox API (on 192.168.0.8) which runs it safely inside Docker,
+    Sends user_code to a remote sandbox API which runs it safely inside Docker,
     then returns the execution result or error.
     """
+    if not isinstance(user_code, str):
+        return {
+            "status": "error",
+            "message": "The 'code' parameter must be a string containing Python code."
+        }
+    
     try:
         response = requests.post(
             SANDBOX_API_URL,
@@ -30,11 +36,11 @@ def run_code_sandboxed(user_code: str) -> dict:
         return {"status": "error", "message": f"Unexpected error contacting sandbox API: {str(e)}"}
 
 EXPORT = {
-    "run_code_sandboxed": {
+    "run_python_sandboxed": {
         "help": "Run Python code sandboxed remotely via API  (500M RAM, NO NETWORK 25S TIMEOUT)",
         "callable": run_code_sandboxed,
         "params": {
-            "user_code": "string, required — Python code to execute safely."
+            "code": "string, required — Python code to execute safely."
         }
     }
 }

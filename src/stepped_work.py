@@ -121,6 +121,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Stay entirely within the scope of this current step, you are NOT ALLOWED to create new numbered steps.\n"
                 "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
+                "- For any **python code execution**, you MUST use the `run_python_sandboxed` action to safely run Python code inside a secured sandbox environment.\n"
+                "- Do NOT attempt to execute code directly or guess results; always rely on the sandbox’s verified output before proceeding.\n"
+                "- The sandbox has the limitations of 500M RAM, 25 seconds runtime, and no network access — you must pass fully formatted, valid Python code as a string, with newlines separating code lines.\n"
+
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
 
