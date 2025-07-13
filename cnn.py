@@ -45,7 +45,7 @@ def describe_image():
     with torch.no_grad():
         generated_ids = model.generate(**inputs, max_new_tokens=500)
         result = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-
+    print(result)
     return jsonify({"result": result})
 
 if __name__ == "__main__":

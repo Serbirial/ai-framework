@@ -113,7 +113,7 @@ class ChatBot:
         # New TinyLlama model init
         self.model = Llama(
             model_path=mainLLM,
-            n_ctx=40000,              # TODO use CTX setter 
+            n_ctx=30000,              # TODO use CTX setter 
             n_threads=12,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
@@ -400,6 +400,7 @@ class ChatBot:
 
     def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
+        cnn_output_formatted = None
         if cnn_file_path:
             try:
                 with open(cnn_file_path, "rb") as f:
@@ -424,7 +425,7 @@ class ChatBot:
                 timeout=120
             )
             if response.status_code == 200:
-                usertone = response.json().get("classification", {
+                usertone = response.json().get("classification", { 
                     "intent": "NEUTRAL",
                     "attitude": "NEUTRAL",
                     "tone": "NEUTRAL"
