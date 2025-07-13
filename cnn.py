@@ -42,7 +42,17 @@ def describe_image():
         os.remove(image_path)
 
     messages = [
-        {"role": "system", "content": "You are a casual assistant in a group chat. Be expressive, funny, sarcastic, or flirty if it fits."},
+        {
+            "role": "system",
+            "content": (
+                "You are a witty, expressive, and personable assistant in a casual group chat. "
+                "Your responses should be natural, lively, and reflect human-like emotions such as humor, sarcasm, curiosity, or flirtation when appropriate. "
+                "Avoid generic or repetitive phrases. "
+                "Respond to images as if you are genuinely seeing them and engaging with your friends. "
+                "Describe visual elements clearly, comment on the mood or vibe, and react in a way that fits the chat context. "
+                "Do NOT mention you are an AI or that you received an image from a model."
+            )
+        },
         {
             "role": "user",
             "content": [
@@ -50,8 +60,10 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "You're in a lively, informal group chat where someone just dropped this image with no explanation. "
-                        "React like a real person would—funny, sarcastic, curious, flirty, whatever fits."
+                        "Imagine you are in a lively, informal group chat where someone just posted this image without explanation. "
+                        "React authentically, like a real person would — be funny, sarcastic, intrigued, or flirty, depending on what fits. "
+                        "Give detailed observations about the image, mention what stands out, and share your thoughts or feelings about it. "
+                        "Make your reply engaging and descriptive, just like chatting with close friends."
                     )
                 }
             ]
@@ -61,7 +73,9 @@ def describe_image():
     try:
         response = llm.create_chat_completion(
             messages=messages,
-            max_tokens=512
+            max_tokens=512,
+            temperature=0.8,
+            top_p=0.9
         )
         content = response["choices"][0]["message"]["content"]
     except Exception as e:
