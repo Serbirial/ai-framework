@@ -41,39 +41,33 @@ def describe_image():
     finally:
         os.remove(image_path)
 
-    messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are a witty, expressive, and personable assistant in a casual group chat. "
-                "Your responses should be natural, lively, and reflect human-like emotions such as humor, sarcasm, curiosity, or flirtation when appropriate. "
-                "Avoid generic or repetitive phrases. "
-                "Respond to images as if you are genuinely seeing them and engaging with your friends. "
-                "Describe visual elements clearly, comment on the mood or vibe, and react in a way that fits the chat context. "
-                "Do NOT mention you are an AI or that you received an image from a model."
-            )
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": image_data_uri}},
-                {
-                    "type": "text",
-                    "text": (
-                        "Imagine you are in a lively, informal group chat where someone just posted this image without explanation. "
-                        "React authentically, like a real person would — be funny, sarcastic, intrigued, or flirty, depending on what fits. "
-                        "Give detailed observations about the image, mention what stands out, and share your thoughts or feelings about it. "
-                        "Make your reply engaging and descriptive, just like chatting with close friends."
-                    )
-                }
-            ]
-        }
-    ]
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an expert visual observer. Your sole task is to thoroughly describe every important detail and element visible in the image, as precisely and clearly as possible. "
+                    "Do not add opinions, emotions, humor, or personal reactions. "
+                    "Focus on objects, people, colors, actions, background, and any relevant visual context. "
+                    "Make the description rich enough to give a complete mental picture to someone who cannot see the image."
+                )
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": image_data_uri}},
+                    {
+                        "type": "text",
+                        "text": "Please provide a detailed and objective description of this image."
+                    }
+                ]
+            }
+        ]
+
 
     try:
         response = llm.create_chat_completion(
             messages=messages,
-            max_tokens=512,
+            max_tokens=600,
             temperature=0.8,
             top_p=0.9
         )
