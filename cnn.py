@@ -41,27 +41,30 @@ def describe_image():
     finally:
         os.remove(image_path)
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are an expert visual observer. Your sole task is to thoroughly describe every important detail and element visible in the image, as precisely and clearly as possible. "
-                    "Do not add opinions, emotions, humor, or personal reactions. "
-                    "Focus on objects, people, colors, actions, background, and any relevant visual context. "
-                    "Make the description rich enough to give a complete mental picture to someone who cannot see the image."
-                )
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image_url", "image_url": {"url": image_data_uri}},
-                    {
-                        "type": "text",
-                        "text": "Please provide a detailed and objective description of this image."
-                    }
-                ]
-            }
-        ]
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a helpful assistant that describes images in detail, focusing on clear, precise, factual descriptions of all visible elements. "
+                "Your description should include people, objects, their positions, actions, emotions, and contextual clues. "
+                "Write in simple, straightforward language, suitable for another AI to understand the scene and respond appropriately in a Discord chat."
+            )
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": image_data_uri}},
+                {
+                    "type": "text",
+                    "text": (
+                        "Describe this image thoroughly. Include details about any people, animals, objects, their actions, expressions, and environment. "
+                        "Avoid speculation but describe everything visible as clearly as possible, so another AI can 'visualize' the scene and respond."
+                    )
+                }
+            ]
+        }
+    ]
+
 
 
     try:
