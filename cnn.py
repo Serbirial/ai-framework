@@ -73,6 +73,7 @@ def describe_image():
             messages=messages,
             max_tokens=600,
             temperature=0.5,
+            repeat_penalty=1,
             top_p=0.9
         )
         content = response["choices"][0]["message"]["content"]
