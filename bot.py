@@ -575,7 +575,7 @@ class ChatBot(discord.Client):
             # so chat history max is max_tokens - reserved_tokens = 30k tokens
             context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=50000, reserved_tokens=20000)
             
-            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=12000, tokenizer=tokenizer)
+            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=50000, tokenizer=tokenizer)
             for entry in db_history:
                 context.add_line(entry["content"], entry["role"])
 

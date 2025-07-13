@@ -9,6 +9,7 @@ from .get_time import EXPORT as GET_TIME_LIVE
 from .safe_get_sysinfo import EXPORT as GET_DEVICE_INFO
 from .safe_live_crypto import EXPORT as GET_CRYPTO_LIVE
 from .safe_wikipedia import EXPORT as GET_WIKIPEDIA
+from .safe_python_sandbox import EXPORT as SAFE_PYTHON_SANDBOX
 
 VALID_ACTIONS = {}
 
@@ -32,7 +33,16 @@ VALID_ACTIONS.update(GET_TIME_LIVE)
 
 VALID_ACTIONS.update(SAFE_MATH_EXPORT)
 VALID_ACTIONS.update(SAFE_CALC_EXPORT)
+VALID_ACTIONS.update(SAFE_PYTHON_SANDBOX)
 
+def describe_valid_actions(valid_actions):
+    print("Registered Tools:")
+    for key, tool in sorted(valid_actions.items()):
+        help_text = tool.get("help", "(no help text)")
+        print(f"\n🔹 Tool Name: {key}")
+        print(f"   Description: {help_text}")
+
+describe_valid_actions(VALID_ACTIONS)
 # If you add more tool modules, import their EXPORT dict and update VALID_ACTIONS similarly
 
 # Example:
