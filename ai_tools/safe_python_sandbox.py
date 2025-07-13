@@ -25,13 +25,13 @@ def run_code_sandboxed(user_code: str) -> dict:
     except requests.Timeout:
         return {"status": "error", "message": "Sandbox API request timed out (30s limit)"}
     except requests.ConnectionError:
-        return {"status": "error", "message": "Failed to connect to sandbox API at 192.168.0.8"}
+        return {"status": "error", "message": "Failed to connect to sandbox API (might be down or in use)"}
     except Exception as e:
         return {"status": "error", "message": f"Unexpected error contacting sandbox API: {str(e)}"}
 
 EXPORT = {
     "run_code_sandboxed": {
-        "help": "Run Python code sandboxed remotely via API  (300M RAM, NO NETWORK 25S TIMEOUT)",
+        "help": "Run Python code sandboxed remotely via API  (500M RAM, NO NETWORK 25S TIMEOUT)",
         "callable": run_code_sandboxed,
         "params": {
             "user_code": "string, required — Python code to execute safely."

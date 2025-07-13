@@ -18,7 +18,7 @@ def run_code_sandboxed(user_code: str):
         # Run the docker container, mounting the temp file as /app/run.py (read-only)
         result = subprocess.run([
             "docker", "run", "--rm",
-            "--memory=275", "--cpus=0.5",  # Enforce resource limits
+            "--memory=500M", "--cpus=0.5",  # Enforce resource limits
             "-v", f"{temp_code_path}:/app/run.py:ro",  # Mount user code inside container
             "--network=none",  # Disable networking for safety
             "safe-py-sandbox"
