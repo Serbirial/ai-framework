@@ -404,7 +404,7 @@ class ChatBot:
             try:
                 with open(cnn_file_path, "rb") as f:
                     cnn_response = requests.post(
-                        f"http://{LOCALHOST}/describe_image",  # or your actual CNN endpoint
+                        f"http://localhost:6006/describe_image",  # or your actual CNN endpoint
                         files={"image": f},
                         timeout=300
                     )
