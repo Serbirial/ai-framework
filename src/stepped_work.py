@@ -81,22 +81,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log("INSTRUCT PROMPT", base)
         return base
 
-    def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
+    def think(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None):
         tokenizer = DummyTokenizer()
 
-        # Build base prompt first (before context)
 
-        base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+        prompt = self.build_prompt(question, username, query_type, usertone, context=context, include_reflection=include_reflection, identifier=identifier)
 
-        # Token-safe context trimming
-        context_lines = context.split("\n") if isinstance(context, str) else context
-        trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx(), reserved_for_output=400)
-
-        # Build full prompt using the trimmed context
-
-        prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
-
-        full = prompt
+        full = f"{prompt}"
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
