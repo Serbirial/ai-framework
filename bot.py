@@ -15,6 +15,28 @@ import asyncio
 
 import time
 
+import os
+
+MAX_IMAGE_SIZE_MB = 20
+ALLOWED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
+
+async def download_image_attachment(message):
+    for attachment in message.attachments:
+        if attachment.content_type and "image" in attachment.content_type:
+            if any(attachment.filename.lower().endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS):
+                if attachment.size > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+                    continue  # Skip oversized images
+
+                save_path = f"temp_image_{message.author.id}.jpg"
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(attachment.url) as resp:
+                        if resp.status == 200:
+                            with open(save_path, "wb") as f:
+                                f.write(await resp.read())
+                            return save_path
+    return None
+
+
 
 async def send_file(message):
     try:
@@ -568,6 +590,8 @@ class ChatBot(discord.Client):
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
+        cnn_file_path = await download_image_attachment(message)
+
         tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
             # max_tokens = total context window your model supports (40k)
@@ -867,7 +891,8 @@ class ChatBot(discord.Client):
                             category_override=flags["category"],
                             recursive_depth=flags["depth"],
                             tiny_mode=flags["tinymode"],
-                            debug=flags["debug"]
+                            debug=flags["debug"],
+                            cnn_file_path=cnn_file_path
                         )
                         await message.reply(response)
                         context.add_line(processed_input, "user")
@@ -886,7 +911,8 @@ class ChatBot(discord.Client):
                             context=history,
                             tiny_mode=flags["tinymode"],
                             category_override="instruction_memory",
-                            debug=flags["debug"]
+                            debug=flags["debug"],
+                            cnn_file_path=cnn_file_path
                         )
                         await message.reply(response)
                         context.add_line(processed_input, "user")
@@ -907,7 +933,8 @@ class ChatBot(discord.Client):
                             category_override=flags["category"],
                             tiny_mode=flags["tinymode"],
                             context=history,
-                            debug=flags["debug"]
+                            debug=flags["debug"],
+                            cnn_file_path=cnn_file_path
                         )
                         await message.reply(response)
                         context.add_line(processed_input, "user")

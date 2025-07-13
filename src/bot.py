@@ -207,7 +207,7 @@ class ChatBot:
 
     
         
-    def build_prompt(self, persona_prompt, username, user_input, identifier, usertone, context):
+    def build_prompt(self, persona_prompt, username, user_input, identifier, usertone, context, cnn_output=None):
         # Fetch core memory entries for user
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -242,6 +242,8 @@ class ChatBot:
             f"{history_section}"
 
         ).strip()
+        if cnn_output:
+            system_prompt += cnn_output
 
         prompt = (
             "<|begin_of_text|>"
@@ -396,7 +398,25 @@ class ChatBot:
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
 
-    def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False):
+    def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
+        cnn_output = None
+        if cnn_file_path:
+            try:
+                with open(cnn_file_path, "rb") as f:
+                    cnn_response = requests.post(
+                        f"http://{LOCALHOST}/describe_image",  # or your actual CNN endpoint
+                        files={"image": f},
+                        timeout=300
+                    )
+                if cnn_response.status_code == 200:
+                    cnn_output = cnn_response.json().get("description", None)
+                else:
+                    cnn_output = f"ERROR: CNN API returned status {cnn_response.status_code}"
+            except Exception as e:
+                cnn_output = f"ERROR: CNN API request failed: {str(e)}"
+                
+        if cnn_output != None:
+            cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
         try:
             response = requests.post(
                 f"http://{WORKER_IP_PORT}/classify_social_tone",
@@ -457,7 +477,7 @@ class ChatBot:
         elif CUSTOM_GPT2:
             prompt = custom_gpt2_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         else:
-            prompt = self.build_prompt(persona_prompt, username, user_input, identifier, usertone, context if context else None)
+            prompt = self.build_prompt(persona_prompt, username, user_input, identifier, usertone, context if context else None, cnn_output=cnn_output_formatted)
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
