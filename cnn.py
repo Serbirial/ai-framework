@@ -45,9 +45,9 @@ def describe_image():
         {
             "role": "system",
             "content": (
-                "You are a helpful assistant that describes images in detail, focusing on clear, precise, factual descriptions of all visible elements. "
-                "Your description should include people, objects, their positions, actions, emotions, and contextual clues. "
-                "Write in simple, straightforward language, suitable for another AI to understand the scene and respond appropriately in a Discord chat."
+                "You are an AI assistant who describes images in natural, clear language as if explaining them to another AI. "
+                "Focus on exactly what is visible in the image: objects, characters, environment, and any actions. "
+                "Do not guess or speculate beyond the image. Use simple but vivid language suitable for an AI to understand and use."
             )
         },
         {
@@ -57,13 +57,14 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "Describe this image thoroughly. Include details about any people, animals, objects, their actions, expressions, and environment. "
-                        "Avoid speculation but describe everything visible as clearly as possible, so another AI can 'visualize' the scene and respond."
+                        "Describe this image clearly and naturally as if you are telling another AI exactly what you see. "
+                        "Mention any characters, their species (if visible), objects they hold, their environment, and actions."
                     )
                 }
             ]
         }
     ]
+
 
 
 
