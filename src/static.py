@@ -214,7 +214,7 @@ class AssistantOnlyFilter: # this filters speaker changes- and special tokens
 from transformers import AutoTokenizer
 
 class DummyTokenizer:
-    def __init__(self, model_name="meta-llama/Llama-3.2-3B-Instruct"):
+    def __init__(self, model_name="NousResearch/Llama-3-Open-3B"):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.eos_token_id = self.tokenizer.eos_token_id
         self.eos_token = self.tokenizer.eos_token
