@@ -570,10 +570,10 @@ class ChatBot(discord.Client):
             return
         tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
-            # max_tokens = total context window your model supports (50k)
+            # max_tokens = total context window your model supports (40k)
             # reserved_tokens = tokens reserved for other parts of the prompt + output generation (e.g. 20k reserved)
-            # so chat history max is max_tokens - reserved_tokens = 30k tokens
-            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=50000, reserved_tokens=20000)
+            # so chat history max is max_tokens - reserved_tokens = 20k tokens
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=40000, reserved_tokens=20000)
             
             db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=50000, tokenizer=tokenizer)
             for entry in db_history:
