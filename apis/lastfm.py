@@ -180,4 +180,4 @@ def lastfm_top_artists():
     return jsonify(handle_api_call(userid, fetch_top_artists))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=444555, debug=True)
