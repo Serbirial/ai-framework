@@ -1,48 +1,53 @@
 from flask import Flask, request, jsonify
-from llama_cpp import Llama
+from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers.image_utils import load_image
+from PIL import Image
+import torch
 import os
 
 app = Flask(__name__)
-# wget https://huggingface.co/Mungert/SmolVLM-500M-Instruct-GGUF/resolve/main/SmolVLM-500M-Instruct-q5_0_l.gguf
-# Load the VLM once at startup
-llm = Llama(
-    model_path="smolvlm-500m-instruct.Q4_K_M.gguf",
-    n_ctx=2048,
-    n_threads=6,
-    logits_all=False,
-    verbose=False
-)
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Load model and processor once
+processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-500M-Instruct")
+model = AutoModelForVision2Seq.from_pretrained(
+    "HuggingFaceTB/SmolVLM-500M-Instruct",
+    torch_dtype=torch.bfloat16 if DEVICE == "cuda" else torch.float32,
+    _attn_implementation="flash_attention_2" if DEVICE == "cuda" else "eager"
+).to(DEVICE)
 
 @app.route("/describe_image", methods=["POST"])
 def describe_image():
     if "image" not in request.files:
-        return jsonify({"error": "Missing image file"}), 400
+        return jsonify({"error": "No image file provided"}), 400
 
-    image_file = request.files["image"]
-    prompt_text = request.form.get("prompt", "Describe this image as if you're chatting with a friend online.")
+    file = request.files["image"]
+    try:
+        image = Image.open(file.stream).convert("RGB")
+    except Exception as e:
+        return jsonify({"error": f"Invalid image: {e}"}), 400
 
-    # Save image temporarily
-    temp_path = image_file.filename
-    image_file.save(temp_path)
-
-    # Compose prompt
+    # Construct input messages
     messages = [
-        {"role": "system", "content": "You are a friendly assistant in a chat room who casually describes images."},
-        {"role": "user", "content": f"<image>\n{prompt_text.strip()}"}
+        {
+            "role": "user",
+            "content": [
+                {"type": "image"},
+                {"type": "text", "text": "You're in a group chat and someone sent this picture. What would you say?"}
+            ]
+        }
     ]
 
-    # Run inference
-    result = llm.create_chat_completion(
-        messages=messages,
-        image_path=temp_path
-    )
+    # Prepare prompt
+    prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
+    inputs = processor(text=prompt, images=[image], return_tensors="pt").to(DEVICE)
 
-    # Remove temp image
-    os.remove(temp_path)
+    with torch.no_grad():
+        generated_ids = model.generate(**inputs, max_new_tokens=500)
+        result = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-    return jsonify({
-        "description": result["choices"][0]["message"]["content"].strip()
-    })
+    return jsonify({"result": result})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6006)
+    port = int(os.environ.get("PORT", 6006))
+    app.run(host="0.0.0.0", port=port)
