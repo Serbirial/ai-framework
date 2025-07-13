@@ -25,7 +25,7 @@ def run_code_sandboxed(user_code: str):
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        timeout=25  # Overall timeout for code execution
+        timeout=60  # Overall timeout for code execution
         )
 
         # Decode and return output

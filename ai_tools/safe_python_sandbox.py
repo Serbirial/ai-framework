@@ -40,7 +40,7 @@ def run_code_sandboxed(user_code) -> dict:
         response = requests.post(
             SANDBOX_API_URL,
             json={"user_code": cleaned_code},
-            timeout=30
+            timeout=65
         )
         if response.status_code != 200:
             return {
@@ -60,7 +60,7 @@ def run_code_sandboxed(user_code) -> dict:
 
 EXPORT = {
     "run_python_sandboxed": {
-        "help": "Run Python code sandboxed remotely via API  (500M RAM, NO NETWORK 25S TIMEOUT)",
+        "help": "Run Python code sandboxed remotely via API  (500M RAM, NO NETWORK 60S TIMEOUT)",
         "callable": run_code_sandboxed,
         "params": {
             "code": "string, required — Python code to execute safely."
