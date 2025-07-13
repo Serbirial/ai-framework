@@ -163,12 +163,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 _prompt_for_cut=step_prompt,
             )
             step_content = response.strip()
-            prior_steps.append(step_content)
+            clean_step_content = step_content.replace("<|begin_of_text|>", "").strip()
 
-            log(f"DEBUG: WORK STEP {step}", step_content)
+            prior_steps.append(clean_step_content)
+
+            log(f"DEBUG: WORK STEP {step}", clean_step_content)
             
             # append the full step (header + content) to the full conversation log
-            full += f"### Step {step+1} of {self.depth}:\n{step_content}\n\n"
+            full += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n\n"
             
             # Check for and run any actions
             action_result = check_for_actions_and_run(response)
