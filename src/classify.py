@@ -10,7 +10,7 @@ import sqlite3
 
 def build_memory_confirmation_prompt(interpreted_data):
     prompt = (
-        "<|begin_of_text|>"
+        ""
         "<|start_header_id|>system<|end_header_id|>\n"
         "You are a helpful assistant.\n"
         "The user just told you some information to remember.\n"
@@ -31,7 +31,7 @@ def interpret_memory_instruction(user_input, model, history=None, max_new_tokens
     Accepts history in LLaMA 3.2 formatted string.
     """
 
-    history_block = history.strip() if history else "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
+    history_block = history.strip() if history else "<|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
 
     prompt = (
         f"{history_block}\n"
@@ -84,7 +84,7 @@ def interpret_to_remember(db_path, userid, model, max_new_tokens=300):
 
     # 3. Build the summarization prompt in LLaMA 3.2 style
     prompt = (
-        "<|begin_of_text|>"
+        ""
         "<|start_header_id|>system<|end_header_id|>\n"
         "You are an AI assistant. Your task is to read the raw memory instructions provided by the user, "
         "and rewrite them into a clear, flat list of concise memory facts.\n\n"
@@ -199,7 +199,7 @@ def classify_user_input(model, tokenizer, user_input, history=None):
     ]
 
     prompt = (
-        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
+        "<|start_header_id|>system<|end_header_id|>\n"
         "You are a classifier that assigns one of the following categories to the user's last message,\n"
         "considering the recent conversation history for context:\n"
         "- greeting: A simple hello or salutation\n"
