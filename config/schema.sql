@@ -53,3 +53,11 @@ CREATE TABLE IF NOT EXISTS BOT_SELECTION (
     FOREIGN KEY (botname) REFERENCES BOT_PROFILE(name) ON DELETE CASCADE
 );
 
+
+
+CREATE TABLE IF NOT EXISTS LASTFM_SESSIONS (
+    userid TEXT PRIMARY KEY,        
+    lastfm_username TEXT NOT NULL,  
+    session_key TEXT NOT NULL,      -- Last.fm session key for API calls
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
