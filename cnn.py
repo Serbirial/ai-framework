@@ -49,7 +49,7 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "First, react naturally like a person in a group chat (funny, flirty, shocked, etc). Then explain what’s happening in the image."
+                        "Can you describe this image?"
                     )
                 }
             ]
@@ -65,7 +65,7 @@ def describe_image():
         response = llm.create_chat_completion(
             messages=messages,
             max_tokens=600,
-            temperature=0.8,
+            temperature=0.5,
             top_p=0.9
         )
         content = response["choices"][0]["message"]["content"]
