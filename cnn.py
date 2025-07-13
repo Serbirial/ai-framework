@@ -1,20 +1,19 @@
 from flask import Flask, request, jsonify
-from transformers import AutoProcessor, AutoModelForVision2Seq
-from transformers.image_utils import load_image
+from llama_cpp import Llama
 from PIL import Image
-import torch
 import os
+import tempfile
+from utils.openai import extract_generated_text
 
 app = Flask(__name__)
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load model and processor once
-processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-500M-Instruct")
-model = AutoModelForVision2Seq.from_pretrained(
-    "HuggingFaceTB/SmolVLM-500M-Instruct",
-    torch_dtype=torch.bfloat16 if DEVICE == "cuda" else torch.float32,
-    _attn_implementation="flash_attention_2" if DEVICE == "cuda" else "eager"
-).to(DEVICE)
+# Load vision-capable LLaMA.cpp model
+llm = Llama(
+    model_path="smolvlm-500m-instruct.Q4_K_M.gguf",
+    n_ctx=1024,
+    n_threads=4,
+    verbose=True
+)
 
 @app.route("/describe_image", methods=["POST"])
 def describe_image():
@@ -23,38 +22,41 @@ def describe_image():
 
     file = request.files["image"]
     try:
-        image = Image.open(file.stream).convert("RGB")
+        # Save image to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            image_path = tmp.name
+            image = Image.open(file.stream).convert("RGB")
+            image.save(image_path)
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
 
+    # Prepare the prompt
     messages = [
         {
+            "role": "system",
+            "content": "You are a casual assistant in a group chat. Be expressive, funny, sarcastic, or flirty if it fits."
+        },
+        {
             "role": "user",
-            "content": [
-                {"type": "image"},
-                {
-                    "type": "text",
-                    "text": (
-                        "You're in a lively, informal group chat where someone just dropped this image with no explanation. "
-                        "It might be a photo, selfie, meme, or something random. React like a real person would—funny, sarcastic, curious, flirty, whatever fits. "
-                        "If it's a meme, try to understand the joke and respond naturally, as if you're talking to close friends. "
-                        "Be descriptive, expressive, and human. Mention what stands out, what the vibe is, and how you'd reply in the chat."
-                    )
-                }
-            ]
+            "content": "<image>\nYou're in a lively, informal group chat where someone just dropped this image with no explanation. React like a real person would—funny, sarcastic, curious, flirty, whatever fits."
         }
     ]
 
+    # Generate with vision input
+    try:
+        result = llm.create_chat_completion(
+            messages=messages,
+            image_path=image_path,
+            max_tokens=512
+        )
+        reply = result["choices"][0]["message"]["content"]
+    except Exception as e:
+        reply = f"Error during generation: {e}"
 
-    # Prepare prompt
-    prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
-    inputs = processor(text=prompt, images=[image], return_tensors="pt").to(DEVICE)
+    # Clean up temp file
+    os.remove(image_path)
 
-    with torch.no_grad():
-        generated_ids = model.generate(**inputs, max_new_tokens=500)
-        result = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-    print(result)
-    return jsonify({"result": result})
+    return jsonify({"result": reply})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 6006))
