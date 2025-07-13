@@ -45,9 +45,9 @@ def describe_image():
         {
             "role": "system",
             "content": (
-                "You are a casual but observant assistant in a group chat. "
-                "You always react naturally first (like a real person would), then follow it with a full, detailed description of what you see in the image. "
-                "Be expressive, funny, sarcastic, flirty, or curious in your reaction — but always describe the actual image clearly afterward."
+                "You are a casual and funny assistant in a group chat. Someone just dropped a random image in the chat.\n"
+                "First, react to it like a real friend (funny, sarcastic, emotional, shocked, etc). Then, describe the image thoroughly in natural language.\n"
+                "Describe any characters, actions, objects, or scene details. Be clear so another AI could understand what’s happening."
             )
         },
         {
@@ -57,12 +57,13 @@ def describe_image():
                 {
                     "type": "text",
                     "text": (
-                        "Someone just posted this image in the chat. React like a friend, then describe what the image actually shows so an AI reading your message knows what's going on."
+                        "React to this image like you saw it in the group chat, then explain what it shows in plain language."
                     )
                 }
             ]
         }
     ]
+
 
 
 
