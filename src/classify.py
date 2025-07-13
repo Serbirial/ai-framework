@@ -31,7 +31,7 @@ def interpret_memory_instruction(user_input, model, history=None, max_new_tokens
     Accepts history in LLaMA 3.2 formatted string.
     """
 
-    history_block = history.strip() if history else "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
+    history_block = history.strip() if history else "<|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
 
     prompt = (
         f"{history_block}\n"
