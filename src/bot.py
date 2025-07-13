@@ -113,7 +113,7 @@ class ChatBot:
         # New TinyLlama model init
         self.model = Llama(
             model_path=mainLLM,
-            n_ctx=30000,              # TODO use CTX setter 
+            n_ctx=8000,              # TODO use CTX setter 
             n_threads=12,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
@@ -245,7 +245,7 @@ class ChatBot:
             system_prompt += cnn_output
 
         prompt = (
-            "<|begin_of_text|>"
+            #"<|begin_of_text|>"
             f"{history_section}"
             "<|start_header_id|>system<|end_header_id|>\n"
             f"{system_prompt}\n"
