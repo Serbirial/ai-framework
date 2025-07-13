@@ -48,11 +48,10 @@ def describe_image():
         os.remove(image_path)
 
     prompt_text = (
-        "You are reacting to an image like a person online.\n"
+        "You are reacting to an image like a person in a chat room.\n"
         "Do not just describe it factually — describe any strange or unexpected behavior, relationships, jokes, power dynamics, or humor.\n"
-        "Assume this image was posted online to be funny, shocking, or strange. Try to interpret why.\n"
-        "Use casual, expressive language. If the image involves people in odd situations, react like a viewer might.\n"
-        "End with a few short possible comments someone might post.\n"
+        "Assume this image was posted online to be funny, shocking, or strange. Try to reason why.\n"
+        "Use expressive language. If the image involves people in odd situations, react like a random chatter might.\n"
     )
 
     if ocr_text.strip():
