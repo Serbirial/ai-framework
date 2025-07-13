@@ -417,6 +417,7 @@ class ChatBot:
                 cnn_output = f"### ERROR: CNN API request failed: {str(e)}"
                 
         if cnn_output != None:
+            category_override = "other" # temp
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
         try:
             response = requests.post(
