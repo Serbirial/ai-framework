@@ -26,6 +26,11 @@ RATE_LIMITS = {
     # action_name: min_seconds_between_calls
     "duckduckgo_query": 1.5,
     "get_current_time": 1.0,
+    "wikipedia_query_scraper": 1.0,
+    "coingecko_price": 1.0,
+    "run_calculus_wolfram_alpha": 1.0,
+    "simple_webpage_scraper": 1.0,
+    "get_weather": 1.0
     # Add other actions here as needed
 }
 
@@ -33,7 +38,7 @@ RATE_LIMITS = {
 last_call_times = {}
 
 def check_rate_limit(action_name):
-    min_interval = RATE_LIMITS.get(action_name, 1.0)  # default 1 second if not configured
+    min_interval = RATE_LIMITS.get(action_name, 0)  # default 1 second if not configured
     now = time.monotonic()
     last_time = last_call_times.get(action_name, 0)
     elapsed = now - last_time
@@ -85,11 +90,11 @@ def check_for_actions_and_run(text):
                     # Check rate limit here
                     allowed, wait = check_rate_limit(action_name)
                     if not allowed:
-                        rate_limit_error = {
-                            "error": f"Rate limit exceeded for action '{action_name}'. Try again in {wait:.2f} seconds."
-                        }
-                        results.append(f"<ActionResult{action_label}>{json.dumps(rate_limit_error)}</ActionResult{action_label}>")
-                        log_action_execution(action_name, action_params, action_label, rate_limit_error)
+                        time.sleep(wait)
+                        print(f"DEBUG: Executing action: {action_name} with {action_params}")
+                        result = VALID_ACTIONS[action_name]["callable"](action_params)
+                        results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
+                        log_action_execution(action_name, action_params, action_label, result)
                     else:
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
