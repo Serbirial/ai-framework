@@ -96,7 +96,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
         prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
 
-        full = f"{prompt}" 
+        full = prompt
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
@@ -149,7 +149,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             # generate step output
-            "<|eot_id|>"
+            step_prompt += "<|eot_id|>"
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
 
