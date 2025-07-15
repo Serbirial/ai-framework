@@ -24,7 +24,7 @@ LABELS = [
 ]
 
 # Load TFLite model
-interpreter = tflite.Interpreter(model_path="detect.tflite")
+interpreter = tflite.Interpreter(model_path="~/models/cnn/detect.tflite")
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
