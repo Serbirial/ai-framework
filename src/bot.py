@@ -113,7 +113,7 @@ class ChatBot:
         # New TinyLlama model init
         self.model = Llama(
             model_path=mainLLM,
-            n_ctx=6000,              # TODO use CTX setter 
+            n_ctx=4096,              # TODO use CTX setter 
             n_threads=5,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
