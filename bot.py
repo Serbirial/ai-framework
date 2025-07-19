@@ -19,48 +19,53 @@ import os
 
 import asyncio
 import time
+import asyncio
+import time
 
 class DiscordBufferedUpdater:
-    def __init__(self, discord_message, cooldown=5):
-        """
-        discord_message: discord.Message object to edit
-        cooldown: minimum seconds between edits
-        """
+    def __init__(self, discord_message, cooldown=5, max_chars=2000):
         self.discord_message = discord_message
         self.cooldown = cooldown
+        self.max_chars = max_chars
         self.buffer = ""
         self.last_edit_time = 0
         self._lock = asyncio.Lock()
+        self._scheduled_task = None
+        self._loop = asyncio.get_event_loop()
 
-    async def __call__(self, new_text_chunk):
-        async with self._lock:
-            self.buffer += new_text_chunk
-            now = time.monotonic()
-            elapsed = now - self.last_edit_time
+    def __call__(self, new_text_chunk):
+        # Sync call: update buffer & schedule async edit
+        self.buffer += new_text_chunk
+        if len(self.buffer) > self.max_chars:
+            excess = len(self.buffer) - self.max_chars
+            self.buffer = self.buffer[excess:]
 
-            if elapsed >= self.cooldown:
-                await self._edit_message()
-                self.last_edit_time = now
-            else:
-                # Schedule an edit for later if none is scheduled yet
-                if not hasattr(self, "_scheduled_task") or self._scheduled_task.done():
-                    delay = self.cooldown - elapsed
-                    self._scheduled_task = asyncio.create_task(self._delayed_edit(delay))
+        now = time.monotonic()
+        elapsed = now - self.last_edit_time
 
-    async def _delayed_edit(self, delay):
-        await asyncio.sleep(delay)
-        async with self._lock:
-            await self._edit_message()
-            self.last_edit_time = time.monotonic()
+        if elapsed >= self.cooldown:
+            # Schedule immediate edit ASAP
+            self._schedule_edit(delay=0)
+            self.last_edit_time = now
+        else:
+            delay = self.cooldown - elapsed
+            self._schedule_edit(delay=delay)
 
-    async def _edit_message(self):
-        # Edit the message with current buffer
-        try:
-            await self.discord_message.edit(content=self.buffer)
-        except Exception as e:
-            # You can handle exceptions here or log them
-            print(f"Failed to edit Discord message: {e}")
+    def _schedule_edit(self, delay):
+        # Cancel existing scheduled task if any
+        if self._scheduled_task and not self._scheduled_task.done():
+            return  # Already scheduled, no need to schedule again
 
+        async def delayed_edit():
+            await asyncio.sleep(delay)
+            async with self._lock:
+                try:
+                    await self.discord_message.edit(content=self.buffer)
+                    self.last_edit_time = time.monotonic()
+                except Exception as e:
+                    print(f"Failed to edit Discord message: {e}")
+
+        self._scheduled_task = self._loop.create_task(delayed_edit())
 
 MAX_IMAGE_SIZE_MB = 20
 ALLOWED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
