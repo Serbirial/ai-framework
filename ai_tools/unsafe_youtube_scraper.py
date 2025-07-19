@@ -19,7 +19,7 @@ def try_ytdlp_extract(url):
             ["yt-dlp", "--dump-json", "--no-warnings", url],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=15
+            timeout=30
         )
         if result.returncode != 0:
             return {"error": f"yt-dlp failed: {result.stderr.decode().strip()}"}
