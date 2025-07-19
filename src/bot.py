@@ -21,7 +21,19 @@ from utils import openai
 
 from log import log
 from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, DEBUG_FUNC, BASE_MAX_TOKENS
-
+MODEL_VAR = Llama(
+            model_path=mainLLM,
+            n_ctx=4096,              # TODO use CTX setter 
+            n_threads=4,             # tune to setup
+            use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
+            logits_all=False,
+            verbose=False,
+            use_mmap=False,
+            n_gpu_layers=0,
+            low_vram=True,
+            n_batch=16,
+            numa=False
+        )
 tokenizer = DummyTokenizer() # FiXME
 
 class StringStreamer:
@@ -111,19 +123,7 @@ class ChatBot:
         #self.model.config.pad_token_id = tokenizer.eos_token_id
         
         # New TinyLlama model init
-        self.model = Llama(
-            model_path=mainLLM,
-            n_ctx=4096,              # TODO use CTX setter 
-            n_threads=5,             # tune to setup
-            use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
-            logits_all=False,
-            verbose=False,
-            use_mmap=False,
-            n_gpu_layers=0,
-            low_vram=True,
-            n_batch=16,
-            numa=False
-        )
+        self.model = MODEL_VAR
 
 
 
