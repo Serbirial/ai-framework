@@ -78,7 +78,7 @@ def youtube_info_scraper(url: str) -> dict:
 
 
 EXPORT = {
-    "youtube_url_metadata": {
+    "youtube_url_info": {
         "help": "Extracts metadata from a YouTube video URL. Uses yt-dlp or falls back to HTML scraping.",
         "callable": youtube_info_scraper,
         "params": {
