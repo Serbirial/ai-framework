@@ -110,12 +110,12 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "**Step Rules:**\n"
                 "- You must ONLY generate content for the **current step**.\n"
                 "- You may leave yourself instructions or a plan for the *next* step, but do NOT write its contents.\n"
-                "- Stay entirely within the scope of this current step, you are NOT ALLOWED to create new numbered steps.\n"
+                "- Stay entirely within the scope of this current step, you are NOT ALLOWED to create numbered steps.\n"
                 "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
-                "- For any **python code execution**, you MUST use the `run_python_sandboxed` action to safely run Python code inside a secured sandbox environment.\n"
+                "- For any *python code execution*, you MUST use the `run_python_sandboxed` action to safely run Python code inside a secured sandbox environment.\n"
                 "- Do NOT attempt to execute code directly or guess results; always rely on the sandbox’s verified output before proceeding.\n"
-                "- The sandbox has the limitations of 500M RAM, 25 seconds runtime, and no network access — you must pass fully formatted, valid Python code as a string, with newlines separating code lines.\n"
+                "- The sandbox has the limitations of 400M RAM, 60 seconds runtime, and no network access — you must pass fully formatted, valid Python code as a string, with newlines separating code lines.\n"
 
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
@@ -126,13 +126,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- If no action is needed, reason forward logically toward completing the task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
                 "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
-                "- You MUST WAIT for the real <ActionResult> of any actions emitted to be provided in the next generation.\n"
+                "- Do not assume or simulate the result of an Action: Always wait for the actual <ActionResult> to be returned in the next step before proceeding.\n"
                 "- Only emit new actions when necessary.\n"
-                "- Output the action first, then optionally explain your reasoning.\n"
+                "- Output the action first, then optionally explain your reasonin why you called the action.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
-                "- Do NOT include any '### Step' headings or numbering in your response; output only the content for the current step.\n"
+                "- Do NOT include any '###' or '### Step...' headings or numbering in your response; output only the content for the current step.\n"
 
             )
 
