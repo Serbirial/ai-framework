@@ -30,13 +30,15 @@ def remove_quirks(text):
 
 def wiki_scraper(query: str, max_paragraphs: int = 4) -> dict:
     try:
-        # Step 1: Search Wikipedia
         search_params = {
             "action": "query",
             "list": "search",
             "srsearch": query,
+            "srwhat": "nearmatch",
+            "srprop": "snippet",
             "format": "json"
         }
+
         # Ensure a minimum of 3 paragraphs
         if max_paragraphs < 3:
             max_paragraphs = 3
@@ -50,7 +52,6 @@ def wiki_scraper(query: str, max_paragraphs: int = 4) -> dict:
         url_title = title.replace(" ", "_")
         article_url = f"{WIKI_ARTICLE_URL}{url_title}"
         time.sleep(0.3) # be respectful
-        # Step 2: Scrape Wikipedia article
         page_res = requests.get(article_url, headers=headers, timeout=7)
         page_res.raise_for_status()
         soup = BeautifulSoup(page_res.text, "html.parser")
@@ -96,5 +97,5 @@ EXPORT = {
 
 if __name__ == "__main__":
     import json
-    result = wiki_scraper("Wolfram Alpha", max_paragraphs=3)
+    result = wiki_scraper("Hyperpop music history", max_paragraphs=3)
     print(json.dumps(result, indent=2, ensure_ascii=False))
