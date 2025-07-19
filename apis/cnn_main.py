@@ -56,9 +56,9 @@ def describe_image():
             image.save(image_path)
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
-
+    detected_objects = None
     try:
-        detected_objects = get_objects_from_tflite_api(image_path)
+        #detected_objects = get_objects_from_tflite_api(image_path)
         ocr_text = " ".join([res[1] for res in ocr_reader.readtext(image_path)])
         image_data_uri = image_to_base64_data_uri(image_path)
     finally:
