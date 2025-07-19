@@ -13,7 +13,7 @@ mood_instruction = {
     "neutral": "Use a calm and balanced tone if not stated otherwise."
 }
 MODEL_NAME = ""
-mainLLM = "//home/summers/models/using/Llama-3.2-1B.Q3_K_M.gguf" # TEMP while running on PI
+mainLLM = "/data/data/com.termux/files/home/llama-3.2-3b-instruct-q4_k_m.gguf" # TEMP while running on PI
 #actual good model vvv
 #mainLLM = "/home/koya/models/llama-2-7b-chat.Q4_K_S.gguf" # TEMP while running on dedi VM
 
