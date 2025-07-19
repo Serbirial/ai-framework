@@ -23,7 +23,7 @@ import asyncio
 import time
 
 class DiscordBufferedUpdater:
-    def __init__(self, discord_message, cooldown=5, max_chars=2000):
+    def __init__(self, discord_message, cooldown=2.5, max_chars=2000):
         self.discord_message = discord_message
         self.cooldown = cooldown
         self.max_chars = max_chars
