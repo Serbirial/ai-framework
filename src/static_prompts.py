@@ -156,12 +156,10 @@ def build_core_memory_prompt(rows):
         prompt += "\n\n"
     return prompt
 
-def build_history_prompt(history):
-    prompt = (
-        f"{history if history else 'No chat history found! This must be your first interaction with the user!\n'}"
-        "\n\n"
-    )
-    return prompt
+def build_history_prompt(history: str | None) -> str:
+    base = history or "No chat history found! This must be your first interaction with the user!\n"
+    return base + "\n\n"
+
 
 def build_discord_formatting_prompt():
     prompt = (
