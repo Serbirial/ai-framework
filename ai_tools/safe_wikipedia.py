@@ -86,10 +86,10 @@ def wiki_scraper(query: str, max_paragraphs: int = 4) -> dict:
 
 EXPORT = {
     "wikipedia_search": {
-        "help": "Searches Wikipedia and returns a formatted summary from the top result.",
+        "help": "Look up a single Wikipedia article **by page title** and return a short summary.",
         "callable": wiki_scraper,
         "params": {
-            "query": "string, required",
+            "query": "string, required — The exact or best‑guess Wikipedia *page title*‑only",
             "max_paragraphs": "int, optional, default 4 (minimum 3)"
         }
     }
