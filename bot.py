@@ -669,7 +669,8 @@ class ChatBot(discord.Client):
         row = cursor.fetchone()
         conn.close()
         
-        streamer = None
+        msg_to_edit = await message.reply("Thinking...")
+        streamer = DiscordBufferedUpdater(msg_to_edit)
 
         if row:
             botname = row[0]
@@ -693,10 +694,6 @@ class ChatBot(discord.Client):
             
             
             return
-        if flags["stream"]:
-            msg_to_edit = await message.reply("Thinking...")
-            streamer = DiscordBufferedUpdater(msg_to_edit)
-
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
@@ -944,7 +941,7 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        await message.reply(response)
+                        #await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -964,7 +961,7 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        await message.reply(response)
+                        #await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -986,7 +983,7 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        await message.reply(response)
+                        #await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
