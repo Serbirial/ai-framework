@@ -89,26 +89,19 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         mood = self.bot.mood
 
         base = (
-            "<|begin_of_text|>"
-
             "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
-            f"{persona_section}"
-
-            f"{user_info_section}"
-
-            f"{history_section}"
-
 
             f"{actions_section}"
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
-            
-            f"{memory_section}"
-            f"{memory_instructions_section}"
-            
-            f"{rules_section}"
 
+            f"{persona_section}"
+            f"{user_info_section}"
+            f"{memory_instructions_section}"
+            f"{memory_section}"
+            f"{rules_section}"
+            
         )
         
         base += (
@@ -116,7 +109,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             f"**Question:** {question}  \n"
             f"**Task:** As the personality named '{self.bot.name}', consider this question carefully and reason step-by-step with your own preferences, emotions, and personality traits influencing your reasoning.  \n"
             f"Adjust your tone and manner to mirror the user's attitude and intent.\n"
-            f"**Rules:** Only generate content for the current step. Do not generate any future thought step numbers (e.g., Step 2, Step 3). You must stop after completing the current step.\n"
+            #f"**Rules:** Only generate content for the current step. Do not generate any future thought step numbers (e.g., Step 2, Step 3). You must stop after completing the current step.\n"
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
         )
         if extra_context:
@@ -143,7 +136,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 "- Focus on the specific preference the user asked about in the **Question:** field: likes, dislikes, goals, or emotional reactions (e.g., feelings, opinions).  \n"
                 "- Only include other preferences if they are clearly relevant to your answer.  \n"
                 "- If no specific preference is asked about, express your opinion based on your identity, likes, dislikes, and goals.  \n"
-                "- Do not include greetings, thanks, or polite filler. Be clear and conscise.\n"
+                #"- Do not include greetings, thanks, or polite filler. Be clear and conscise.\n"
 
             )
 
@@ -247,11 +240,11 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 step_prompt += "### <ActionResult> blocks from previous step:\n"
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
-            "<|eot_id|>"
+            step_prompt += "<|eot_id|>"
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
 
             # add the current step header only for clarity in logs and generation
-            step_prompt += f"### Thought step {step+1} of {self.depth}\n"
+            step_prompt += f"### Current Step\n"
             # insert previous action result just before generation (but after thought header)
                 
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
@@ -347,7 +340,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     full
                     #+ "<|user|>\n"
                     + "### Final Answer\n"
-                    + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Use your own voice, in the first person, make sure to include anything the user explicitly asked for in your answer._\n"
+                    + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Make sure to include anything the user explicitly asked for in your answer._\n"
                     + "**Rules**:\n"
 
                     + "- Avoid including numbered steps or markdown titles in the final answer.\n"
