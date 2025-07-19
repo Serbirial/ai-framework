@@ -68,8 +68,10 @@ def scrape_youtube_html(url):
 
 
 def youtube_info_scraper(url: str) -> dict:
-    if "youtube.com/watch" not in url and "youtu.be/" not in url:
-        return {"error": "Provided URL is not a valid YouTube video URL."}
+    url = url.strip()
+    if not ("youtube.com/watch" in url or "youtu.be/" in url):
+        return {"error": f"Invalid YouTube URL: {url}"}
+
     
     if USE_YTDLP:
         return try_ytdlp_extract(url)
@@ -88,6 +90,6 @@ EXPORT = {
 }
 
 if __name__ == "__main__":
-    test_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    test_url = "https://www.youtube.com/watch?v=nRROWJa8sdA"
     result = youtube_info_scraper(test_url)
     print(json.dumps(result, indent=2, ensure_ascii=False))
