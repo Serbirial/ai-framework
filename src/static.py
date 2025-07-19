@@ -69,11 +69,26 @@ class StopOnSpeakerChange:
         if new_text_chunk.strip() == "":
             return False  # Don't process empty chunks at all
         if self.hard_stop in self.buffer or self.hard_stop in new_text_chunk:
-            if self.line_count >= 1: # refuse to stop until 1 line has been collected
+            if self.line_count >= 1:
                 return True
             else:
                 return False
+            
+        # Define user tokens explicitly for clarity
+        user_tokens = [
+            "<|start_header_id|>user<|end_header_id|>",
+            "<|user|>",
+            "<user>"
+        ]
 
+        # Check for user tokens anywhere in the combined buffer or the new chunk
+        # If found, stop immediately regardless of min_lines
+        combined_text = self.buffer + new_text_chunk
+        if any(token in combined_text for token in user_tokens):
+            print("STOP: Detected user speaker token in buffer or new chunk: stopping immediately!")
+            self.stopped = True
+            return True
+        
         self.buffer += new_text_chunk
 
         lines = []
@@ -84,129 +99,37 @@ class StopOnSpeakerChange:
 
         all_stop_tokens = self.default_stop_tokens + self.custom_stops
 
+        # Stop immediately if any stop token found in the buffer
         for token in all_stop_tokens:
             if token in self.buffer and self.line_count >= self.min_lines:
+                print(f"STOP: Detected stop token {repr(token)} in buffer with min_lines reached.")
+                self.stopped = True
                 return True
+
         for line in lines:
             print(f"Processing line: {repr(line)} | line_count: {self.line_count}")
 
-            if line == "<|assistant|>":
+            # Skip assistant token silently
+            if line == "<|start_header_id|>assistant<|end_header_id|>":
                 continue
 
             if any(line.startswith(tok) for tok in all_stop_tokens):
                 if self.line_count >= self.min_lines:
-                    print("STOP: Detected token in line and min_lines reached.")
+                    print("STOP: Detected user/system token line and min_lines reached.")
                     self.stopped = True
                     return True
 
             if line and not line.startswith("<|"):
                 self.line_count += 1
-                print(f"Assistant line counted → {self.line_count}")
+                print(f"Assistant line counted -> {self.line_count}")
 
             if self.line_count >= self.max_lines:
                 print("STOP: Reached max_lines.")
                 self.stopped = True
                 return True
+
         self.output += new_text_chunk
         return False
-
-
-    
-class DiscordTextStreamer:
-    def __init__(self, discord_message, update_interval=5.0):
-        """
-        discord_message: a discord.Message or discord.InteractionResponse object with an edit() coroutine method.
-        update_interval: seconds between edits.
-        """
-        self.message = discord_message
-        self.update_interval = update_interval
-        self.buffer = ""
-        self.last_update_time = 0
-        self._lock = asyncio.Lock()
-        self._task = None
-
-    async def _periodic_update(self):
-        while True:
-            await asyncio.sleep(self.update_interval)
-            async with self._lock:
-                if self.buffer:
-                    try:
-                        await self.message.edit(content=self.buffer)
-                    except Exception as e:
-                        print(f"Error editing Discord message: {e}")
-                    self.buffer = ""
-                    self.last_update_time = time.time()
-
-    def start(self):
-        if self._task is None:
-            self._task = asyncio.create_task(self._periodic_update())
-
-    async def update(self, text_chunk):
-        async with self._lock:
-            self.buffer += text_chunk
-
-        # Start the periodic task if not started
-        self.start()
-
-    async def stop(self):
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
-
-class AssistantOnlyFilter: # this filters speaker changes- and special tokens
-    def __init__(self, assistant_token="<|assistant|>", other_tokens=None):
-        self.assistant_token = assistant_token
-        self.other_tokens = other_tokens or ["<|user|>", "<|system|>", "<|end|>", "<user>"]
-
-        self.buffer = ""
-        self.filtered_output = ""
-        self.saw_any_speaker_change = False  # Flag for first detected speaker change
-        self.in_assistant_mode = True        # Start accumulating regardless until speaker change
-
-    def __call__(self, new_text_chunk):
-        self.buffer += new_text_chunk
-
-        lines = self.buffer.split("\n")
-        self.buffer = lines.pop()  # Save the last (possibly incomplete) line for next chunk
-
-        for line in lines:
-            stripped = line.strip()
-
-            # Detect non-assistant speaker tokens
-            if stripped in self.other_tokens:
-                self.saw_any_speaker_change = True
-                self.in_assistant_mode = False
-                continue  # Skip speaker tokens entirely
-
-            # Detect assistant token
-            if stripped == self.assistant_token:
-                self.saw_any_speaker_change = True
-                self.in_assistant_mode = True
-                continue  # Skip speaker tokens entirely
-
-            # Accumulate only assistant-mode lines, but skip speaker tokens
-            if (not self.saw_any_speaker_change) or (self.in_assistant_mode and stripped != ""):
-                self.filtered_output += line + "\n"
-
-        return False  # Never stop generation
-
-    def get_filtered_output(self):
-        leftover = self.buffer.strip()
-
-        # Don't add assistant or other speaker tokens accidentally
-        if leftover in self.other_tokens + [self.assistant_token]:
-            return self.filtered_output
-
-        # Only add leftover if it's valid assistant output
-        if (not self.saw_any_speaker_change) or (self.in_assistant_mode and leftover):
-            return self.filtered_output + leftover + "\n"
-
-        return self.filtered_output
-
 
 
 

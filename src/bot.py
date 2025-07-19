@@ -263,6 +263,8 @@ class ChatBot:
     def _straightforward_generate(self, prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, _prompt_for_cut):
         stop_criteria.line_count = 0  # reset for this generation
         stop_criteria.buffer = ""
+        stop_criteria.output = ""
+        stop_criteria.stopped = False
         #filtered = AssistantOnlyFilter()
 
 

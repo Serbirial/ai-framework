@@ -107,7 +107,7 @@ def duckduckgo_query(query: str) -> dict:
         return {"error": f"Unexpected error: {str(e)}"}
 
 EXPORT = {
-    "duckduckgo_query": {
+    "duckduckgo_search": {
         "help": (
             "Perform a DuckDuckGo Instant Answer query and return the top answer or summary."
         ),

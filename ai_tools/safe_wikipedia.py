@@ -84,7 +84,7 @@ def wiki_scraper(query: str, max_paragraphs: int = 4) -> dict:
         return {"error": f"Exception during Wikipedia scraping: {str(e)}"}
 
 EXPORT = {
-    "wikipedia_query_scraper": {
+    "wikipedia_search": {
         "help": "Searches Wikipedia and returns a formatted summary from the top result.",
         "callable": wiki_scraper,
         "params": {
