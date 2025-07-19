@@ -17,6 +17,51 @@ import time
 
 import os
 
+import asyncio
+import time
+
+class DiscordBufferedUpdater:
+    def __init__(self, discord_message, cooldown=5):
+        """
+        discord_message: discord.Message object to edit
+        cooldown: minimum seconds between edits
+        """
+        self.discord_message = discord_message
+        self.cooldown = cooldown
+        self.buffer = ""
+        self.last_edit_time = 0
+        self._lock = asyncio.Lock()
+
+    async def __call__(self, new_text_chunk):
+        async with self._lock:
+            self.buffer += new_text_chunk
+            now = time.monotonic()
+            elapsed = now - self.last_edit_time
+
+            if elapsed >= self.cooldown:
+                await self._edit_message()
+                self.last_edit_time = now
+            else:
+                # Schedule an edit for later if none is scheduled yet
+                if not hasattr(self, "_scheduled_task") or self._scheduled_task.done():
+                    delay = self.cooldown - elapsed
+                    self._scheduled_task = asyncio.create_task(self._delayed_edit(delay))
+
+    async def _delayed_edit(self, delay):
+        await asyncio.sleep(delay)
+        async with self._lock:
+            await self._edit_message()
+            self.last_edit_time = time.monotonic()
+
+    async def _edit_message(self):
+        # Edit the message with current buffer
+        try:
+            await self.discord_message.edit(content=self.buffer)
+        except Exception as e:
+            # You can handle exceptions here or log them
+            print(f"Failed to edit Discord message: {e}")
+
+
 MAX_IMAGE_SIZE_MB = 20
 ALLOWED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 
@@ -645,7 +690,7 @@ class ChatBot(discord.Client):
             return
         if flags["stream"]:
             msg_to_edit = await message.reply("Thinking...")
-            streamer = static.DiscordTextStreamer(msg_to_edit)
+            streamer = DiscordBufferedUpdater(msg_to_edit)
 
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
