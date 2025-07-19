@@ -289,7 +289,7 @@ class ChatBot:
                 break
 
             if streamer:
-                streamer.update(text_chunk)
+                streamer(text_chunk)
 
         output_text = stop_criteria.output
         log("RAW OUTPUT BASE", output_text)
