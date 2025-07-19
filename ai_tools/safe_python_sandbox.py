@@ -1,7 +1,7 @@
 import requests
 import re
 
-SANDBOX_API_URL = "http://192.168.0.9:5000/run_code"  # Adjust port/path as needed
+SANDBOX_API_URL = "http://192.168.0.8:5000/run_code"  # Adjust port/path as needed
 
 def extract_code_from_md(user_code: str) -> str:
     """
@@ -60,7 +60,7 @@ def run_code_sandboxed(user_code) -> dict:
 
 EXPORT = {
     "run_python_sandboxed": {
-        "help": "Run Python code sandboxed remotely via API  (500M RAM, NO NETWORK 60S TIMEOUT)",
+        "help": "Run Python code sandboxed remotely via API  (400M RAM, NO NETWORK 60S TIMEOUT)",
         "callable": run_code_sandboxed,
         "params": {
             "code": "string, required — Python code to execute safely."
