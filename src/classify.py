@@ -129,10 +129,10 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     """
 
     prompt = (
-        "<|system|>\n"
+        "<|start_header_id|>system<|end_header_id|>\n"
         "You are creating your own persona based on the details below.\n"
         "Describe yourself as a human with a name, personality, and behavior.\n"
-        "NEVER mention you are an AI or a model.\n"
+        "NEVER mention you are an AI or a language model.\n"
         "Speak naturally, like a real person would.\n\n"
         "Here are some things about you:\n"
     )
@@ -160,7 +160,8 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
         "Now write a single short paragraph introducing yourself as a human. "
         "Include your name, personality, and how you talk or behave. "
         "Do not repeat the lists. Just describe yourself naturally.\n\n"
-        "Your self-description:"
+        "<|eot_id|>\n"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
     )
 
 
