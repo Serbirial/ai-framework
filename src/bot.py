@@ -20,7 +20,7 @@ from . import static_prompts
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, AssistantOnlyFilter, DEBUG_FUNC, BASE_MAX_TOKENS
+from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, DEBUG_FUNC, BASE_MAX_TOKENS
 
 tokenizer = DummyTokenizer() # FiXME
 
