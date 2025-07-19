@@ -31,8 +31,8 @@ MODEL_VAR = Llama(
             use_mmap=False,
             n_gpu_layers=32,
             low_vram=False,
-            n_batch=16,
-            numa=False
+            n_batch=16
+            #numa=False
         )
 tokenizer = DummyTokenizer() # FiXME
 
