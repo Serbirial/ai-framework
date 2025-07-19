@@ -33,7 +33,7 @@ def get_cpu_model() -> str:
     # Fallback to platform.machine()
     return platform.machine()
 
-def get_system_info() -> dict:
+def get_system_info(params: dict = None) -> dict:
     try:
         info = {}
         info['os'] = platform.system()
@@ -49,8 +49,8 @@ def get_system_info() -> dict:
         return {"error": f"Failed to get system info: {str(e)}"}
 
 EXPORT = {
-    "get_system_info": {
-        "help": "Get the current machine's basic system information (OS, CPU model and cores, RAM, hostname, Python version).",
+    "get_device_info": {
+        "help": "Get the current machine's basic information (OS, CPU model and cores, RAM, hostname, Python version).",
         "callable": get_system_info,
         "params": {}
     }
