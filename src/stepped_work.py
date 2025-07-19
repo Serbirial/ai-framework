@@ -128,7 +128,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
                 "- Do not assume or simulate the result of an Action: Always wait for the actual <ActionResult> to be returned in the next step before proceeding.\n"
                 "- Only emit new actions when necessary.\n"
-                "- Output the action first, then optionally explain your reasonin why you called the action.\n"
+                "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
