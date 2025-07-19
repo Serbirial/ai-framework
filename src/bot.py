@@ -265,6 +265,7 @@ class ChatBot:
         stop_criteria.buffer = ""
         stop_criteria.output = ""
         stop_criteria.stopped = False
+        streamer.buffer = ""
         #filtered = AssistantOnlyFilter()
 
 
