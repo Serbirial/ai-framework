@@ -1,6 +1,8 @@
 import subprocess
 import json
 import requests
+import re
+
 from bs4 import BeautifulSoup
 
 USE_YTDLP = True  # Toggle between yt-dlp (accurate) and HTML (fallback)
@@ -69,9 +71,15 @@ def scrape_youtube_html(url):
 
 def youtube_info_scraper(url: str) -> dict:
     url = url.strip()
-    if not ("youtube.com/watch" in url or "youtu.be/" in url):
-        return {"error": f"Invalid YouTube URL: {url}"}
 
+    # Accept all valid YouTube video URLs
+    youtube_video_pattern = re.compile(
+        r"(https?://)?(www\.)?(youtube\.com|youtu\.be)/"
+        r"(watch\?v=|shorts/|embed/|v/|.+\?v=)?[A-Za-z0-9_-]{11}"
+    )
+
+    if not youtube_video_pattern.search(url):
+        return {"error": f"Invalid YouTube video URL: {url}"}
     
     if USE_YTDLP:
         return try_ytdlp_extract(url)
