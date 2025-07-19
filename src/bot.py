@@ -29,8 +29,8 @@ MODEL_VAR = Llama(
             logits_all=False,
             verbose=False,
             use_mmap=False,
-            n_gpu_layers=0,
-            low_vram=True,
+            n_gpu_layers=32,
+            low_vram=False,
             n_batch=16,
             numa=False
         )
