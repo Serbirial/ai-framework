@@ -24,7 +24,7 @@ I essentially want this to end up being my own selfhosted version of chatGPT, ma
 * Route -> Task Worker
 * Step 1: Action: web_search("capital of France")
 * Tool response: The capital is Paris.
-* Step 2: Confirms and replies
+* Step 2: Confirms and sets up filler for next step
 * Step 3: Filler setting up for final reply
 
 * Final Reply: The capital of France is Paris!
