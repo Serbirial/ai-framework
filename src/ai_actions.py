@@ -115,6 +115,8 @@ def check_for_actions_and_run(model, text):
                                         i += 1
                                         combined += f"### Section {i} of {len(chunked_summaries)}:\n"
                                         combined += f"{chunk}\n\n"
+                                        
+                                    result = {"summary": combined, "url": result["url"]}
 
 
                                 else:
