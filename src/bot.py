@@ -388,7 +388,8 @@ class ChatBot:
 
         usertone, category, like_or_dislike = grouped_preprocessing.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
         persona_prompt = self.get_persona_prompt(identifier)
-        
+        if category_override:
+            category = category_override
         def get_moods():
             return {
                 "Like/Dislike Mood Factor": { 
