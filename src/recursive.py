@@ -80,10 +80,6 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        history_section = static_prompts.build_history_prompt(context)
-        actions_section = static_prompts.build_base_actions_prompt()
-        actions_rule_section = static_prompts.build_base_actions_rule_prompt()
-        actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
         
 
         mood = self.bot.mood
@@ -92,9 +88,6 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
 
-            f"{actions_section}"
-            f"{actions_explanation_section}"
-            f"{actions_rule_section}"
 
             f"{persona_section}"
             f"{user_info_section}"
