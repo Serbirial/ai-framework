@@ -135,8 +135,7 @@ def build_memory_instructions_prompt(force_factual=False):
         prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n"
     elif force_factual == True:
         prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances other than:\n"
-        prompt += f"    - Actions and ActionResults must never be influenced by the Core Memory or Chat History\n"
-        prompt += f"    - Any real-world factual data (from Actions or similar) must NEVER be influenced by the Core Memory or Chat History\n\n"
+        prompt += f"    - Any real-world factual data (from Actions or <|ipython|>) must NEVER be influenced or changed by the Core Memory or Chat History\n\n"
     return prompt
 
 def build_user_profile_prompt(username, usertone):
@@ -216,6 +215,6 @@ def build_calculus_tool_prompt():
         "- Examples:\n"
         '  <Action>{ "action": "run_calculus", "parameters": { "type": "derivative", "expression": "x^2 + 3x", "variable": "x" }, "label": "calc1" }</Action>\n'
         '  <Action>{ "action": "run_calculus", "parameters": { "type": "integral", "expression": "sin(x)", "variable": "x", "at": [0, 3.14] }, "label": "calc2" }</Action>\n'
-        "- Wait for the <ActionResult> before continuing reasoning.\n"
+        "- Wait for the <|ipython|> before continuing reasoning.\n"
         "- Use only when the user’s request requires it — such as computing slopes, area under curves, or behavior as values approach limits.\n"
     )

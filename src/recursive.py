@@ -12,46 +12,10 @@ from .static import RECURSIVE_MAX_TOKENS_FINAL, RECURSIVE_MAX_TOKENS_PER_STEP
 import re
 
 from ai_tools import VALID_ACTIONS
+from .ai_actions import check_for_actions_and_run
 
 
 
-
-def check_for_actions_and_run(text):
-    results = []
-
-    matches = re.findall(r"<Action>(.*?)</Action>", text, re.DOTALL)
-    if not matches:
-        return "NOACTION"  # no actions found
-
-    for raw in matches:
-        try:
-            action_json = json.loads(raw)
-            action_name = action_json.get("action")
-            action_params = action_json.get("parameters", {})
-            action_label = action_json.get("label", None)  # AI-provided label
-
-            if not action_label:
-                # If no label given, fallback to generic
-                action_label = f"action_{len(results) + 1}"
-
-            if action_name in VALID_ACTIONS:
-                log(f"DEBUG: Executing action: {action_name} with {action_params}")
-                result = VALID_ACTIONS[action_name]["callable"](action_params)
-                results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
-            else:
-                error_msg = {"error": f"Unknown action: {action_name}"}
-                results.append(f"<ActionResult{action_label}>{json.dumps(error_msg)}</ActionResult{action_label}>")
-        except Exception as e:
-            error_msg = {"error": f"Failed to execute action: {str(e)}"}
-            label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
-            results.append(f"<ActionResult{label}>{json.dumps(error_msg)}</ActionResult{label}>")
-
-    if len(results)>0:
-        if len(results) == 1:
-            return results[0]
-        else:
-            return results
-    return "NOACTION"
 
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
@@ -106,7 +70,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             #f"_Be attentive to how this relates to your identity, preferences, mood, or values._\n"
         )
         if extra_context:
-            base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
+            base += f"\n<|ipython|>{extra_context}<|eot_id|>\n"
         
         # Add specific guidance based on query_type
         if query_type == "task":
@@ -194,6 +158,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             if mood_reflections:
                 base += "\n" + mood_reflections + "\n"
+                
+        base += "<|eot_id|>"
         log("RECURSIVE PROMPT", base)
         return base
 
@@ -230,9 +196,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             step_prompt = f"{prompt}"
 
             if extra_context_lines:
-                step_prompt += "### <ActionResult> blocks from previous step:\n"
                 step_prompt += "\n".join(extra_context_lines) + "\n"
                 extra_context_lines.clear()
+            
             step_prompt += "<|eot_id|>"
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
 
@@ -262,7 +228,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prior_steps.append(step_content)
 
             # append the full step (header + content) to the full conversation log
+            full += "<|start_header_id|>assistant<|end_header_id|>\n"
             full += f"### Thought step {step+1} of {self.depth}\n{step_content}\n\n"
+            full += "<|eot_id|>"
             # queue action result for next step input
             if action_result != "NOACTION":
                 if type(action_result) == list: # multiple actions = multiple results

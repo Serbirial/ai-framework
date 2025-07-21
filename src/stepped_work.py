@@ -76,7 +76,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
 
 
-                
         # Add specific guidance based on query_type
 
         log("INSTRUCT PROMPT", base)
@@ -92,18 +91,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
-    
+        to_add = ""
         for step in range(self.depth):
             # start with the system prompt or base context
             step_prompt = f"{full}"
 
-            if extra_context_lines:
-                step_prompt += "### Previous Steps <ActionResult> blocks:\n"
-                for actionresult in extra_context_lines:
-                    step_content += f"{actionresult}\n"
-                extra_context_lines.clear()
                 
-            step_prompt += f"### Current Step\n"
+            step_prompt += f"### Current Step:\n"
             step_prompt += f"**User Given Task:**\n    - {question}\n" # Reinforce the task every step
 
             step_prompt += (
@@ -135,13 +129,15 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Do NOT include any '###' or '### Step...' headings or numbering in your response; output only the content for the current step.\n"
 
             )
+            # end sys prompt
+            step_prompt += "<|eot_id|>"
 
-                
+            # add previous steps and tool results
+            step_prompt += to_add
+            
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-            # generate step output
-            step_prompt += "<|eot_id|>"
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
 
@@ -160,24 +156,24 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             prior_steps.append(clean_step_content)
 
             log(f"DEBUG: WORK STEP {step}", clean_step_content)
-            
+            to_add += "<|start_header_id|>assistant<|end_header_id|>\n"
+
             # append the full step (header + content) to the full conversation log
-            full += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n\n"
+            to_add += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n\n"
             
             # Check for and run any actions
             action_result = check_for_actions_and_run(self.bot.model, response)
             
             # queue action result for next step input
             if action_result != "NOACTION":
-                full += f"### Action Results for step {step+1}:\n"
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
                         extra_context_lines.append(result)
-                        full += f"{result}\n" # add result to full prompt
+                        to_add += f"{result}\n" # add result to full prompt
                 else:
                     extra_context_lines.append(action_result)
-                    full += f"{action_result}\n" # add result to full prompt
-                full += "\n"
+                    to_add += f"{action_result}\n" # add result to full prompt
+                to_add += "\n"
 
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 # add checkpoint step_prompt
@@ -200,7 +196,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     stop_criteria=stop_criteria,
                     _prompt_for_cut=step_prompt,
                 )
-                full += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
+                to_add += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
+            to_add == "<|eot_id|>"
 
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
         final_prompt = (
@@ -218,6 +215,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
             + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
             + "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
+
+            + to_add # add the steps
 
             + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
