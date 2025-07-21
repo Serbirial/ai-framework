@@ -452,7 +452,7 @@ class ChatBot:
             category_override = "other" # temp
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
         
-        usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier)
+        usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier, context)
         
         self.mood = mood
         
