@@ -2,7 +2,9 @@ from log import log
 
 from . import classify
 from ai_tools import VALID_ACTIONS
+from .static import DummyTokenizer
 
+tokenizer = DummyTokenizer()
 
 import json
 import re
@@ -98,8 +100,26 @@ def check_for_actions_and_run(model, text):
                             if "error" in result.keys():
                                 result = result
                             else:
-                                summary = classify.summarize_raw_scraped_data(model, result["raw_html"], 2048)
-                                result = {"summary": summary, "url": result["url"]}
+                                raw_token_count = len(tokenizer.encode(result))
+                                if raw_token_count >= 6000:
+                                    base_raw_html = result
+                                    all_tokens = tokenizer.encode(base_raw_html)
+                                    chunks = [all_tokens[i:i+6000] for i in range(0, len(all_tokens), 6000)]
+                                    chunked_html_parts = [tokenizer.decode(chunk) for chunk in chunks]
+                                    chunked_summaries = []
+                                    for i, chunk_text in enumerate(chunked_html_parts):
+                                        chunked_summaries.append(classify.summarize_raw_scraped_data(model, chunk_text, 1800))
+                                    combined = ""
+                                    i = 0
+                                    for chunk in chunked_summaries:
+                                        i += 1
+                                        combined += f"### Section {i} of {len(chunked_summaries)}:\n"
+                                        combined += f"{chunk}\n\n"
+
+
+                                else:
+                                    summary = classify.summarize_raw_scraped_data(model, result["raw_html"], 2048)
+                                    result = {"summary": summary, "url": result["url"]}
 
                         # Replace <ActionResultX> with <|ipython|> block
                         output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"
