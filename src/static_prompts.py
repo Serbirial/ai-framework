@@ -1,8 +1,26 @@
 from ai_tools import VALID_ACTIONS
 import json
-from .static import mood_instruction
+from .static import mood_instruction, RECURSIVE_MAX_TOKENS_PER_STEP, WORK_MAX_TOKENS_PER_STEP, RECURSIVE_MAX_TOKENS_FINAL, WORK_MAX_TOKENS_FINAL, BASE_MAX_TOKENS
+
+def build_token_limits_prompt(recursive_max_tokens_per_step: int = RECURSIVE_MAX_TOKENS_PER_STEP, work_max_tokens_per_step: int = WORK_MAX_TOKENS_PER_STEP, recursive_max_tokens_final: int = RECURSIVE_MAX_TOKENS_FINAL, work_max_tokens_final: int = WORK_MAX_TOKENS_FINAL, base_max_tokens: int = BASE_MAX_TOKENS) -> str:
+    prompt = (
+        f"### **Token Usage Rules:**\n"
+        f"- You must always keep your output within strict token limits.\n"
+        f"- For task steps, generate no more than {work_max_tokens_per_step} tokens per step.\n"
+        f"- For any non-task steps, generate no more than {recursive_max_tokens_per_step} tokens per step.\n"
+
+        f"- For final replies not task related, generate no more than {recursive_max_tokens_final} tokens.\n"
+        f"- For final replies task related, generate no more than {work_max_tokens_final} tokens.\n"
+
+        f"- For base chatting (no stepping or final replies), generate no more than {base_max_tokens} tokens.\n"
+        f"- Never exceed these limits, or your output risks being cut off.\n"
+        f"- Always shape your responses to fit neatly within these bounds without unnecessary verbosity.\n"
+    )
+    return prompt
+
 
 def build_capability_explanation_to_itself():
+    
     prompt = (
         "### Your Available Tools\n\n"
         "You have access to a set of special tools called Actions. These Actions allow you to perform tasks that require real data or complex processing beyond your native abilities.\n\n"
@@ -34,6 +52,7 @@ def build_cnn_input_prompt(cnn_output):
 def build_base_actions_prompt():
     prompt = (
         f"### Actions\n"
+        f"Environment: ipython\n"
         f"You may output up to THREE <Action> JSON blocks per step.\n"
         f"You must output actions in this exact format:\n"
         '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
@@ -67,9 +86,9 @@ def build_base_actions_explanation_prompt():
         "### What Actions Actually Do\n"
         "- <Action> blocks are real requests to **external tools** — not simulated by the assistant.\n"
         "- When you emit an action, you are **queueing a real functions execution**.\n"
-        "- The system will run it and give you a result as <ActionResult<label>>.\n"
-        "- Do NOT invent, guess or generate action results. Wait until it the system gives you the action result section.\n"
-        "- You may explain your intent in calling an action, but never assume or generate an ActionResult.\n\n"
+        "- The system will run it and give you a result as the <|ipython|> token.\n"
+        "- Do NOT invent, guess or generate action results. Wait until it the system gives you the <|ipython|> token.\n"
+        "- You may explain your intent in calling an action, but never assume or generate an <|ipython|>.\n\n"
     )
     return prompt
 
