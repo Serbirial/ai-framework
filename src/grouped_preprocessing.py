@@ -102,5 +102,5 @@ def basic_preprocessing(
     like = parsed.get("like", "NEUTRAL").upper()
     if like not in {"LIKE", "DISLIKE", "NEUTRAL"}:
         like = "NEUTRAL"
-
+    print(f"Preprocessing: {social}\n{category}\n{like}\n")
     return social, category, like

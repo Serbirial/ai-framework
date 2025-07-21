@@ -420,8 +420,8 @@ class ChatBot:
                 print("[WARN] Falling back to local model.")
                 return classify.classify_moods_into_sentence(self.model, tokenizer, moods)
             
-        moods = get_moods(self, user_input, identifier, usertone)
-        mood_sentence = get_mood_sentence(self, tokenizer, moods)
+        moods = get_moods()
+        mood_sentence = get_mood_sentence()
         
         # Set the base mood based on highest score social mood
         social_moods = moods["Social Intents Mood Factor"]["mood"]
