@@ -87,25 +87,24 @@ def check_for_actions_and_run(model, text):
                     action_label = f"action_{len(results) + 1}"
 
                 if action_name in VALID_ACTIONS:
-                    # Check rate limit here
                     allowed, wait = check_rate_limit(action_name)
                     if not allowed:
                         time.sleep(wait)
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
+
                         if action_name == "simple_url_scraper":
-                            result = classify.summarize_raw_scraped_data(model, result, 1024)
-                print(f"DEBUG: Executing action: {action_name} with {action_params}")
-                result = VALID_ACTIONS[action_name]["callable"](action_params)
+                            if "error" in result.keys():
+                                result = result
+                            else:
+                                summary = classify.summarize_raw_scraped_data(model, result["raw_html"], 2048)
+                                result = {"summary": summary, "url": result["url"]}
 
-                if action_name == "simple_url_scraper":
-                    result = classify.summarize_raw_scraped_data(model, result, 1024)
+                        # Replace <ActionResultX> with <|ipython|> block
+                        output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"
+                        results.append(output)
 
-                # Replace <ActionResultX> with <|ipython|> block
-                output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"
-                results.append(output)
-
-                log_action_execution(action_name, action_params, action_label, result)
+                        log_action_execution(action_name, action_params, action_label, result)
 
             except Exception as e:
                 error_msg = {"error": f"Failed to execute action: {str(e)}"}

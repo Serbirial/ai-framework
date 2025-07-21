@@ -9,7 +9,7 @@ headers = {
     "Referer": "http://127.0.0.1/"
 }
 
-def simple_webpage_scraper(params: dict, model=None) -> dict:
+def simple_webpage_scraper(params: dict) -> dict:
     url = params.get("url")
     if not url:
         return {"error": "Missing required parameter: url"}
@@ -21,13 +21,8 @@ def simple_webpage_scraper(params: dict, model=None) -> dict:
 
         html_raw = res.text
 
-        summary = classify.summarize_raw_scraped_data(model, html_raw, 2048)
-        return {"url": url, "summary": summary}
+        return {"url": url, "raw_html": summary}
 
-        return {
-            "result": "Raw HTML successfully fetched",
-            "raw_html": html_raw
-        }
 
     except Exception as e:
         return {"error": f"Exception during scraping: {str(e)}"}
