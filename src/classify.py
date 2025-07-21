@@ -512,7 +512,7 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
     return query
 
 
-def summarize_raw_scraped_data(model, input_text, max_tokens=1024): # TODO: move to seperate file that can summarize any raw data and go through it in chunks if its too large
+def summarize_raw_scraped_data(model, input_text, max_tokens=2048): # TODO: move to seperate file that can summarize any raw data and go through it in chunks if its too large
     """
     Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)
 
@@ -528,19 +528,22 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=1024): # TODO: move
         "<|start_header_id|>system<|end_header_id|>\n"
 
         "You are a summarizer.\n"
-        "Your job is to read messy, long, or scraped web data (html, txt, json, csv, etc.) and produce a clean, helpful summary for another AI so they can visualize it.\n"
-        "Always ignore noise like ads, cookie warnings, and duplicate boilerplate.\n"
-        "If no meaningful content is present, say 'No useful content found.'\n\n"
-        "### Raw Web Data:\n"
+        "You read raw, unstructured data (HTML, text, forums, JSON, etc) and describe it as if explaining it to someone.\n"
+        "Summarize with rich, natural language, in paragraph form.\n"
+        "Capture the overall purpose of the page, any key content (product, game, article, thread, etc), and what a visitor would expect to find.\n"
+        "Make sure you include specific features, themes, or functionality if relevant.\n"
+        "Avoid referencing ads or cookies.\n"
+        "If the page has no content, say: 'No useful content found.'\n\n"
+        "### Raw Data:\n"
         f"{input_text.strip()}\n\n"
-        f"<|start_header_id|>assistant<|end_header_id|>\n"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
 
     )
 
     output = model.create_completion(
         prompt=prompt,
         max_tokens=max_tokens,
-        temperature=0.5,
+        temperature=0.7,
         top_p=0.9,
         stream=False,
     )
