@@ -402,8 +402,7 @@ class ChatBot:
         # Reverse to maintain oldest-to-newest order
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
-
-
+    
     def run_classifiers(self, tokenizer, user_input, category_override, identifier):
         # Queues to get results from threads
         q_usertone = queue.Queue()
@@ -478,8 +477,6 @@ class ChatBot:
         persona_prompt = q_persona_prompt.get()
         category = q_category.get()
 
-        print("[run_classifiers] group 1 complete")
-
         def get_moods():
             moods = {
                 "Like/Dislike Mood Factor": {
@@ -531,9 +528,7 @@ class ChatBot:
         social_moods = moods["Social Intents Mood Factor"]["mood"]
         mood = social_moods[0] if social_moods else "uncertain (api error)"
 
-        print("[run_classifiers] complete")
         return usertone, moods, mood, mood_sentence, persona_prompt, category
-        
 
     def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
