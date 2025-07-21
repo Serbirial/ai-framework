@@ -259,6 +259,7 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
     dislikes_str = ", ".join(dislikes)
 
     prompt = (
+        "<|start_header_id|>system<|end_header_id|>\n"
         f"You are a sentiment classifier for the AI's preferences.\n"
         f"Likes: {likes_str}\n"
         f"Dislikes: {dislikes_str}\n\n"
@@ -274,7 +275,8 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
         f"Classification: DISLIKE\n\n"
         f"User input: \"What is the weather today?\"\n"
         f"Classification: NEUTRAL\n\n"
-        f"User input: \"{user_input}\"\n"
+        "<|eot|>\n"
+        f"<|start_header_id|>user<|end_header_id|> {user_input}u\n<|eot|>\n"
         f"Classification:"
     )
 
@@ -302,6 +304,8 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
 
 def classify_social_tone(model, tokenizer, user_input):
     prompt = (
+        "<|start_header_id|>system<|end_header_id|>\n"
+
         "You are a social tone classifier for a conversation with an AI assistant.\n"
         "Classify the user's tone and attitude in the message.\n"
         "If the input is meaningless, gibberish, or does not express any clear sentiment, choose NEUTRAL.\n"
@@ -351,7 +355,9 @@ def classify_social_tone(model, tokenizer, user_input):
         "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
         "User: \"What time is it?\"\n"
         "Classification: {\"intent\": \"NEUTRAL\", \"attitude\": \"NEUTRAL\", \"tone\": \"NEUTRAL\"}\n\n"
-        f"User: \"{user_input}\"\n"
+
+        f"<|start_header_id|>user<|end_header_id|> {user_input}<|eot|>\n"
+
         f"Classification:"
     )
     output_text = ""
@@ -518,51 +524,6 @@ def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
 
 
 
-def detect_web_search_cue_llama(model, input_text: str, role: str = "user") -> bool:
-    """
-    Uses LLaMA to determine whether a given text requires a live web search.
-
-    Args:
-        model: LLaMA model instance (llama_cpp.Llama).
-        input_text (str): Text to evaluate.
-        role (str): "user" or "thought".
-
-    Returns:
-        bool: True if web search is likely needed, False otherwise.
-    """
-    prompt = (
-        "<|system|>\n"
-        "You are an intelligent assistant deciding whether the following input requires a live web search.\n"
-        "You should return 'yes' only if the input implies that up-to-date, external, or factual information is needed.\n\n"
-        "Examples:\n"
-        "Input: 'What’s the weather in Tokyo right now?'\nSearchNeeded: yes\n"
-        "Input: 'Who won the last Formula 1 race?'\nSearchNeeded: yes\n"
-        "Input: 'What is 2 + 2?'\nSearchNeeded: no\n"
-        "Input: 'I feel curious about new tech trends in 2025.'\nSearchNeeded: yes\n"
-        "Input: 'Tell me a fun fact about the moon.'\nSearchNeeded: no\n"
-        "Input: 'I think I should find some recent data about that.'\nSearchNeeded: yes\n"
-        f"<|{role}|>\n"
-        f"Input: \"{input_text}\"\n"
-        "<|assistant|>\n"
-        "SearchNeeded:"
-    )
-
-    output_text = ""
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=10,
-        temperature=0.0,
-        stream=False,
-    )
-    output_text += openai.extract_generated_text(output)
-
-    # Remove prompt prefix
-    answer = output_text[len(prompt):].strip().lower()
-
-    log("WEB SEARCH CUE", answer)
-
-    # Accept any answer that starts with "yes" as True
-    return answer.startswith("yes")
 
 def extract_search_query_llama(model, input_text: str, role: str = "user") -> str:
     """
@@ -614,7 +575,7 @@ def extract_search_query_llama(model, input_text: str, role: str = "user") -> st
     return query
 
 
-def summarize_raw_scraped_data(model, input_text, max_tokens=200):
+def summarize_raw_scraped_data(model, input_text, max_tokens=1024):
     """
     Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)
 
@@ -627,7 +588,7 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=200):
         str: Clean summary.
     """
     prompt = (
-        "You are an intelligent summarizer.\n"
+        "You are a summarizer.\n"
         "Your job is to read messy, long, or scraped web data and produce a clean, helpful summary.\n"
         "Always ignore noise like headers, menus, ads, cookie warnings, and duplicate boilerplate.\n"
         "If no meaningful content is present, say 'No useful content found.'\n\n"
@@ -648,6 +609,7 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=200):
     return summary if summary else "No useful content found."
 
 
+# NOT USED! MIGHT USE LATER!
 def generate_dynamic_mood_instruction_from_memory(model, tokenizer, memory_rows: list[str]) -> dict:
     """
     Uses the LLM to generate mood expression guidelines (mood_instruction) based on core memory entries.
