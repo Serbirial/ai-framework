@@ -402,7 +402,7 @@ class ChatBot:
                     },
                 "Social Intents Mood Factor": {
                     "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
-                    "mood": usertone
+                    "mood": self.get_moods_social(usertone)
                 }
             } # TODO Set mood based on all moods
         def get_mood_sentence():
