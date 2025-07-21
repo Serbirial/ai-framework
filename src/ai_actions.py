@@ -73,7 +73,8 @@ def check_for_actions_and_run(model, text):
 
             json_str = text[end_tag_pos + 1 : close_tag_start]
             json_str = json_str[json_str.find('{') : json_str.rfind('}') + 1].strip()
-
+            action_name = None
+            action_label = None
             try:
                 action_json = json.loads(json_str)
                 action_name = action_json.get("action")
@@ -113,7 +114,7 @@ def check_for_actions_and_run(model, text):
 
                 label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
 
-                log_action_execution(action_name if 'action_name' in locals() else "unknown", action_params if 'action_params' in locals() else {}, label, error_msg)
+                log_action_execution( "unknown", action_params if 'action_params' in locals() else {}, label, error_msg)
 
             pos = close_tag_end
         else:
