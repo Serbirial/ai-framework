@@ -16,4 +16,15 @@ My main goal with this is to make a 'framework' that can be used with any compat
 
 I essentially want this to end up being my own selfhosted version of chatGPT, matching its capabilities and functions but with *more*, and without being shackled with rules.
 
-## Add more later... (im lazy i know)
+## Example Workflow
+
+* User: What's the capital of France?
+
+* Classifying: Decides this is a task
+* Route -> Task Worker
+* Step 1: Action: web_search("capital of France")
+* Tool response: The capital is Paris.
+* Step 2: Confirms and replies
+* Step 3: Filler setting up for final reply
+
+* Final Reply: The capital of France is Paris!
