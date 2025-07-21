@@ -16,6 +16,7 @@ from .recursive import RecursiveThinker
 from .stepped_work import RecursiveWork
 
 from . import classify
+from . import grouped_preprocessing
 from . import static_prompts
 from utils import openai
 
@@ -128,29 +129,7 @@ class ChatBot:
 
 
 
-    def get_mood_based_on_likes_or_dislikes_in_input(self, question, identifier):
-        personality = list_personality(identifier)
-
-
-
-        try:
-            response = requests.post(
-                f"http://{WORKER_IP_PORT}/classify_likes_dislikes",  # change if hosted elsewhere
-                json={
-                    "user_input": question,
-                    "likes": personality["likes"],
-                    "dislikes": personality["dislikes"]
-                },
-                timeout=120
-            )
-            if response.status_code == 200:
-                classification = response.json().get("classification", "NEUTRAL")
-            else:
-                classification = "NEUTRAL"
-        except Exception as e:
-            print(f"[WARN] API Down, cant offload to sub models.")
-            print("[WARN] Falling back to local model.")
-            classification = classify.classify_likes_dislikes_user_input(self.model, tokenizer, question, personality["likes"], personality["dislikes"])
+    def get_mood_based_on_like_dislike(self, classification):
 
         if classification == "LIKE":
             return "happy"
@@ -401,57 +380,14 @@ class ChatBot:
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
     
-    def run_classifiers(self, tokenizer, user_input, category_override, identifier):
+    def run_classifiers(self, tokenizer, user_input, category_override, identifier, history):
         """Returns usertone, moods, mood, persona prompt, category
         """
-        def get_usertone():
-            try:
-                response = requests.post(
-                    f"http://{WORKER_IP_PORT}/classify_social_tone",
-                    json={"user_input": user_input},
-                    timeout=120
-                )
-                if response.status_code == 200:
-                    return response.json().get("classification", { 
-                        "intent": "NEUTRAL",
-                        "attitude": "NEUTRAL",
-                        "tone": "NEUTRAL"
-                    })
-                else:
-                    return {
-                        "intent": "NEUTRAL",
-                        "attitude": "NEUTRAL",
-                        "tone": "NEUTRAL"
-                    }
-            except Exception as e:
-                print(f"[WARN] API Down, cant offload to sub models.")
-                print("[WARN] Falling back to local model.")
-                return classify.classify_social_tone(self.model, tokenizer, user_input)
-                
-                
-        def get_category():
-            if category_override == None:
-                try:
-                    response = requests.post(
-                        f"http://{WORKER_IP_PORT}/classify_user_input",
-                        json={"user_input": user_input},
-                        timeout=120
-                    )
-                    if response.status_code == 200:
-                        return response.json().get("category", "other")
-                    else:
-                        return "other"
-                except Exception as e:
-                    print(f"[WARN] API Down, cant offload to sub models.")
-                    print("[WARN] Falling back to local model.")
-                    return classify.classify_user_input(self.model, tokenizer, user_input)
-            else:
-                category = category_override
-            return category
-                
-        usertone = get_usertone(self, tokenizer, user_input)
+        
+        personality = list_personality(identifier)
+
+        usertone, category, like_or_dislike = grouped_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
         persona_prompt = self.get_persona_prompt(identifier)
-        category = get_category(self, category_override)
         
         def get_moods():
             return {
@@ -461,11 +397,11 @@ class ChatBot:
                     },
                 "General Input Mood Factor": {
                     "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
-                    "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input, identifier),
+                    "mood": self.get_mood_based_on_like_dislike(like_or_dislike),
                     },
                 "Social Intents Mood Factor": {
                     "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
-                    "mood": self.get_moods_social(usertone)
+                    "mood": usertone
                 }
             } # TODO Set mood based on all moods
         def get_mood_sentence():
