@@ -109,24 +109,23 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
                 "- For any *python code execution*, you MUST use the `run_python_sandboxed` action to safely run Python code inside a secured sandbox environment.\n"
                 "- Do NOT attempt to execute code directly or guess results; always rely on the sandbox’s verified output before proceeding.\n"
-                "- The sandbox has the limitations of 400M RAM, 60 seconds runtime, and no network access — you must pass fully formatted, valid Python code as a string, with newlines separating code lines.\n"
 
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
 
-                "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current reasoning step logically requires real data you cannot guess.\n"
-                "- NEVER guess or assume an action is needed unless it is required to get real data.\n"
+                "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current step logically requires real data you cannot guess.\n"
+                "- Dont use actions that wont explicitly progress to solving the user given task.\n"
 
-                "- If no action is needed, reason forward logically toward completing the task.\n"
+                "- If no action is needed, reason forward logically toward completing the user given task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
-                "- Use previously returned <|ipython|> values when available to build your reasoning.\n"
-                "- Do not assume or simulate the result of an Action: Always wait for the actual <|ipython|> to be returned in the next step before proceeding.\n"
+                "- Use previously returned ipython tokens when available to build your reasoning.\n"
+                "- Do not assume or simulate the result of an Action: Always wait for the next step before proceeding.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
-                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare the final summary.\n\n"
-                "- Do NOT include any '###' or '### Step...' headings or numbering in your response; output only the content for the current step.\n"
+                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n"
+                "- Do NOT output any '###' or '### Step...' headings.\n\n"
 
             )
             # end sys prompt
