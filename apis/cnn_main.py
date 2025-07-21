@@ -80,19 +80,23 @@ def describe_image():
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
 
+    # Run OCR if needed
     image_path = save_temp_resized_pil(pil_img)
-
-    detected_objects = None  # get_objects_from_tflite_api(image_path)  # optional
+    detected_objects = None 
     ocr_text = " ".join([res[1] for res in ocr_reader.readtext(image_path)])
-    image_data_uri = image_to_base64_data_uri(image_path)
     os.remove(image_path)
 
+    # Create system prompt
     prompt_text = "Describe this image."
     if detected_objects:
         objs_list = ", ".join(f"{o['label']} ({o['confidence']:.2f})" for o in detected_objects)
         prompt_text += f"\nDetected objects: {objs_list}."
     if ocr_text.strip():
         prompt_text += f"\nExtracted text: {ocr_text}"
+
+    image_buffer = io.BytesIO()
+    pil_img.save(image_buffer, format="PNG")
+    image_bytes = image_buffer.getvalue()
 
     messages = [
         {
@@ -102,20 +106,27 @@ def describe_image():
         {
             "role": "user",
             "content": [
-                {"type": "image_url", "image_url": {"url": image_data_uri}}
+                {"type": "image", "image": image_bytes}
             ]
         }
     ]
 
-
     print(messages)
+
     try:
-        resp = llm.create_chat_completion(messages=messages, max_tokens=600, temperature=0.5, repeat_penalty=1, top_p=0.9)
+        resp = llm.create_chat_completion(
+            messages=messages,
+            max_tokens=600,
+            temperature=0.5,
+            repeat_penalty=1,
+            top_p=0.9
+        )
         content = resp["choices"][0]["message"]["content"]
     except Exception as e:
         content = f"Error: {e}"
 
     return jsonify({"result": content})
+
 
 
 @app.route("/describe_video", methods=["POST"])
