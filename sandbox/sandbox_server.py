@@ -52,6 +52,7 @@ def api_run_code():
 
     user_code = data['user_code']
     result = run_code_sandboxed(user_code)
+    print(f"Code output: {result}\n")
     return jsonify(result)
 
 if __name__ == "__main__":
