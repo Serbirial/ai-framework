@@ -386,7 +386,7 @@ class ChatBot:
         
         personality = list_personality(identifier)
 
-        usertone, category, like_or_dislike = grouped_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
+        usertone, category, like_or_dislike = grouped_preprocessing.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
         persona_prompt = self.get_persona_prompt(identifier)
         
         def get_moods():
