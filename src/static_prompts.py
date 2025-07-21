@@ -200,6 +200,10 @@ def build_discord_formatting_prompt():
         "### **Output Policy**\n"
         "- Escape any unintentional special characters using `\\` so Discord does not render them as formatting.\n"
         "- You may use actual formatting (e.g. **bold**, *italic*) only when appropriate and intended.\n\n"
+        
+        "### **General Rules**\n"
+        "- Abide by your Core Memory and anything it asks of you.\n"
+        "- Type / Talk like a human, not an AI.\n\n"
     )
     return prompt
 
