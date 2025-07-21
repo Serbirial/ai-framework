@@ -31,9 +31,10 @@ def basic_preprocessing(
     prompt = (
         "<|system|>\n"
         "You are a helpful assistant that performs three tasks on each message:\n"
-        "1. Classify the user's social tone (intent, attitude, tone).\n"
+        "1. Classify the user's social tone with fields: intent (COMPLIMENT, INSULT, NEUTRAL), attitude (NICE, RUDE, NEUTRAL), and tone (POLITE, AGGRESSIVE, JOKING, NEUTRAL).\n"
         "2. Classify the message category.\n"
-        "3. Detect whether the message mentions a LIKE, DISLIKE, or NEUTRAL topic, based on the assistant's preferences.\n\n"
+        "3. Detect whether the message mentions a LIKE, DISLIKE, or NEUTRAL topic, based on the assistant's preferences.\n"
+        "4. Generate a natural-sounding sentence summarizing the assistant’s current emotional state, based off all of the above.\n\n"
 
         "Tone classification is a JSON object with:\n"
         "- intent: COMPLIMENT, INSULT, or NEUTRAL\n"
@@ -56,7 +57,8 @@ def basic_preprocessing(
         "{\n"
         "  \"social\": {\"intent\": ..., \"attitude\": ..., \"tone\": ...},\n"
         "  \"category\": ..., \n"
-        "  \"like\": ...\n"
+        "  \"like\": ..., \n"
+        "  \"mood_sentence\": \"...\"\n"
         "}\n"
         "<|eot|>\n"
 
@@ -82,9 +84,10 @@ def basic_preprocessing(
         parsed = json.loads(raw[json_start:json_end])
     except Exception:
         parsed = {
-            "social":   {"intent": "NEUTRAL", "attitude": "NEUTRAL", "tone": "NEUTRAL"},
+            "social": {"intent": "NEUTRAL", "attitude": "NEUTRAL", "tone": "NEUTRAL"},
             "category": "other",
-            "likes":    "NEUTRAL",
+            "like": "NEUTRAL",
+            "mood_sentence": "I feel neutral and composed at the moment."
         }
 
     # Clean + validate
@@ -102,5 +105,11 @@ def basic_preprocessing(
     like = parsed.get("like", "NEUTRAL").upper()
     if like not in {"LIKE", "DISLIKE", "NEUTRAL"}:
         like = "NEUTRAL"
-    print(f"Preprocessing: {social}\n{category}\n{like}\n")
-    return social, category, like
+
+    mood_sentence = parsed.get("mood_sentence", "").strip()
+    if not mood_sentence or len(mood_sentence.split()) < 3:
+        mood_sentence = "I feel neutral and composed at the moment."
+
+    return social, category, like, mood_sentence
+    print(f"Preprocessing: {social}\n{category}\n{like}\n{mood_sentence}\n")
+    return social, category, like, mood_sentence

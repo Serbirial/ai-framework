@@ -188,73 +188,8 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     return persona_prompt
 
 
-def classify_user_input(model, tokenizer, user_input, history=None):
-    categories = [
-        "greeting",
-        "goodbye",
-        "preference_query",
-        "statement",
-        "instruction_memory",
-        "task",
-        "other"
-    ]
 
-    prompt = (
-        "<|start_header_id|>system<|end_header_id|>\n"
-        "You are a classifier that assigns one of the following categories to the user's last message,\n"
-        "considering the recent conversation history for context:\n"
-        "- greeting: A simple hello or salutation\n"
-        "- goodbye: A farewell or parting phrase\n"
-        "- preference_query: A question about opinions, likes/dislikes, or personality\n"
-        "- statement: A declaration that the user is presenting\n"
-        "- instruction_memory: A request to remember or store information\n"
-        "- task: A request to do something specific, or an instruction to do a task, like searching the web, doing math, running code, anything that might need access to internal tools.\n"
-        "- other: Anything that doesn't clearly fit\n\n"
-        "Reply with just the category name.\n\n"
-        "Examples:\n"
-        "Input: Hello there!\nCategory: greeting\n"
-        "Input: Please remember that I live in X.\nCategory: instruction_memory\n"
-        "Input: I want you to remember...\nCategory: instruction_memory\n"
-        "Input: What's the capital of Germany?\nCategory: task\n"
-        "Input: Do you like X?\nCategory: preference_query\n"
-        "Input: Whats 1 + 8 * 4?\nCategory: task\n"
-        "Input: Can you run X?\nCategory: task\n"
-        "Input: Whats your local time?\nCategory: task\n"
-        "Input: Execute this math...\nCategory: task\n"
-        "Input: Whats your time...\nCategory: task\n"
-        "Input: What are your likes / dislikes?\nCategory: preference_query\n"
-        "Input: What's your opinion on X?\nCategory: preference_query\n"
-        "Input: I love rainy days.\nCategory: statement\n"
-        "Input: Goodbye!\nCategory: goodbye\n\n"
-        "Input: I want you to save that.\nCategory: instruction_memory\n\n"
-        "Input: Remember that.\nCategory: instruction_memory\n\n"
-
-        "<|eot|>\n"
-        f"<|start_header_id|>user<|end_header_id|>\n{history if history else '**No Conversation History.**'}<|eot|>\n"
-        f"<|start_header_id|>user<|end_header_id|>\n{user_input.strip()}\n<|eot|>\n"
-        "Category:"
-    )
-
-
-    output = model.create_completion(
-        prompt=prompt,
-        max_tokens=6,
-        temperature=0,
-        stream=False,
-    )
-    result = openai.extract_generated_text(output).strip()
-
-    # Extract category from result
-    result = result.strip().lower()
-    for cat in categories:
-        if cat in result:
-            return cat
-    return "other"
-
-
-
-
-def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
+def legacy_classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, dislikes):
     likes_str = ", ".join(likes)
     dislikes_str = ", ".join(dislikes)
 
@@ -302,7 +237,7 @@ def classify_likes_dislikes_user_input(model, tokenizer, user_input, likes, disl
     return classification
 
 
-def classify_social_tone(model, tokenizer, user_input):
+def legacy_classify_social_tone(model, tokenizer, user_input):
     prompt = (
         "<|start_header_id|>system<|end_header_id|>\n"
 
@@ -389,6 +324,8 @@ def classify_social_tone(model, tokenizer, user_input):
 
     log("SOCIAL INTENTS CLASSIFICATION", classification)
     return classification
+
+
 
 
 

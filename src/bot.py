@@ -386,7 +386,7 @@ class ChatBot:
         
         personality = list_personality(identifier)
 
-        usertone, category, like_or_dislike = grouped_preprocessing.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
+        usertone, category, like_or_dislike, mood_sentence = grouped_preprocessing.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
         persona_prompt = self.get_persona_prompt(identifier)
         if category_override:
             category = category_override
@@ -405,24 +405,8 @@ class ChatBot:
                     "mood": self.get_moods_social(usertone)
                 }
             } # TODO Set mood based on all moods
-        def get_mood_sentence():
-            try:
-                response = requests.post(
-                    f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
-                    json={"moods_dict": moods},
-                    timeout=120
-                )
-                if response.status_code == 200:
-                    return response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
-                else:
-                    return "I feel neutral and composed at the moment."
-            except Exception as e:
-                print(f"[WARN] API Down, cant offload to sub models.")
-                print("[WARN] Falling back to local model.")
-                return classify.classify_moods_into_sentence(self.model, tokenizer, moods)
             
         moods = get_moods()
-        mood_sentence = get_mood_sentence()
         
         # Set the base mood based on highest score social mood
         social_moods = moods["Social Intents Mood Factor"]["mood"]
