@@ -159,7 +159,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             to_add += "<|start_header_id|>assistant<|end_header_id|>\n"
 
             # append the full step (header + content) to the full conversation log
-            to_add += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n\n"
+            to_add += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n"
+            to_add == "<|eot_id|>\n"
             
             # Check for and run any actions
             action_result = check_for_actions_and_run(self.bot.model, response)
@@ -196,8 +197,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     stop_criteria=stop_criteria,
                     _prompt_for_cut=step_prompt,
                 )
+                to_add += "<|start_header_id|>assistant<|end_header_id|>\n"
+
                 to_add += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
-            to_add == "<|eot_id|>"
+                to_add == "<|eot_id|>"
 
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
         final_prompt = (
