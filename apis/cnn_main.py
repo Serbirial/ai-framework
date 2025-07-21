@@ -61,7 +61,7 @@ def get_objects_from_tflite_api(image_path):
 
 # ---------------- LLaMA MODEL ----------------
 llm = Llama(
-    model_path="SmolVLM-500M-Instruct-q4_k_s.gguf",
+    model_path="SmolVLM-500M-Instruct-q8_0.gguf",
     n_ctx=800,
     n_threads=4,
     verbose=True,
