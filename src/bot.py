@@ -7,8 +7,6 @@
 from llama_cpp import Llama
 
 import requests
-import threading
-import queue
 import tiny_prompts, custom_gpt2_prompts
 import json
 import time
@@ -404,129 +402,95 @@ class ChatBot:
         return "\n".join(messages)
     
     def run_classifiers(self, tokenizer, user_input, category_override, identifier):
-        # Queues to get results from threads
-        q_usertone = queue.Queue()
-        q_persona_prompt = queue.Queue()
-        q_category = queue.Queue()
-        q_moods = queue.Queue()
-        q_mood_sentence = queue.Queue()
-
+        """Returns usertone, moods, mood, persona prompt, category
+        """
         def get_usertone():
             try:
                 response = requests.post(
                     f"http://{WORKER_IP_PORT}/classify_social_tone",
                     json={"user_input": user_input},
-                    timeout=10
+                    timeout=120
                 )
                 if response.status_code == 200:
-                    q_usertone.put(response.json().get("classification", {
-                        "intent": "NEUTRAL",
-                        "attitude": "NEUTRAL",
-                        "tone": "NEUTRAL"
-                    }))
-                else:
-                    q_usertone.put({
+                    return response.json().get("classification", { 
                         "intent": "NEUTRAL",
                         "attitude": "NEUTRAL",
                         "tone": "NEUTRAL"
                     })
+                else:
+                    return {
+                        "intent": "NEUTRAL",
+                        "attitude": "NEUTRAL",
+                        "tone": "NEUTRAL"
+                    }
             except Exception as e:
-                print(f"[WARN] API Down in get_usertone: {e}")
+                print(f"[WARN] API Down, cant offload to sub models.")
                 print("[WARN] Falling back to local model.")
-                q_usertone.put(classify.classify_social_tone(self.model, tokenizer, user_input))
-
+                return classify.classify_social_tone(self.model, tokenizer, user_input)
+                
+                
         def get_category():
-            if category_override is None:
+            if category_override == None:
                 try:
                     response = requests.post(
                         f"http://{WORKER_IP_PORT}/classify_user_input",
                         json={"user_input": user_input},
-                        timeout=10
+                        timeout=120
                     )
                     if response.status_code == 200:
-                        q_category.put(response.json().get("category", "other"))
+                        return response.json().get("category", "other")
                     else:
-                        q_category.put("other")
+                        return "other"
                 except Exception as e:
-                    print(f"[WARN] API Down in get_category: {e}")
+                    print(f"[WARN] API Down, cant offload to sub models.")
                     print("[WARN] Falling back to local model.")
-                    q_category.put(classify.classify_user_input(self.model, tokenizer, user_input))
+                    return classify.classify_user_input(self.model, tokenizer, user_input)
             else:
-                q_category.put(category_override)
-
-        def get_persona_prompt():
-            prompt = self.get_persona_prompt(identifier)
-            q_persona_prompt.put(prompt)
-
-        # Run group 1 threads (3 concurrent)
-        t_usertone = threading.Thread(target=get_usertone)
-        t_persona_prompt = threading.Thread(target=get_persona_prompt)
-        t_category = threading.Thread(target=get_category)
-
-        t_usertone.start()
-        t_persona_prompt.start()
-        t_category.start()
-
-        # Wait for group 1 threads to finish
-        t_usertone.join()
-        t_persona_prompt.join()
-        t_category.join()
-
-        # Get results from queues
-        usertone = q_usertone.get()
-        persona_prompt = q_persona_prompt.get()
-        category = q_category.get()
-
+                category = category_override
+            return category
+                
+        usertone = get_usertone(self, tokenizer, user_input)
+        persona_prompt = self.get_persona_prompt(identifier)
+        category = get_category(self, category_override)
+        
         def get_moods():
-            moods = {
-                "Like/Dislike Mood Factor": {
+            return {
+                "Like/Dislike Mood Factor": { 
                     "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
                     "mood": self.get_mood_primitive(user_input),
-                },
+                    },
                 "General Input Mood Factor": {
                     "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
                     "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input, identifier),
-                },
+                    },
                 "Social Intents Mood Factor": {
                     "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
                     "mood": self.get_moods_social(usertone)
                 }
-            }
-            q_moods.put(moods)
-
+            } # TODO Set mood based on all moods
         def get_mood_sentence():
-            moods = q_moods.get()  # Wait for moods to be ready
             try:
                 response = requests.post(
                     f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
                     json={"moods_dict": moods},
-                    timeout=10
+                    timeout=120
                 )
                 if response.status_code == 200:
-                    q_mood_sentence.put(response.json().get("mood_sentence", "I feel neutral and composed at the moment."))
+                    return response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
                 else:
-                    q_mood_sentence.put("I feel neutral and composed at the moment.")
+                    return "I feel neutral and composed at the moment."
             except Exception as e:
-                print(f"[WARN] API Down in get_mood_sentence: {e}")
+                print(f"[WARN] API Down, cant offload to sub models.")
                 print("[WARN] Falling back to local model.")
-                q_mood_sentence.put(classify.classify_moods_into_sentence(self.model, tokenizer, moods))
-
-        # Run group 2 threads (2 concurrent)
-        t_moods = threading.Thread(target=get_moods)
-        t_mood_sentence = threading.Thread(target=get_mood_sentence)
-
-        t_moods.start()
-        t_mood_sentence.start()
-
-        t_moods.join()
-        t_mood_sentence.join()
-
-        moods = q_moods.get()
-        mood_sentence = q_mood_sentence.get()
-
-        # Use moods to get the base mood
+                return classify.classify_moods_into_sentence(self.model, tokenizer, moods)
+            
+        moods = get_moods(self, user_input, identifier, usertone)
+        mood_sentence = get_mood_sentence(self, tokenizer, moods)
+        
+        # Set the base mood based on highest score social mood
         social_moods = moods["Social Intents Mood Factor"]["mood"]
         mood = social_moods[0] if social_moods else "uncertain (api error)"
+        
 
         return usertone, moods, mood, mood_sentence, persona_prompt, category
 
