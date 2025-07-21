@@ -179,7 +179,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     full += f"{action_result}\n" # add result to full prompt
                 full += "\n"
 
-            # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
@@ -218,7 +217,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n"
             + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
             + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
-            "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
+            + "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
 
             + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
@@ -232,7 +231,6 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=WORK_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts

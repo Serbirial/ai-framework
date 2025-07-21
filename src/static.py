@@ -21,11 +21,11 @@ webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-ne
 baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
 
-RECURSIVE_MAX_TOKENS_PER_STEP = 256 # Generate up to 200 tokens per step
-WORK_MAX_TOKENS_PER_STEP = 256 # Generate up to 200 tokens per step
-RECURSIVE_MAX_TOKENS_FINAL = 460 # Generate up to 400 tokens for the final output
-WORK_MAX_TOKENS_FINAL = 460 # Generate up to 400 tokens for the final output
-BASE_MAX_TOKENS = 460 # Generate up to 300 tokens when using BASE replies (base chat replies- no recursive thinking or working- no special action usage- nothing- pure chat mode.)
+RECURSIVE_MAX_TOKENS_PER_STEP = 256 # Generate up to 256 tokens per step
+WORK_MAX_TOKENS_PER_STEP = 256 # Generate up to 256 tokens per step
+RECURSIVE_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
+WORK_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
+BASE_MAX_TOKENS = 460 # Generate up to 460 tokens when using BASE replies (base chat replies- no recursive thinking or working- no special action usage- nothing- pure chat mode.)
 
 WORKER_IP_PORT = "localhost:5007"
 

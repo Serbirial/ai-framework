@@ -7,10 +7,9 @@ import tempfile
 app = Flask(__name__)
 
 def run_code_sandboxed(user_code: str):
-    # Create a unique temp file path for the user code
+    # Create a unique temp file path for the code
     temp_code_path = os.path.join(tempfile.gettempdir(), f"run_{uuid.uuid4().hex}.py")
 
-    # Write the user code to the temp file
     with open(temp_code_path, "w") as f:
         f.write(user_code)
 
@@ -35,7 +34,7 @@ def run_code_sandboxed(user_code: str):
         }
 
     except subprocess.TimeoutExpired:
-        return {"status": "error", "message": "Code execution timed out (25s limit)"}
+        return {"status": "error", "message": "Code execution timed out (60s limit)"}
     except subprocess.CalledProcessError as e:
         return {"status": "error", "message": f"Run failed: {str(e)}"}
     except Exception as e:

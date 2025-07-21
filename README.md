@@ -4,13 +4,16 @@ An experimental AI chatbot framework designed for Discord integration, featuring
 
 ## Features
 
-- **Mood-Aware Responses**: The chatbot adjusts its tone based on user interactions, reflecting moods such as happy, annoyed, or angry.
-- **Memory Management**: Remembers user interactions and facts, allowing for contextually relevant conversations.
-- **Recursive Thinking**: Employs a recursive approach to process queries and generate responses.
-- **Discord Integration**: Includes a ready-to-use Discord bot example (`bot.py`).
+- **Recursive Thinking**: Models can simulate reasoning by generating internal thoughts before final responses.
+- **Mood-Aware Chatbot**: Mood is tracked and influences tone and behavior (e.g. happy, annoyed, angry).
+- **Function Routing (Tool Use)**: The model can return structured commands like `<Action>...</Action>` which are routed internally.
+- **Discord Integration**: Includes a functional bot setup with message handling, streaming, and debugging tools.
+- **Prompt Management**: Prompts are kept modular and organized for easy tuning. (MOVING TO JSON PROMPT STORAGE!)
 
-### Prerequisites
+## Goal
 
-- Python 3.12 or higher
-- Discord account and server(s)
-- Discord 'bot' token
+My main goal with this is to make a 'framework' that can be used with any compatible model (meta llama prompt styles, current is 3.2) and turns it into a selfhostable 'gpt' alternative, with the pro's of being open source and fully customizable for any task or workflow with a bit of elbow grease.
+
+I essentially want this to end up being my own selfhosted version of chatGPT, matching its capabilities and functions but with *more*, and without being shackled with rules.
+
+## Add more later... (im lazy i know)
