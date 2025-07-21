@@ -32,7 +32,7 @@ def get_objects_from_tflite_api(image_path):
 
 # Initialize your LLaMA.cpp model
 llm = Llama(
-    model_path="SmolVLM-500M-Instruct-f16.gguf",
+    model_path="SmolVLM-500M-Instruct-q4_k_s.gguf",
     n_ctx=1400,
     n_threads=4,
     verbose=True
