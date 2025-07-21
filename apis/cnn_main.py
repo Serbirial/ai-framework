@@ -11,12 +11,42 @@ import easyocr
 
 app = Flask(__name__)
 
-# Initialize OCR once, try GPU acceleration, fallback to CPU
+# ---------------- OCR INITIALISATION ----------------
 try:
     ocr_reader = easyocr.Reader(['en'], gpu=True)
 except Exception as e:
     print(f"GPU OCR not available, falling back to CPU: {e}")
     ocr_reader = easyocr.Reader(['en'], gpu=False)
+
+# ---------------- UTILS ----------------
+
+def resize_image_pil(img: Image.Image, size=(512, 512)) -> Image.Image:
+    """Resize keeping aspect ratio by letter‑boxing to exactly 512×512."""
+    img.thumbnail(size, Image.LANCZOS)
+    bg = Image.new("RGB", size, (0, 0, 0))
+    bg.paste(img, ((size[0] - img.width) // 2, (size[1] - img.height) // 2))
+    return bg
+
+
+def image_to_base64_data_uri(file_path: str) -> str:
+    with open(file_path, "rb") as img_file:
+        base64_data = base64.b64encode(img_file.read()).decode("utf-8")
+        return f"data:image/jpeg;base64,{base64_data}"
+
+
+def save_temp_resized_pil(pil_img: Image.Image) -> str:
+    pil_img = resize_image_pil(pil_img)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+    pil_img.save(tmp.name, quality=90)
+    return tmp.name
+
+
+def save_temp_resized_cv2(frame) -> str:
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(frame)
+    return save_temp_resized_pil(pil_img)
+
+# ---------------- OBJECT DETECTION (OPTIONAL) ----------------
 
 def get_objects_from_tflite_api(image_path):
     with open(image_path, "rb") as f:
@@ -24,24 +54,20 @@ def get_objects_from_tflite_api(image_path):
         try:
             response = requests.post("http://192.168.0.8:7007/detect_objects", files=files, timeout=5)
             response.raise_for_status()
-            data = response.json()
-            return data.get("objects", [])
+            return response.json().get("objects", [])
         except Exception as e:
             print(f"Error calling TFLite detection API: {e}")
             return []
 
-# Initialize your LLaMA.cpp model
+# ---------------- LLaMA MODEL ----------------
 llm = Llama(
     model_path="SmolVLM-500M-Instruct-q4_k_s.gguf",
-    n_ctx=1400,
+    n_ctx=800,
     n_threads=4,
-    verbose=True
+    verbose=True,
 )
 
-def image_to_base64_data_uri(file_path):
-    with open(file_path, "rb") as img_file:
-        base64_data = base64.b64encode(img_file.read()).decode('utf-8')
-        return f"data:image/jpeg;base64,{base64_data}"
+# ---------------- ROUTES ----------------
 
 @app.route("/describe_image", methods=["POST"])
 def describe_image():
@@ -50,61 +76,37 @@ def describe_image():
 
     file = request.files["image"]
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-            image_path = tmp.name
-            image = Image.open(file.stream).convert("RGB")
-            image.save(image_path)
+        pil_img = Image.open(file.stream).convert("RGB")
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
-    detected_objects = None
-    try:
-        #detected_objects = get_objects_from_tflite_api(image_path)
-        ocr_text = " ".join([res[1] for res in ocr_reader.readtext(image_path)])
-        image_data_uri = image_to_base64_data_uri(image_path)
-    finally:
-        os.remove(image_path)
 
-    objects_descr = ""
+    image_path = save_temp_resized_pil(pil_img)
+
+    detected_objects = None  # get_objects_from_tflite_api(image_path)  # optional
+    ocr_text = " ".join([res[1] for res in ocr_reader.readtext(image_path)])
+    image_data_uri = image_to_base64_data_uri(image_path)
+    os.remove(image_path)
+
+    prompt_text = "Describe this image in detail."
     if detected_objects:
-        objs_list = [f"{obj['label']} ({obj['confidence']:.2f})" for obj in detected_objects]
-        objects_descr = "Detected objects: " + ", ".join(objs_list) + "."
-
-    prompt_text = (
-        "You are reacting to an image like a person in a chat room.\n"
-        "Do not just describe it factually — describe any strange or unexpected behavior, relationships, jokes, power dynamics, or humor.\n"
-        "Assume this image was posted online to be funny, shocking, or strange. Try to reason why.\n"
-        "Use expressive language. If the image involves people in odd situations, react like a random chatter might.\n"
-    )
-
-    if objects_descr:
-        prompt_text += f"\n{objects_descr}"
-
+        objs_list = ", ".join(f"{o['label']} ({o['confidence']:.2f})" for o in detected_objects)
+        prompt_text += f" Detected objects: {objs_list}."
     if ocr_text.strip():
-        prompt_text += f"\nExtracted text from the image: {ocr_text}"
+        prompt_text += f" Extracted text: {ocr_text}"
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": image_data_uri}},
-                {"type": "text", "text": prompt_text}
-            ]
-        }
-    ]
+    messages = [{"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": image_data_uri}},
+        {"type": "text", "text": prompt_text}
+    ]}]
 
     try:
-        response = llm.create_chat_completion(
-            messages=messages,
-            max_tokens=600,
-            temperature=0.5,
-            repeat_penalty=1,
-            top_p=0.9
-        )
-        content = response["choices"][0]["message"]["content"]
+        resp = llm.create_chat_completion(messages=messages, max_tokens=600, temperature=0.5, repeat_penalty=1, top_p=0.9)
+        content = resp["choices"][0]["message"]["content"]
     except Exception as e:
         content = f"Error: {e}"
 
     return jsonify({"result": content})
+
 
 @app.route("/describe_video", methods=["POST"])
 def describe_video():
@@ -112,104 +114,58 @@ def describe_video():
         return jsonify({"error": "No video file provided"}), 400
 
     video_file = request.files["video"]
-    filename = video_file.filename.lower()
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
-            video_path = tmp.name
-            video_file.save(video_path)
-    except Exception as e:
-        return jsonify({"error": f"Failed to save video: {e}"}), 400
+    suffix = os.path.splitext(video_file.filename)[1]
+    tmp_video = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    video_path = tmp_video.name
+    video_file.save(video_path)
 
-    selected_frames = []
-    ocr_texts = []
+    selected_frames, ocr_texts = [], []
 
-    try:
-        if filename.endswith(".gif"):
-            gif = Image.open(video_path)
-            frames = []
-            try:
-                while True:
-                    frames.append(gif.copy().convert("RGB"))
-                    gif.seek(gif.tell() + 1)
-            except EOFError:
-                pass
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 10
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    every = int(fps * 1.5)
+    idxs = [i * every for i in range(min(6, total // every))]
 
-            step = max(1, len(frames) // 6)
-            frames_to_use = frames[::step][:6]
+    for idx in idxs:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ok, frame = cap.read()
+        if not ok:
+            continue
+        fpath = save_temp_resized_cv2(frame)
+        selected_frames.append(fpath)
+        ocr = ocr_reader.readtext(fpath)
+        if ocr:
+            ocr_texts.append(" ".join(r[1] for r in ocr))
+    cap.release()
+    os.remove(video_path)
 
-            for frame in frames_to_use:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_frame:
-                    frame.save(tmp_frame.name)
-                    selected_frames.append(tmp_frame.name)
+    if not selected_frames:
+        return jsonify({"error": "No suitable frames extracted"}), 400
 
-        elif filename.endswith(".mp4") or filename.endswith(".webm"):
-            cap = cv2.VideoCapture(video_path)
-            fps = cap.get(cv2.CAP_PROP_FPS) or 10
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            frame_interval = int(fps * 1.5)
-            frame_indices = [int(i * frame_interval) for i in range(min(6, int(total_frames // frame_interval)))]
+    images_json = [{"type": "image_url", "image_url": {"url": image_to_base64_data_uri(p)}} for p in selected_frames]
+    for p in selected_frames:
+        os.remove(p)
 
-            for idx in frame_indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if not ret:
-                    continue
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as frame_file:
-                    cv2.imwrite(frame_file.name, frame)
-                    selected_frames.append(frame_file.name)
-            cap.release()
-        else:
-            return jsonify({"error": "Unsupported file type"}), 400
-
-        os.remove(video_path)
-
-        if not selected_frames:
-            return jsonify({"error": "No usable frames found"}), 400
-
-        images_json = []
-        for path in selected_frames:
-            uri = image_to_base64_data_uri(path)
-            images_json.append({"type": "image_url", "image_url": {"url": uri}})
-            ocr_result = ocr_reader.readtext(path)
-            if ocr_result:
-                ocr_texts.append(" ".join([res[1] for res in ocr_result]))
-            os.remove(path)
-
-        combined_ocr = "\n".join(ocr_texts).strip()
-
-    except Exception as e:
-        return jsonify({"error": f"Failed to process video: {e}"}), 500
-
-    prompt_text = (
-        "These frames are taken from a short video posted in a group chat.\n"
-        "Summarize what happens, describe any interesting moments or vibes, "
-        "and react naturally like you're chatting with friends. You can joke, emote, or analyze if it's a meme or event."
-    )
-
-    if combined_ocr:
-        prompt_text += f"\n\nExtracted text from the video frames:\n{combined_ocr}"
+    prompt = (
+        "These frames are from a short video posted in a group chat. "
+        "Summarize what happens, describe interesting moments or vibes, and react like you're chatting with friends." )
+    if ocr_texts:
+        prompt += "\nExtracted text: " + " ".join(ocr_texts)
 
     messages = [
-        {"role": "system", "content": "You are in a casual chat reacting to videos. Be expressive and human."},
-        {
-            "role": "user",
-            "content": images_json + [{"type": "text", "text": prompt_text}]
-        }
+        {"role": "system", "content": "You are in a casual chat reacting to videos."},
+        {"role": "user", "content": images_json + [{"type": "text", "text": prompt}]}
     ]
 
     try:
-        result = llm.create_chat_completion(
-            messages=messages,
-            max_tokens=512
-        )
-        reply = result["choices"][0]["message"]["content"]
+        resp = llm.create_chat_completion(messages=messages, max_tokens=512)
+        reply = resp["choices"][0]["message"]["content"]
     except Exception as e:
         reply = f"Error: {e}"
 
     return jsonify({"result": reply})
 
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 6006))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 6006)))
