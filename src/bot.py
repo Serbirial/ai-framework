@@ -25,12 +25,12 @@ from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WOR
 MODEL_VAR = Llama(
             model_path=mainLLM,
             n_ctx=16000,              # TODO use CTX setter 
-            n_threads=4,             # tune to setup
+            n_threads=12,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
-            use_mmap=False,
-            n_gpu_layers=32,
+            use_mmap=True,
+            n_gpu_layers=0,
             low_vram=False,
             n_batch=16
             #numa=False
