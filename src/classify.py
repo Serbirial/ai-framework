@@ -528,8 +528,8 @@ def summarize_raw_scraped_data(model, input_text, max_tokens=1024): # TODO: move
         "<|start_header_id|>system<|end_header_id|>\n"
 
         "You are a summarizer.\n"
-        "Your job is to read messy, long, or scraped web data and produce a clean, helpful summary.\n"
-        "Always ignore noise like headers, menus, ads, cookie warnings, and duplicate boilerplate.\n"
+        "Your job is to read messy, long, or scraped web data (html, txt, json, csv, etc.) and produce a clean, helpful summary for another AI so they can visualize it.\n"
+        "Always ignore noise like ads, cookie warnings, and duplicate boilerplate.\n"
         "If no meaningful content is present, say 'No useful content found.'\n\n"
         "### Raw Web Data:\n"
         f"{input_text.strip()}\n\n"
