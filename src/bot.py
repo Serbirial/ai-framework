@@ -24,7 +24,7 @@ from log import log
 from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, DEBUG_FUNC, BASE_MAX_TOKENS
 MODEL_VAR = Llama(
             model_path=mainLLM,
-            n_ctx=16000,              # TODO use CTX setter 
+            n_ctx=24000,              # TODO use CTX setter 
             n_threads=12,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
