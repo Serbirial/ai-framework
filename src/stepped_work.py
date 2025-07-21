@@ -140,6 +140,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
             log(f"STEP {step+1} PROMPT\n", step_prompt)
+            self.streamer(f"\n\nMoving on to step {step+1} of the task!")
+            
             response = self.bot._straightforward_generate(
                 step_prompt,
                 max_new_tokens=WORK_MAX_TOKENS_PER_STEP,
@@ -186,7 +188,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     f"- Reminder: Your task is to do step-by-step processing and calling <Actions> to complete the task as needed as the personality '{self.bot.name}'.\n"
                 )
                 step_prompt += checkpoint_prompt
-                stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
+                stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops)
                 response = self.bot._straightforward_generate(
                     step_prompt,
                     max_new_tokens=WORK_MAX_TOKENS_PER_STEP,
@@ -236,6 +238,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
+        self.streamer(f"\n\Finalizing my response!")
+        
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=WORK_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts

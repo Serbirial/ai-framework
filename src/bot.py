@@ -419,6 +419,8 @@ class ChatBot:
         cnn_output = None
         cnn_output_formatted = None
         if cnn_file_path:
+            streamer(f"- Image Detetcted, starting processing (may take a while)...\n")
+            
             try:
                 with open(cnn_file_path, "rb") as f:
                     cnn_response = requests.post(
@@ -429,13 +431,17 @@ class ChatBot:
                 if cnn_response.status_code == 200:
                     cnn_output = cnn_response.json().get("description", None)
                 else:
+                    streamer(f"- Major Error\n\n")
                     cnn_output = f"### ERROR: CNN API returned status {cnn_response.status_code}"
             except Exception as e:
+                streamer(f"- Major Error\n\n")
                 cnn_output = f"### ERROR: CNN API request failed: {str(e)}"
                 
-        if cnn_output != None:
+        if cnn_output != None:            
             category_override = "other" # temp
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
+            streamer(f"- Image processed.\n")
+            
         
         usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier, context)
         
@@ -443,6 +449,12 @@ class ChatBot:
         
         
         self.mood_sentence = mood_sentence
+        if debug:
+            streamer(f"- Setting mood to {self.mood}\n")
+            streamer(f"- Setting mood sentence to {self.mood_sentence}\n")
+            
+            
+            
         if tiny_mode:
             prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         elif CUSTOM_GPT2:
@@ -455,15 +467,21 @@ class ChatBot:
 
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops, min_lines=1)  # NO tokenizer argument
+        streamer(f"I have classified your message as `{category}`, acting accordingly...\n\n")
         
         thoughts = None
         final = "blank final string"
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
+            streamer(f"- Trying to save to my memory...\n")
+
             memory_data = classify.interpret_memory_instruction(user_input, self.model)
             if memory_data:
                 raw_text = memory_data  # make sure this is a string
+                
                 self.add_to_remember(identifier, raw_text)
+                streamer(f"- Saved to memory.\n\n")
+                
                 prompt = classify.build_memory_confirmation_prompt(raw_text)
 
                 # add data from helper function into prompt before responding
@@ -471,6 +489,7 @@ class ChatBot:
                 if debug:
                     DEBUG_FUNC(prompt=prompt, response=response, memory_data=memory_data)
             else:
+                streamer(f"- Major error\n\n")
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
         elif category == "task": # The user wants the AI to do something task based- and it will be done step by step.
@@ -509,7 +528,7 @@ class ChatBot:
             thoughts = thoughts
             
             response = final
-        elif category == "other":
+        elif category == "other":            
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
             
@@ -521,6 +540,8 @@ class ChatBot:
                 short_context = context
                 
             if force_recursive == True:
+                streamer(f"- Forcing recursive (will take longer).\n\n")
+                
                 thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
