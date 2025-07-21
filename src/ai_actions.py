@@ -95,24 +95,25 @@ def check_for_actions_and_run(model, text):
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
                         if action_name == "simple_url_scraper":
                             result = classify.summarize_raw_scraped_data(model, result, 1024)
-                        results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
-                        log_action_execution(action_name, action_params, action_label, result)
-                    else:
-                        print(f"DEBUG: Executing action: {action_name} with {action_params}")
-                        result = VALID_ACTIONS[action_name]["callable"](action_params)
-                        if action_name == "simple_url_scraper":
-                            result = classify.summarize_raw_scraped_data(model, result, 1024)
-                        results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
-                        log_action_execution(action_name, action_params, action_label, result)
-                else:
-                    error_msg = {"error": f"Unknown action: {action_name}"}
-                    results.append(f"<ActionResult{action_label}>{json.dumps(error_msg)}</ActionResult{action_label}>")
-                    log_action_execution(action_name, action_params, action_label, error_msg)
+                print(f"DEBUG: Executing action: {action_name} with {action_params}")
+                result = VALID_ACTIONS[action_name]["callable"](action_params)
+
+                if action_name == "simple_url_scraper":
+                    result = classify.summarize_raw_scraped_data(model, result, 1024)
+
+                # Replace <ActionResultX> with <|ipython|> block
+                output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"
+                results.append(output)
+
+                log_action_execution(action_name, action_params, action_label, result)
 
             except Exception as e:
                 error_msg = {"error": f"Failed to execute action: {str(e)}"}
+                output = f"<|ipython|>\n# Error during {action_name or 'unknown'}\n{json.dumps(error_msg, indent=2)}\n<|eot_id|>"
+                results.append(output)
+
                 label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
-                results.append(f"<ActionResult{label}>{json.dumps(error_msg)}</ActionResult{label}>")
+
                 log_action_execution(action_name if 'action_name' in locals() else "unknown", action_params if 'action_params' in locals() else {}, label, error_msg)
 
             pos = close_tag_end
