@@ -263,7 +263,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             step_content = response.strip()
             log(f"DEBUG: THOUGHT STEP {step}", step_content)
             
-            action_result = check_for_actions_and_run(response)
+            action_result = check_for_actions_and_run(self.bot.model, response)
 
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)

@@ -108,8 +108,8 @@ def simple_webpage_scraper(url: str, max_paragraphs: int = 3) -> dict:
         return {"error": f"Exception during scraping: {str(e)}"}
 
 EXPORT = {
-    "simple_webpage_scraper": {
-        "help": "Scrapes a raw web URL and returns a formatted version, and top footnotes.",
+    "simple_url_scraper": {
+        "help": "Scrapes a raw web URL and returns a summarized / processed version.",
         "callable": simple_webpage_scraper,
         "params": {
             "url": "string, required",
@@ -120,6 +120,6 @@ EXPORT = {
 
 if __name__ == "__main__":
     import json
-    test_url = "https://en.wikipedia.org/wiki/Mount_Everest"
+    test_url = "https://music.youtube.com/playlist?list=PLzpRt2zQpnBO0yzFMjmilb7I7DGckf2jC"
     result = simple_webpage_scraper(test_url)
     print(json.dumps(result, indent=2, ensure_ascii=False))

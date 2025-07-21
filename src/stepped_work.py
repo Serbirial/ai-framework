@@ -165,7 +165,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n\n"
             
             # Check for and run any actions
-            action_result = check_for_actions_and_run(response)
+            action_result = check_for_actions_and_run(self.bot.model, response)
             
             # queue action result for next step input
             if action_result != "NOACTION":

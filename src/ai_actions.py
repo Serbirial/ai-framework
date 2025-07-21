@@ -29,7 +29,7 @@ RATE_LIMITS = {
     "wikipedia_query_scraper": 1.0,
     "coingecko_price": 1.0,
     "run_calculus_wolfram_alpha": 1.0,
-    "simple_webpage_scraper": 1.0,
+    "simple_url_scraper": 1.0,
     "get_weather": 1.0
     # Add other actions here as needed
 }
@@ -49,7 +49,7 @@ def check_rate_limit(action_name):
     last_call_times[action_name] = now
     return True, 0
 
-def check_for_actions_and_run(text):
+def check_for_actions_and_run(model, text):
     results = []
 
     pos = 0
@@ -93,11 +93,15 @@ def check_for_actions_and_run(text):
                         time.sleep(wait)
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
+                        if action_name == "simple_url_scraper":
+                            result = classify.summarize_raw_scraped_data(model, result, 1024)
                         results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
                         log_action_execution(action_name, action_params, action_label, result)
                     else:
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
+                        if action_name == "simple_url_scraper":
+                            result = classify.summarize_raw_scraped_data(model, result, 1024)
                         results.append(f"<ActionResult{action_label}>{json.dumps(result)}</ActionResult{action_label}>")
                         log_action_execution(action_name, action_params, action_label, result)
                 else:
