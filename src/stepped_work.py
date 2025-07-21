@@ -73,7 +73,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         )
 
         if extra_context:
-            base += f"\n<ActionResult>{extra_context}</ActionResult>\n"
+            base += f"\n<|ipython|>{extra_context}</|ipython|>\n"
 
 
         # Add specific guidance based on query_type
@@ -119,8 +119,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
                 "- If no action is needed, reason forward logically toward completing the task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
-                "- Use previously returned <ActionResult> values when available to build your reasoning.\n"
-                "- Do not assume or simulate the result of an Action: Always wait for the actual <ActionResult> to be returned in the next step before proceeding.\n"
+                "- Use previously returned <|ipython|> values when available to build your reasoning.\n"
+                "- Do not assume or simulate the result of an Action: Always wait for the actual <|ipython|> to be returned in the next step before proceeding.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
@@ -207,7 +207,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full
             + discord_formatting_prompt
             + f"### Responding to {username}\n"
-            + "**Task:** Now summarize to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            + "**Task:** Summarize to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
             + "**Rules**:\n"
             + "- Do NOT mention or list internal step names, action calls, or raw execution details unless asked.\n"
 
@@ -218,6 +218,10 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
             + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
             + "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
+
+            # end sys prompt
+            + "<|eot_id|>"
+
 
             + to_add # add the steps
 
