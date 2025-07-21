@@ -110,6 +110,5 @@ def basic_preprocessing(
     if not mood_sentence or len(mood_sentence.split()) < 3:
         mood_sentence = "I feel neutral and composed at the moment."
 
-    return social, category, like, mood_sentence
     print(f"Preprocessing: {social}\n{category}\n{like}\n{mood_sentence}\n")
     return social, category, like, mood_sentence
