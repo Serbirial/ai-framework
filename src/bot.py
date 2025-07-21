@@ -7,6 +7,7 @@
 from llama_cpp import Llama
 
 import requests
+import concurrent.futures
 import tiny_prompts, custom_gpt2_prompts
 import json
 import time
@@ -400,6 +401,106 @@ class ChatBot:
         # Reverse to maintain oldest-to-newest order
         messages = [row[0] for row in reversed(rows)]
         return "\n".join(messages)
+    
+    def run_classifiers(self, tokenizer, user_input, category_override, identifier):
+        """Returns usertone, moods, mood, mood_sentence, persona_prompt, category
+        """
+        def get_usertone():
+            try:
+                response = requests.post(
+                    f"http://{WORKER_IP_PORT}/classify_social_tone",
+                    json={"user_input": user_input},
+                    timeout=120
+                )
+                if response.status_code == 200:
+                    return response.json().get("classification", { 
+                        "intent": "NEUTRAL",
+                        "attitude": "NEUTRAL",
+                        "tone": "NEUTRAL"
+                    })
+                else:
+                    return {
+                        "intent": "NEUTRAL",
+                        "attitude": "NEUTRAL",
+                        "tone": "NEUTRAL"
+                    }
+            except Exception as e:
+                print(f"[WARN] API Down, cant offload to sub models.")
+                print("[WARN] Falling back to local model.")
+                return classify.classify_social_tone(self.model, tokenizer, user_input)
+                
+                
+        def get_category():
+            if category_override == None:
+                try:
+                    response = requests.post(
+                        f"http://{WORKER_IP_PORT}/classify_user_input",
+                        json={"user_input": user_input},
+                        timeout=120
+                    )
+                    if response.status_code == 200:
+                        return response.json().get("category", "other")
+                    else:
+                        return "other"
+                except Exception as e:
+                    print(f"[WARN] API Down, cant offload to sub models.")
+                    print("[WARN] Falling back to local model.")
+                    return classify.classify_user_input(self.model, tokenizer, user_input)
+            else:
+                category = category_override
+            return category
+                
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            future_usertone = executor.submit(get_usertone)
+            future_persona_prompt = executor.submit(self.get_persona_prompt)
+            future_category = executor.submit(get_category)
+            usertone = future_usertone.result()
+            persona_prompt = future_persona_prompt.result()
+            category = future_category.result()
+        
+        def get_moods():
+            return {
+                "Like/Dislike Mood Factor": { 
+                    "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
+                    "mood": self.get_mood_primitive(user_input),
+                    },
+                "General Input Mood Factor": {
+                    "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
+                    "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input, identifier),
+                    },
+                "Social Intents Mood Factor": {
+                    "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
+                    "mood": self.get_moods_social(usertone)
+                }
+            } # TODO Set mood based on all moods
+        def get_mood_sentence():
+            try:
+                response = requests.post(
+                    f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
+                    json={"moods_dict": moods},
+                    timeout=120
+                )
+                if response.status_code == 200:
+                    return response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
+                else:
+                    return "I feel neutral and composed at the moment."
+            except Exception as e:
+                print(f"[WARN] API Down, cant offload to sub models.")
+                print("[WARN] Falling back to local model.")
+                return classify.classify_moods_into_sentence(self.model, tokenizer, moods)
+            
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_moods = executor.submit(get_moods)
+            future_mood_sentence = executor.submit(get_mood_sentence)
+            moods = future_moods.result()
+            mood_sentence = future_mood_sentence.result()
+            
+        # Set the base mood based on highest score social mood
+        social_moods = moods["Social Intents Mood Factor"]["mood"]
+        mood = social_moods[0] if social_moods else "uncertain (api error)"
+        
+
+        return usertone, moods, mood, mood_sentence, persona_prompt, category
 
     def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
@@ -422,61 +523,13 @@ class ChatBot:
         if cnn_output != None:
             category_override = "other" # temp
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
-        try:
-            response = requests.post(
-                f"http://{WORKER_IP_PORT}/classify_social_tone",
-                json={"user_input": user_input},
-                timeout=120
-            )
-            if response.status_code == 200:
-                usertone = response.json().get("classification", { 
-                    "intent": "NEUTRAL",
-                    "attitude": "NEUTRAL",
-                    "tone": "NEUTRAL"
-                })
-            else:
-                usertone = {
-                    "intent": "NEUTRAL",
-                    "attitude": "NEUTRAL",
-                    "tone": "NEUTRAL"
-                }
-        except Exception as e:
-            print(f"[WARN] API Down, cant offload to sub models.")
-            print("[WARN] Falling back to local model.")
-            usertone = classify.classify_social_tone(self.model, tokenizer, user_input)
-        moods = {
-            "Like/Dislike Mood Factor": { 
-                "prompt": "This is the mood factor based on if your likes, or dislikes, were mentioned in the input.",
-                "mood": self.get_mood_primitive(user_input),
-                },
-            "General Input Mood Factor": {
-                "prompt": "This is the mood factor based on if the input as a whole is liked, e.g: Did the user compliment/insult, did they talk about one of your likes/dislikes, etc.",
-                "mood": self.get_mood_based_on_likes_or_dislikes_in_input(user_input, identifier),
-                },
-            "Social Intents Mood Factor": {
-                "prompt": "These are the moods based on the detected social intents from the input, e.g: user intent, user attitude, user tone.",
-                "mood": self.get_moods_social(usertone)
-            }
-        } # TODO Set mood based on all moods
-        # Set the base mood based on highest score social mood
-        social_moods = moods["Social Intents Mood Factor"]["mood"]
-        self.mood = social_moods[0] if social_moods else "uncertain (api error)"
-        persona_prompt = self.get_persona_prompt(identifier)
         
-        try:
-            response = requests.post(
-                f"http://{WORKER_IP_PORT}/classify_moods_into_sentence",
-                json={"moods_dict": moods},
-                timeout=120
-            )
-            if response.status_code == 200:
-                self.mood_sentence = response.json().get("mood_sentence", "I feel neutral and composed at the moment.")
-            else:
-                self.mood_sentence = "I feel neutral and composed at the moment."
-        except Exception as e:
-            print(f"[WARN] API Down, cant offload to sub models.")
-            print("[WARN] Falling back to local model.")
-            self.mood_sentence = classify.classify_moods_into_sentence(self.model, tokenizer, moods)
+        usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier)
+        
+        self.mood = mood
+        
+        
+        self.mood_sentence = mood_sentence
         if tiny_mode:
             prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         elif CUSTOM_GPT2:
@@ -486,23 +539,7 @@ class ChatBot:
 
         #inputs = tokenizer(prompt, return_tensors="pt", padding=True).to(self.model.device)
         #log("DEBUG: DEFAULT PROMPT TOKENS", inputs.input_ids.size(1))
-        if category_override == None:
-            try:
-                response = requests.post(
-                    f"http://{WORKER_IP_PORT}/classify_user_input",
-                    json={"user_input": user_input},
-                    timeout=120
-                )
-                if response.status_code == 200:
-                    category = response.json().get("category", "other")
-                else:
-                    category = "other"
-            except Exception as e:
-                print(f"[WARN] API Down, cant offload to sub models.")
-                print("[WARN] Falling back to local model.")
-                category = classify.classify_user_input(self.model, tokenizer, user_input)
-        else:
-            category = category_override
+
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops, min_lines=1)  # NO tokenizer argument
         
