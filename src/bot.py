@@ -452,7 +452,7 @@ class ChatBot:
                 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             future_usertone = executor.submit(get_usertone)
-            future_persona_prompt = executor.submit(self.get_persona_prompt)
+            future_persona_prompt = executor.submit(self.get_persona_prompt, identifier=identifier)
             future_category = executor.submit(get_category)
             usertone = future_usertone.result()
             persona_prompt = future_persona_prompt.result()
