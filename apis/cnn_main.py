@@ -87,12 +87,12 @@ def describe_image():
     image_data_uri = image_to_base64_data_uri(image_path)
     os.remove(image_path)
 
-    prompt_text = "Describe this image in detail.\n\n"
+    prompt_text = "Describe this image."
     if detected_objects:
         objs_list = ", ".join(f"{o['label']} ({o['confidence']:.2f})" for o in detected_objects)
-        prompt_text += f"Detected objects: {objs_list}.\n"
+        prompt_text += f"\nDetected objects: {objs_list}."
     if ocr_text.strip():
-        prompt_text += f"Extracted text: {ocr_text}\n"
+        prompt_text += f"\nExtracted text: {ocr_text}"
 
     messages = [
         {
@@ -108,6 +108,7 @@ def describe_image():
     ]
 
 
+    print(messages)
     try:
         resp = llm.create_chat_completion(messages=messages, max_tokens=600, temperature=0.5, repeat_penalty=1, top_p=0.9)
         content = resp["choices"][0]["message"]["content"]
