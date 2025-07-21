@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
-from llama_cpp import Llama
+import torch
 from PIL import Image
+from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers.image_utils import load_image
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 import base64
 import os
 import tempfile
@@ -59,15 +62,12 @@ def get_objects_from_tflite_api(image_path):
             print(f"Error calling TFLite detection API: {e}")
             return []
 
-# ---------------- LLaMA MODEL ----------------
-llm = Llama(
-    model_path="SmolVLM-500M-Instruct-q8_0.gguf",
-    n_ctx=800,
-    n_threads=4,
-    verbose=True,
-)
-
-# ---------------- ROUTES ----------------
+processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-Base")
+llm = AutoModelForVision2Seq.from_pretrained(
+    "HuggingFaceTB/SmolVLM-Base",
+    torch_dtype=torch.bfloat16,
+    _attn_implementation="flash_attention_2" if DEVICE == "cuda" else "eager",
+).to(DEVICE)
 
 @app.route("/describe_image", methods=["POST"])
 def describe_image():
@@ -80,52 +80,39 @@ def describe_image():
     except Exception as e:
         return jsonify({"error": f"Invalid image: {e}"}), 400
 
-    # Run OCR if needed
-    image_path = save_temp_resized_pil(pil_img)
-    detected_objects = None 
-    ocr_text = " ".join([res[1] for res in ocr_reader.readtext(image_path)])
-    os.remove(image_path)
+    # Run OCR
+    img_path = save_temp_resized_pil(pil_img)
+    ocr_text = " ".join([res[1] for res in ocr_reader.readtext(img_path)])
+    os.remove(img_path)
 
-    # Create system prompt
-    prompt_text = "Describe this image."
-    if detected_objects:
-        objs_list = ", ".join(f"{o['label']} ({o['confidence']:.2f})" for o in detected_objects)
-        prompt_text += f"\nDetected objects: {objs_list}."
+    # Build prompt
+    prompt = "Can you describe this image?"
     if ocr_text.strip():
-        prompt_text += f"\nExtracted text: {ocr_text}"
+        prompt += f"\nExtracted text from the image: {ocr_text}"
 
-    image_buffer = io.BytesIO()
-    pil_img.save(image_buffer, format="PNG")
-    image_bytes = image_buffer.getvalue()
-
+    # Prepare messages
     messages = [
-        {
-            "role": "system",
-            "content": prompt_text
-        },
         {
             "role": "user",
             "content": [
-                {"type": "image", "image": image_bytes}
+                {"type": "image"},
+                {"type": "text", "text": prompt}
             ]
         }
     ]
 
-    print(messages)
+    # Preprocess
+    chat_prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
+    inputs = processor(text=chat_prompt, images=[pil_img], return_tensors="pt").to(DEVICE)
 
     try:
-        resp = llm.create_chat_completion(
-            messages=messages,
-            max_tokens=600,
-            temperature=0.5,
-            repeat_penalty=1,
-            top_p=0.9
-        )
-        content = resp["choices"][0]["message"]["content"]
+        generated_ids = llm.generate(**inputs, max_new_tokens=512)
+        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
     except Exception as e:
-        content = f"Error: {e}"
+        generated_text = f"Error: {e}"
 
-    return jsonify({"result": content})
+    return jsonify({"result": generated_text})
+
 
 
 
