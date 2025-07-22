@@ -1,8 +1,4 @@
 import requests
-from src import classify
-from bs4 import BeautifulSoup
-import html
-import re
 
 headers = {
     "User-Agent": "AI/1.0 (RespectfulAI; +http://127.0.0.1/)",
@@ -21,7 +17,7 @@ def simple_webpage_scraper(params: dict) -> dict:
 
         html_raw = res.text
 
-        return {"url": url, "raw_html": summary}
+        return {"url": url, "raw_html": html_raw}
 
 
     except Exception as e:
@@ -30,7 +26,7 @@ def simple_webpage_scraper(params: dict) -> dict:
 
 EXPORT = {
     "simple_url_scraper": {
-        "help": "Fetches the full raw HTML of a web page for later summarization/classification.",
+        "help": "Scrapes any URL into a either a single summary- or chunked summaries.", # this gets intercepted and summarized in the action executor.
         "callable": simple_webpage_scraper,
         "params": {
             "url": "string, required"
