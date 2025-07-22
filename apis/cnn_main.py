@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import torch
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq, BitsAndBytesConfig
+from transformers import AutoProcessor, AutoModelForVision2Seq
 from transformers.image_utils import load_image
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 import base64
@@ -61,14 +61,12 @@ def get_objects_from_tflite_api(image_path):
         except Exception as e:
             print(f"Error calling TFLite detection API: {e}")
             return []
-quantization_config = BitsAndBytesConfig(load_in_8bit=True)
 
 processor = AutoProcessor.from_pretrained("HuggingFaceTB/SmolVLM-Base")
 llm = AutoModelForVision2Seq.from_pretrained(
     "HuggingFaceTB/SmolVLM-Base",
     torch_dtype=torch.bfloat16,
     _attn_implementation="flash_attention_2" if DEVICE == "cuda" else "eager",
-    quantization_config=quantization_config
 ).to(DEVICE)
 
 @app.route("/describe_image", methods=["POST"])
