@@ -23,7 +23,7 @@ import asyncio
 import time
 
 class DiscordBufferedUpdater:
-    def __init__(self, discord_message, cooldown=2.3, max_chars=1900):
+    def __init__(self, discord_message, cooldown=2.4, max_chars=1900):
         self.discord_message = discord_message
         self.cooldown = cooldown
         self.max_chars = max_chars
@@ -33,9 +33,6 @@ class DiscordBufferedUpdater:
         self._lock = asyncio.Lock()
         self._scheduled_task = None
         self._loop = asyncio.get_event_loop()
-        
-    def add_special(self, entry):
-        self.special_buffer.append(f"{entry}")
 
     def __call__(self, new_text_chunk):
         # Sync call: update buffer & schedule async edit
@@ -75,6 +72,9 @@ class DiscordBufferedUpdater:
                     print(f"Failed to edit Discord message: {e}")
 
         self._scheduled_task = self._loop.create_task(delayed_edit())
+
+    def add_special(self, entry):
+        self.special_buffer.append(f"{entry}")
 
 MAX_IMAGE_SIZE_MB = 20
 ALLOWED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
