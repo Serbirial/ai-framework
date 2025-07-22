@@ -421,7 +421,8 @@ class ChatBot:
         cnn_output = None
         cnn_output_formatted = None
         if cnn_file_path:
-            streamer.add_special(f"Image Detetcted, starting processing (may take a while)...")
+            if streamer:
+                streamer.add_special(f"Image Detetcted, starting processing (may take a while)...")
             
             try:
                 with open(cnn_file_path, "rb") as f:
@@ -433,26 +434,30 @@ class ChatBot:
                 if cnn_response.status_code == 200:
                     cnn_output = cnn_response.json().get("description", None)
                 else:
-                    streamer.add_special(f"Major Error")
+                    if streamer:
+                        streamer.add_special(f"Major Error")
                     cnn_output = f"### ERROR: CNN API returned status {cnn_response.status_code}"
             except Exception as e:
-                streamer.add_special(f"Major Error")
+                if streamer:
+                    streamer.add_special(f"Major Error")
                 cnn_output = f"### ERROR: CNN API request failed: {str(e)}"
                 
         if cnn_output != None:            
             category_override = "other" # temp
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
-            streamer.add_special(f"Image processed.")
-            
-        streamer.add_special("Pre-processing input")
+            if streamer:
+                streamer.add_special(f"Image processed.")
+        if streamer:
+            streamer.add_special("Pre-processing input")
         usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier, context)
         
         self.mood = mood
         
         
         self.mood_sentence = mood_sentence
-        streamer.add_special(f"Setting mood to {self.mood}\n")
-        streamer.add_special(f"Setting mood sentence to {self.mood_sentence}\n")
+        if streamer:
+            streamer.add_special(f"Setting mood to {self.mood}\n")
+            streamer.add_special(f"Setting mood sentence to {self.mood_sentence}\n")
             
             
             
@@ -468,20 +473,23 @@ class ChatBot:
 
         custom_stops = [f"<|{username}|>", f"<|{self.name}|>"]
         stop_criteria = StopOnSpeakerChange(bot_name=self.name, custom_stops=custom_stops, min_lines=1)  # NO tokenizer argument
-        streamer.add_special(f"I have classified your message as `{category}` and im routing your response accordingly...")
+        if streamer:
+            streamer.add_special(f"I have classified your message as `{category}` and im routing your response accordingly...")
         
         thoughts = None
         final = "blank final string"
         response = "This is the default blank response, you should never see this."
         if category == "instruction_memory":
-            streamer.add_special(f"Trying to save to memory...")
+            if streamer:
+                streamer.add_special(f"Trying to save to memory...")
 
             memory_data = classify.interpret_memory_instruction(user_input, self.model)
             if memory_data:
                 raw_text = memory_data  # make sure this is a string
                 
                 self.add_to_remember(identifier, raw_text)
-                streamer.add_special(f"Saved to memory.")
+                if streamer:
+                    streamer.add_special(f"Saved to memory.")
                 
                 prompt = classify.build_memory_confirmation_prompt(raw_text)
 
@@ -490,11 +498,13 @@ class ChatBot:
                 if debug:
                     DEBUG_FUNC(prompt=prompt, response=response, memory_data=memory_data)
             else:
-                streamer.add_special(f"Major error")
+                if streamer:
+                    streamer.add_special(f"Major error")
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
         elif category == "task": # The user wants the AI to do something task based- and it will be done step by step.
-            streamer.add_special(f"Trying to complete the task...")
+            if streamer:
+                streamer.add_special(f"Trying to complete the task...")
 
             if not context:
                 short_context = self.get_recent_history(identifier, limit=10)
@@ -512,7 +522,8 @@ class ChatBot:
             response = final
 
         elif category == "preference_query":
-            streamer.add_special(f"Internally reasoning...")
+            if streamer:
+                streamer.add_special(f"Internally reasoning...")
             
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
@@ -545,7 +556,8 @@ class ChatBot:
                 short_context = context
                 
             if force_recursive == True:
-                streamer.add_special(f"Forcing recursive (will take longer).")
+                if streamer:
+                    streamer.add_special(f"Forcing recursive (will take longer).")
                 
                 thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
@@ -562,7 +574,8 @@ class ChatBot:
             if not force_recursive:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
             elif force_recursive:
-                streamer.add_special(f"Forcing recursive (will take longer).")
+                if streamer:
+                    streamer.add_special(f"Forcing recursive (will take longer).")
                 
                 # Use recursive thinker for more elaborate introspection
                 # Extract just memory lines for context

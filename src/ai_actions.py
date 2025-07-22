@@ -51,7 +51,7 @@ def check_rate_limit(action_name):
     last_call_times[action_name] = now
     return True, 0
 
-def check_for_actions_and_run(model, text):
+def check_for_actions_and_run(model, text, streamer=None):
     results = []
 
     pos = 0
@@ -82,6 +82,8 @@ def check_for_actions_and_run(model, text):
                 action_name = action_json.get("action")
                 action_params = action_json.get("parameters", {})
                 action_label = action_json.get("label", None)
+                if streamer:
+                    streamer.add_special(f"Executing tool `{action_name}`")
                 # Polite sleep ONLY for specific actions
                 if action_name in RATE_LIMITS:
                     time.sleep(0.3)
@@ -118,7 +120,6 @@ def check_for_actions_and_run(model, text):
                                         
                                     result = {"summary": combined, "url": result["url"]}
 
-
                                 else:
                                     summary = classify.summarize_raw_scraped_data(model, result["raw_html"], 2048)
                                     result = {"summary": summary, "url": result["url"]}
@@ -126,6 +127,9 @@ def check_for_actions_and_run(model, text):
                         # Replace <ActionResultX> with <|ipython|> block
                         output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"
                         results.append(output)
+
+                        if streamer:
+                            streamer.add_special(f"Executed tool `{action_name}`")
 
                         log_action_execution(action_name, action_params, action_label, result)
 
@@ -135,7 +139,8 @@ def check_for_actions_and_run(model, text):
                 results.append(output)
 
                 label = action_label if 'action_label' in locals() else f"action_{len(results) + 1}"
-
+                if streamer:
+                    streamer.add_special(f"Errored while executing tool `{action_name if action_name else 'Cant Get Action Name'}`")
                 log_action_execution( "unknown", action_params if 'action_params' in locals() else {}, label, error_msg)
 
             pos = close_tag_end
