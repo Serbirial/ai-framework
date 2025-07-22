@@ -30,7 +30,7 @@ def basic_preprocessing(
 
     prompt = (
         "<|system|>\n"
-        "You are a helpful assistant that performs three tasks on each message:\n"
+        "You are a helpful assistant that performs four tasks on each message:\n"
         "1. Classify the user's social tone with fields: intent (COMPLIMENT, INSULT, NEUTRAL), attitude (NICE, RUDE, NEUTRAL), and tone (POLITE, AGGRESSIVE, JOKING, NEUTRAL).\n"
         "2. Classify the message category.\n"
         "3. Detect whether the message mentions a LIKE, DISLIKE, or NEUTRAL topic, based on the assistant's preferences.\n"
