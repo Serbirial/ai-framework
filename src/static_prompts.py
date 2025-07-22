@@ -53,7 +53,6 @@ def build_base_actions_prompt():
     prompt = (
         f"### Actions\n"
         f"Environment: ipython\n"
-        f"You may output up to THREE <Action> JSON blocks per step.\n"
         f"You must output actions in this exact format:\n"
         '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
         f"Where:\n"
@@ -77,7 +76,14 @@ def build_base_actions_rule_prompt():
         '- Actions MUST:\n'
         "   - Start with <Action>\n"
         "   - End with </Action>\n\n"
-        "- Actions MUST Start AND End with the above, or they will not be recognized by the system.\n\n"
+        "- Actions MUST Start AND End with the above, or they will not be recognized by the system.\n"
+        "- The content inside <Action> must be a valid, minified JSON object.\n"
+        "- Do NOT URL-encode any characters inside string values (e.g., do not replace '}' with '%7D').\n"
+        "- All keys and values must use straight double quotes (\").\n"
+        
+        "- URLs should be included exactly as-is, without encoding slashes, braces, or colons.\n\n"
+
+
     )
     return prompt
 
