@@ -11,6 +11,7 @@ import tiny_prompts, custom_gpt2_prompts
 import json
 import time
 import os
+import asyncio, re
 import sqlite3
 from .recursive import RecursiveThinker
 from .stepped_work import RecursiveWork
@@ -25,20 +26,8 @@ from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer
 
 CONFIG_VAR = Config()
 
-MODEL_VAR = Llama(
-            model_path=CONFIG_VAR.general["main_llm_path"],
-            n_ctx=16000,              # TODO use CTX setter 
-            n_threads=4,             # tune to setup
-            use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
-            logits_all=False,
-            verbose=False,
-            use_mmap=True,
-            n_gpu_layers=32,
-            low_vram=False,
-            n_batch=64
-            #numa=False
-        )
 tokenizer = DummyTokenizer() # FiXME
+
 
 
 class StringStreamer:
@@ -108,7 +97,7 @@ def list_personality(userid):
 
 
 class ChatBot:
-    def __init__(self, name="ayokdaeno", db_path=DB_PATH):
+    def __init__(self, name="ayokdaeno", db_path=DB_PATH, model = None):
         self.name = name
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
@@ -128,7 +117,22 @@ class ChatBot:
         #self.model.config.pad_token_id = tokenizer.eos_token_id
         
         # New TinyLlama model init
-        self.model = MODEL_VAR
+        if model:
+            self.model = model
+        else:
+            self.model = Llama(
+                model_path=CONFIG_VAR.general["main_llm_path"],
+                n_ctx=16000,              # TODO use CTX setter 
+                n_threads=8,             # tune to setup
+                use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
+                logits_all=False,
+                verbose=False,
+                use_mmap=True,
+                n_gpu_layers=32,
+                low_vram=False,
+                n_batch=64
+                #numa=False
+            )
 
 
 

@@ -671,45 +671,6 @@ class ChatBot(discord.Client):
             tier = row[0]
         else:
             tier = "t0"  # Default to t0 if no tier set
-        
-        if self.main_llm_generating:
-            if tier == "t2":
-                await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
-            else:
-                if not self.sub_model.has_free_slot():
-                    await message.channel.send("Too many users are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
-                    return
-                conn = sqlite3.connect(static.DB_PATH)
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT data, timestamp FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-                    (message.author.id,)
-                )
-                rows = cursor.fetchall()
-                conn.close()
-
-                if not rows:
-                    rows = None
-                prompt = (
-                    f"{static_prompts.build_base_chat_task_prompt(self.ai.name, message.author.display_name)}"
-                    f"{static_prompts.build_core_memory_prompt(rows)}"
-                    f"{static_prompts.build_discord_formatting_prompt()}"
-                )
-                slot = self.sub_model.assign(
-                    identifier=message.author.id,
-                    full_prompt=prompt,
-                    user_input=self.process_input(message.content),
-                )
-                if slot is None:
-                    await message.channel.send("Too many users are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
-                    return
-                else:
-                    await message.channel.send("Working on a reply...")
-                    while not self.sub_model.generations[slot]["is_ready"]:
-                        await asyncio.sleep(5)
-                    output = self.sub_model.generations[slot]["output"] or "(no response? error possibly?)"
-                    self.sub_model.remove(slot)
-                    return await message.reply(output)
 
 
         if message.author == self.user:
@@ -1083,6 +1044,46 @@ class ChatBot(discord.Client):
         
         if flags["depth"] != None and type(flags["depth"]) == int:
             depth = flags["depth"]
+            
+        if self.main_llm_generating:
+            if tier in ['t2', 't3', 't3+']:
+                await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
+            else:
+                if not self.sub_model.has_free_slot():
+                    await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
+                    return
+  
+                slot = self.sub_model.assign(identifier=message.author.id)
+                if slot is None:
+                    await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
+                    return
+                else:
+                    async with message.channel.typing():
+                        response = await asyncio.to_thread(
+                            self.sub_model.chat,
+                            max_new_tokens=460,
+                            username=message.author.display_name,
+                            user_input=processed_input,
+                            identifier=message.author.id,
+                            context=history,
+                            streamer=streamer,
+                            force_recursive=flags["recursive"],
+                            category_override=flags["category"],
+                            recursive_depth=depth,
+                            tiny_mode=flags["tinymode"],
+                            debug=flags["debug"],
+                            tier=tier,
+                            cnn_file_path=cnn_file_path
+                        )
+                        await msg_to_edit.delete()
+                        await message.reply(response)
+                        
+                        context.add_line(processed_input, "user")
+                        context.add_line(response, "assistant")
+                        await send_file(message)
+                        self.sub_model.remove(slot)
+                        return await message.reply(response)
+                
         async with self.generate_lock:
             self.main_llm_generating = True 
             response = None
@@ -1168,8 +1169,10 @@ class ChatBot(discord.Client):
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:
+                    self.main_llm_generating = False
                     pass
-                except Exception as e:
+                except Exception as e:                    
+                    self.main_llm_generating = False
                     if response != None:
                         await message.reply(response)
                     import traceback
