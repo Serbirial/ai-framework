@@ -65,8 +65,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
         base += (
             f"### Task Info\n"
-            f"**User Given Task:** {question}  \n"
-            f"**Task:** As the personality named '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
+            f"**{username} asked you:** {question}  \n"
+            f"**Task:** As '{self.bot.name}', you are now performing a real-world task step-by-step. Use <Action> calls to interact with real tools or data sources when needed.\n"
             f"You must complete the task through actionable thinking — reasoning is encouraged, but results must come from actions and their results, not assumptions.\n"
         )
 
@@ -185,7 +185,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     "- Ask: Are your steps clearly building toward completing the task?\n"
                     "- Briefly summarize what you've accomplished and what remains.\n"
                     "- Then continue with the next step, staying focused.\n"
-                    f"- Reminder: Your task is to do step-by-step processing and calling <Actions> to complete the task as needed as the personality '{self.bot.name}'.\n"
+                    f"- Reminder: The user asked: {question}\n"
                 )
                 step_prompt += checkpoint_prompt
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops)
