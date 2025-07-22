@@ -468,7 +468,7 @@ class ChatBot(discord.Client):
         self.main_llm_generating = False
         self.sub_llm_at_capacity = False
         
-        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"])
+        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name)
 
         print(f"Up to {self.sub_model.max_concurrent} concurrent interactions with the sub model allowed.")
 

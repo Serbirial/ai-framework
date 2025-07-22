@@ -12,7 +12,7 @@ class Concurrent_Llama_Gen:
 	Spins up N independent llama.cpp models (one per slot) and runs an isolated instance of ChatBot for concurrency.
 	"""
 
-	def __init__(self, model_path: str, botname: object, max_concurrent: int = 2, n_ctx: int | None = None):
+	def __init__(self, model_path: str, botname: str, max_concurrent: int = 2, n_ctx: int | None = None):
 		if not n_ctx:
 			self.n_ctx = config.token_config["t0"]["BASE_MAX_TOKENS"] * max_concurrent
 
