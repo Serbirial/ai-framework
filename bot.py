@@ -923,6 +923,7 @@ class ChatBot(discord.Client):
             
             return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
         async with self.generate_lock:  # ✅ Thread-safe section
+            response = None
             async with message.channel.typing():
                 try:
                     if flags["recursive"]:
@@ -941,7 +942,9 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        #await message.reply(response)
+                        await msg_to_edit.delete()
+                        await message.reply(response)
+                        
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -961,7 +964,8 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        #await message.reply(response)
+                        await msg_to_edit.delete()
+                        await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -983,7 +987,8 @@ class ChatBot(discord.Client):
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
                         )
-                        #await message.reply(response)
+                        await msg_to_edit.delete()
+                        await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -994,6 +999,11 @@ class ChatBot(discord.Client):
 
                 except aiohttp.client_exceptions.ClientConnectorError:
                     pass
+                    if response != None:
+                        await message.reply(response)
+                except Exception:
+                    if response != None:
+                        await message.reply(response)
 
     def process_input(self, message):
         """ Process the input message """
