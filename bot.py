@@ -922,6 +922,10 @@ class ChatBot(discord.Client):
             
             
             return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
+        depth = 4
+        
+        if flags["depth"] != None and type(flags["depth"]) == int:
+            depth = flags["depth"]
         async with self.generate_lock:  # ✅ Thread-safe section
             response = None
             async with message.channel.typing():
@@ -937,7 +941,7 @@ class ChatBot(discord.Client):
                             streamer=streamer,
                             force_recursive=True,
                             category_override=flags["category"],
-                            recursive_depth=flags["depth"],
+                            recursive_depth=depth,
                             tiny_mode=flags["tinymode"],
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
@@ -960,6 +964,7 @@ class ChatBot(discord.Client):
                             streamer=streamer,
                             context=history,
                             tiny_mode=flags["tinymode"],
+                            recursive_depth=depth,
                             category_override="instruction_memory",
                             debug=flags["debug"],
                             cnn_file_path=cnn_file_path
@@ -980,6 +985,7 @@ class ChatBot(discord.Client):
                             user_input=processed_input,
                             temperature=0.8,
                             streamer=streamer,
+                            recursive_depth=depth,
                             identifier=message.author.id,
                             category_override=flags["category"],
                             tiny_mode=flags["tinymode"],
