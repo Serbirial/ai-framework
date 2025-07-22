@@ -38,14 +38,12 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        history_section = static_prompts.build_history_prompt(context)
         actions_section = static_prompts.build_base_actions_prompt()
         actions_rule_section = static_prompts.build_base_actions_rule_prompt()
         actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
         
         base = (
             #"<|begin_of_text|>"
-            f"{history_section}" # low priority for large chat history
 
             "<|start_header_id|>system<|end_header_id|>\n"
             f"You are a personality-driven assistant named {self.bot.name}.\n"
@@ -90,6 +88,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         full = f"{prompt}"
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
+        history_section = static_prompts.build_history_prompt(context)
 
         to_add = ""
         for step in range(self.depth):
@@ -98,7 +97,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
                 
             step_prompt += f"### Current Step:\n"
-            step_prompt += f"**User Given Task:**\n    - {question}\n" # Reinforce the task every step
+            step_prompt += f"**Task Reminder:** {question}\n\n" # Reinforce the task every step
 
             step_prompt += (
                 "**Step Rules:**\n"
@@ -108,7 +107,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- For *any* basic math expressions (addition, subtraction, multiplication, division, etc), you MUST use the `execute_math` action.\n"
                 "- For *any* advanced calculus expressions (derivatives, integrals, limits, etc), you MUST use the `run_calculus` action.\n"
                 "- For any *python code execution*, you MUST use the `run_python_sandboxed` action to safely run Python code inside a secured sandbox environment.\n"
-                "- Do NOT attempt to execute code directly or guess results; always rely on the sandbox’s verified output before proceeding.\n"
+                "- NEVER attempt to execute code directly or guess results; always rely on the sandbox’s verified output before proceeding.\n"
 
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
@@ -124,12 +123,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
-                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n"
-                "- Do NOT output any '###' or '### Step...' headings.\n\n"
+                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n\n"
+                #"- Do NOT output any '###' or '### Step...' headings.\n\n"
 
             )
             # end sys prompt
             step_prompt += "<|eot_id|>"
+
 
             # add previous steps and tool results
             step_prompt += to_add
@@ -207,8 +207,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         final_prompt = (
             full
             + discord_formatting_prompt
-            + f"### Responding to {username}\n"
-            + "**Task:** Respond to the user, if the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            + f"### Replying To {username}:\n"
+            + "**Task:** Now summarize your internal task steps to the user, if the task is unfinished, explain what progress has been made and what steps remain.\n\n"
             + "**Rules**:\n"
             + "- DO NOT mention or list internal step names, function calls, or raw action metadata unless the user explicitly asks.\n"
             + "- The user cannot see your internal thoughts or steps — always restate anything important from earlier as if explaining it from scratch.\n"
@@ -216,9 +216,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             + "- Include clear disclaimers if your response includes web data, scraped content, or summaries from tools.\n"
             + "- DO NOT execute new actions — only summarize based on information already gathered.\n"
             + "- Speak naturally in the first person, as if you’re talking directly to the user.\n"
-            + "- If the task is complete, say so clearly and offer a concise  summary.\n"
             + "- If the task is still in progress, list ONLY the next immediate steps in as few words as possible while still clearly communicating to both the user and yourself when reviewing chat history.\n"
-            + "- When sharing results from a tool, restate what was found in your own words — never show raw action data, JSON, or internal tokens.\n"
+            + "- When sharing Results from a Action, restate what was found in your own words.\n"
+            + "- The user can only see this reply, they cant see ANY previous steps- only what you reply with below- so make sure to re-state anything when referencing steps.\n\n"
 
             # end sys prompt
             + "<|eot_id|>\n"
