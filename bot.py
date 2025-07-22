@@ -1014,11 +1014,11 @@ class ChatBot(discord.Client):
 
                 except aiohttp.client_exceptions.ClientConnectorError:
                     pass
+                except Exception as e:
                     if response != None:
                         await message.reply(response)
-                except Exception:
-                    if response != None:
-                        await message.reply(response)
+                    import traceback
+                    await message.reply(traceback.format_exception_only(e))
 
     def process_input(self, message):
         """ Process the input message """
