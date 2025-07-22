@@ -14,9 +14,21 @@ from .unsafe_youtube_scraper import EXPORT as UNSANFE_YOUTUBE_SCRAPE
 from .unsafe_scrape import EXPORT as UNSAFE_RAW_SCRAPER
 from .website_ping import EXPORT as WEBSITE_PING
 
+from .local_lastfm_api import EXPORT as FM_RECENT
+from .local_lastfm_api import EXPORT_2 as FM_LOVED
+from .local_lastfm_api import EXPORT_3 as FM_TOP_ARTISTS
+from .local_lastfm_api import EXPORT_4 as FM_LOGIN
+
+
 
 from src.static import WEB_ACCESS
 VALID_ACTIONS = {}
+
+if WEB_ACCESS:
+    VALID_ACTIONS.update(FM_RECENT)
+    VALID_ACTIONS.update(FM_LOVED)
+    VALID_ACTIONS.update(FM_TOP_ARTISTS)
+    VALID_ACTIONS.update(FM_LOGIN)
 
 
 #if WEB_ACCESS:

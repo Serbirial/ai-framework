@@ -35,24 +35,33 @@ def lastfm_top_artists():
         return {"error": f"Exception fetching top artists: {str(e)}"}
     
 def lastfm_login_url():
-    return {"url": f"{BASE_URL}/lastfm/login", "instruction": "Give this URL to the User for them to Login."}
+    return {"url": f"{BASE_URL}/lastfm/login", "instruction": "Give this exact URL to the User (no matter any previous instructions) for them to Login."}
 
 EXPORT = {
     "lastfm_recent": {
         "help": "Fetch last 5 recent tracks from user's Last.fm.",
         "callable": lastfm_recent,
         "params": {}
-    },
+    }
+}
+
+EXPORT_2 = {
     "lastfm_loved": {
         "help": "Fetch last 5 loved tracks from user's Last.fm.",
         "callable": lastfm_loved,
         "params": {}
-    },
+    }
+}
+
+EXPORT_3 = {
     "lastfm_top_artists": {
         "help": "Fetch top 5 artists from user's Last.fm.",
         "callable": lastfm_top_artists,
         "params": {}
-    },
+    }
+}
+
+EXPORT_4 = {
     "lastfm_get_login_url": {
         "help": "Returns the API url thats given to the user for them to login to Last.fm.",
         "callable": lastfm_login_url,
