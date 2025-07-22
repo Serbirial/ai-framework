@@ -1,8 +1,9 @@
 from ai_tools import VALID_ACTIONS
 import json
-from .static import mood_instruction, RECURSIVE_MAX_TOKENS_PER_STEP, WORK_MAX_TOKENS_PER_STEP, RECURSIVE_MAX_TOKENS_FINAL, WORK_MAX_TOKENS_FINAL, BASE_MAX_TOKENS
+from .static import Config
+cnf = Config()
 
-def build_token_limits_prompt(recursive_max_tokens_per_step: int = RECURSIVE_MAX_TOKENS_PER_STEP, work_max_tokens_per_step: int = WORK_MAX_TOKENS_PER_STEP, recursive_max_tokens_final: int = RECURSIVE_MAX_TOKENS_FINAL, work_max_tokens_final: int = WORK_MAX_TOKENS_FINAL, base_max_tokens: int = BASE_MAX_TOKENS) -> str:
+def build_token_limits_prompt(recursive_max_tokens_per_step: int, work_max_tokens_per_step: int, recursive_max_tokens_final: int, work_max_tokens_final: int, base_max_tokens: int) -> str:
     prompt = (
         f"### **Token Usage Rules:**\n"
         f"- You must always keep your output within strict token limits.\n"
@@ -99,8 +100,12 @@ def build_base_actions_explanation_prompt():
     return prompt
 
 def build_base_personality_profile_prompt(botname, persona_prompt, personality, mood, mood_sentence):
+    if mood in cnf.general["mood_instruction"]:
+        mood_instruction = cnf.general["mood_instruction"][mood]
+    else:
+        mood_instruction = "Speak in a calm and balanced tone."
     prompt = (
-            f"### **{botname}'s Personality Profile:**\n\n"
+            f"### **{botname}'s Personality Profile:**\n"
             
             f"{persona_prompt}\n\n" # THIS SHOULD MAKE THE AI *BECOME* THE PERSONA AND EMBODY INSTRUCTIONS IN THE MEMORY OR PERSONA ITEMS
 
@@ -114,7 +119,8 @@ def build_base_personality_profile_prompt(botname, persona_prompt, personality, 
             f"- " + "\n- ".join(personality.get("goals", [])) + "\n\n"
 
             f"**Current Mood:** {mood}\n"
-            f"**Mood Instructions:** {mood_instruction.get(mood, 'Speak in a calm and balanced tone.')}\n\n"
+            
+            f"**Mood Instructions:** {mood_instruction}\n"
             f"**Mood Summary:** {mood_sentence}\n\n"
     )
     return prompt

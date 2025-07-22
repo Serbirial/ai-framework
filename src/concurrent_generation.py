@@ -9,25 +9,24 @@ class Concurrent_Llama_Gen:
 		if not n_ctx:
 			n_ctx = config.token_config["t0"]["BASE_MAX_TOKENS"] * max_concurrent
 		
-		self.model = Llama(
-			model_path=model_path,
-			n_ctx=n_ctx,
-			n_threads=6,
-			n_batch=64,
-			n_gpu_layers=32,
-			use_mlock=False,
-			logits_all=False,
-			verbose=False,
-		)
 		self.max_concurrent = max_concurrent
 		self.generations = {
 			i: {
 				"prompt": None,
 				"identifier": None,
-				"input": None,
 				"output": "",
 				"is_ready": False,
-				"token_limit": 0, 
+				"max_token_generation": 0,
+				"model": Llama(
+					model_path=model_path,
+					n_ctx=n_ctx,
+					n_threads=2,
+					n_batch=64,
+					n_gpu_layers=0,
+					use_mlock=False,
+					logits_all=False,
+					verbose=False,
+				),
 				"token_count": 0  
 			}
 			for i in range(max_concurrent)

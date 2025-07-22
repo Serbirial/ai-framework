@@ -1,5 +1,18 @@
 {
-    "t2": {
+    "t3+": {
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
+        "WORK_MAX_TOKENS_PER_STEP": 800,
+
+        "RECURSIVE_MAX_TOKENS_FINAL": 460,
+        "WORK_MAX_TOKENS_FINAL": 460, 
+
+        "BASE_MAX_TOKENS": 460,
+
+        "BASE_TOKEN_WINDOW": 18000,
+        "MAX_STEPS": 8
+
+    },
+    "t3": {
         "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
         "WORK_MAX_TOKENS_PER_STEP": 800,
 
@@ -9,8 +22,20 @@
         "BASE_MAX_TOKENS": 460,
 
         "BASE_TOKEN_WINDOW": 16000,
-        "MAX_STEPS": 7
+        "MAX_STEPS": 8
 
+    },
+    "t2": {
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
+        "WORK_MAX_TOKENS_PER_STEP": 550,
+
+        "RECURSIVE_MAX_TOKENS_FINAL": 460,
+        "WORK_MAX_TOKENS_FINAL": 460, 
+
+        "BASE_MAX_TOKENS": 460,
+
+        "BASE_TOKEN_WINDOW": 16000,
+        "MAX_STEPS": 7
 
     },
     "t1": {

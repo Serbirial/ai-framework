@@ -21,7 +21,9 @@ from .local_lastfm_api import EXPORT_4 as FM_LOGIN
 
 
 
-from src.static import WEB_ACCESS
+from src.static import Config
+cnf = Config()
+WEB_ACCESS = cnf.general["web_access"]
 VALID_ACTIONS = {}
 
 if WEB_ACCESS:
