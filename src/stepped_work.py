@@ -76,7 +76,67 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
 
         # Add specific guidance based on query_type
 
-        log("INSTRUCT PROMPT", base)
+        log("TASK PROMPT", base)
+        return base
+    
+    def build_final_prompt(self, identifier, username, usertone, question, steps_and_tools):
+        personality = bot.list_personality(identifier)
+
+        persona_prompt = self.persona_prompt
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+            (identifier,)
+        )
+        rows = cursor.fetchall()
+        conn.close()  
+        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
+        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
+        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
+        
+        
+        base = (
+            #"<|begin_of_text|>"
+
+            "<|start_header_id|>system<|end_header_id|>\n"
+            f"You are '{self.bot.name}'.\n"
+
+            f"{persona_section}"
+            f"{user_info_section}"
+            f"{memory_instructions_section}"
+            f"{memory_section}"
+            f"{rules_section}"
+            f"{discord_formatting_prompt}"
+            
+            "**Task:**\n"
+            f"- {username} asked you: {question}\n"
+            "- Summarize your internal task steps to the user, if the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            "**Rules:**\n"
+            "- DO NOT mention or list raw ipython tool output unless the user explicitly asks.\n"
+            "- The user cannot see your internal thoughts or steps — always restate anything important from earlier as if explaining it from scratch.\n"
+            "- Explain your reasoning and what has been done so far in plain, conversational language.\n"
+            "- Include clear disclaimers if your response includes web data, scraped content, or summaries from tools.\n"
+            "- DO NOT execute new actions — only summarize based on information you already gathered.\n"
+            "- Speak naturally in the first person, as if you’re talking directly to the user.\n"
+            "- If the task is still in progress, list ONLY the next immediate steps in as few words as possible while still clearly communicating to both the user and yourself when reviewing chat history.\n"
+            "- When sharing Results from a Action, restate what was found in your own words.\n"
+            "- The user can only see this reply, they cant see ANY previous steps- only what you reply with below- so make sure to re-state anything when referencing steps.\n\n"
+            
+            f"<|eot_id|>\n" # end system prompt
+            
+        )
+        
+        
+        # add the previous output (pairs of steps and their tool outputs)
+        base += steps_and_tools
+
+
+
+        log("FINAL TASK PROMPT", base)
         return base
 
     def think(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None):
@@ -140,7 +200,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
             log(f"STEP {step+1} PROMPT\n", step_prompt)
-            self.streamer(f"\n\nMoving on to step {step+1} of the task!")
+            self.streamer.add_special(f"Moving on to step {step+1} of the task!")
             
             response = self.bot._straightforward_generate(
                 step_prompt,
@@ -203,32 +263,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 to_add += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
                 to_add == "<|eot_id|>"
 
-        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
-        final_prompt = (
-            full
-            + discord_formatting_prompt
-            + f"### Replying To {username}:\n"
-            + "**Task:** Now summarize your internal task steps to the user, if the task is unfinished, explain what progress has been made and what steps remain.\n\n"
-            + "**Rules**:\n"
-            + "- DO NOT mention or list internal step names, function calls, or raw action metadata unless the user explicitly asks.\n"
-            + "- The user cannot see your internal thoughts or steps — always restate anything important from earlier as if explaining it from scratch.\n"
-            + "- Explain your reasoning and what has been done so far in plain, conversational language.\n"
-            + "- Include clear disclaimers if your response includes web data, scraped content, or summaries from tools.\n"
-            + "- DO NOT execute new actions — only summarize based on information already gathered.\n"
-            + "- Speak naturally in the first person, as if you’re talking directly to the user.\n"
-            + "- If the task is still in progress, list ONLY the next immediate steps in as few words as possible while still clearly communicating to both the user and yourself when reviewing chat history.\n"
-            + "- When sharing Results from a Action, restate what was found in your own words.\n"
-            + "- The user can only see this reply, they cant see ANY previous steps- only what you reply with below- so make sure to re-state anything when referencing steps.\n\n"
+        final_prompt = self.build_final_prompt(identifier, username, usertone, question, steps_and_tools=to_add)
+        final_prompt += "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
 
-            # end sys prompt
-            + "<|eot_id|>\n"
-
-
-            + to_add # add the steps
-
-            + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-
-        )
 
 
         tokenizer = DummyTokenizer()
@@ -238,7 +275,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-        self.streamer(f"\n\Finalizing my response!")
+        self.streamer.add_special(f"Finalizing the task response!")
         
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=WORK_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400

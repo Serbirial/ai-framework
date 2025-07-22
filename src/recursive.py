@@ -210,7 +210,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             
             # generate step output
-            self.streamer(f"\n\nMoving on to step {step+1} of reasoning!")
+            self.streamer.add_special(f"Moving on to step {step+1} of reasoning")
 
             response = self.bot._straightforward_generate(
                 step_prompt,
@@ -321,7 +321,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-        self.streamer(f"\n\Finalizing my reply!")
+        self.streamer.add_special(f"Finalizing my recursive reply")
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=RECURSIVE_MAX_TOKENS_FINAL, # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts

@@ -23,15 +23,19 @@ import asyncio
 import time
 
 class DiscordBufferedUpdater:
-    def __init__(self, discord_message, cooldown=2.5, max_chars=2000):
+    def __init__(self, discord_message, cooldown=2.3, max_chars=1900):
         self.discord_message = discord_message
         self.cooldown = cooldown
         self.max_chars = max_chars
         self.buffer = ""
+        self.special_buffer = {}
         self.last_edit_time = 0
         self._lock = asyncio.Lock()
         self._scheduled_task = None
         self._loop = asyncio.get_event_loop()
+        
+    def add_special(self, entry):
+        self.special_buffer.append(f"{entry}")
 
     def __call__(self, new_text_chunk):
         # Sync call: update buffer & schedule async edit
@@ -60,7 +64,12 @@ class DiscordBufferedUpdater:
             await asyncio.sleep(delay)
             async with self._lock:
                 try:
-                    await self.discord_message.edit(content=self.buffer)
+                    temp = ""
+                    for entry in self.special_buffer:
+                        temp += f"{entry}\n"
+
+                    temp += f"\n{self.buffer}"
+                    await self.discord_message.edit(content=temp)
                     self.last_edit_time = time.monotonic()
                 except Exception as e:
                     print(f"Failed to edit Discord message: {e}")
