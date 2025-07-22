@@ -5,11 +5,15 @@ headers = {
     "Referer": "http://127.0.0.1/"
 }
 
+banned_hosts = ["localhost", "127.0.0.1", "192.168"]
+
 def simple_webpage_scraper(params: dict) -> dict:
     url = params.get("url")
     if not url:
         return {"error": "Missing required parameter: url"}
-
+    for host in banned_hosts:
+        if host in url:
+            return {"error": f"Not allowed to scrape localhost or (W)LAN."}
     try:
         res = requests.get(url, headers=headers, timeout=10)
         if not res.ok:

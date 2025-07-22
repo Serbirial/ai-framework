@@ -1,19 +1,11 @@
 
-import asyncio
+import json
 import time
 
 from . import discord_debug
 
 
-mood_instruction = {
-    "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",
-    "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence if not stated otherwise.",
-    "angry": "Be clearly mad, extremely sarcastic, and show extreme irritation in every sentence if not stated otherwise.",
-
-    "neutral": "Use a calm and balanced tone if not stated otherwise."
-}
 MODEL_NAME = ""
-mainLLM = "/content/ai-framework/Llama-3.2-8B-Instruct-Q6_K.gguf" # TEMP while running on PI
 #actual good model vvv
 #mainLLM = "/home/koya/models/llama-2-7b-chat.Q4_K_S.gguf" # TEMP while running on dedi VM
 
@@ -21,11 +13,6 @@ webclassifyLLMName = "/home/summers/models/using/t5-small-finetuned-summarize-ne
 baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S.gguf" # temp model 
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
 
-RECURSIVE_MAX_TOKENS_PER_STEP = 256 # Generate up to 300 tokens per step in base recursive thinking
-WORK_MAX_TOKENS_PER_STEP = 800 # Generate up to 500 tokens per step in recursive task based working / thinking
-RECURSIVE_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
-WORK_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
-BASE_MAX_TOKENS = 460 # Generate up to 460 tokens when using BASE replies (base chat replies- no recursive thinking or working- no special action usage- nothing- pure chat mode.)
 
 WORKER_IP_PORT = "localhost:5007"
 
@@ -33,9 +20,24 @@ TOKEN = ""
 DB_PATH = "memory.db"
 SCHEMA_PATH = "config/schema.sql"
 
-CUSTOM_GPT2 = False
 
-WEB_ACCESS = True # This is what enables or disables the AI having internet access
+class Config(object):
+    def __init__(self):
+        self.token_config = {}
+        self.prompts = {}
+        self.general = {}
+        self.load_configs()
+
+    def load_configs(self):
+        with open("config/token_limits.json", "r", encoding="utf-8") as f:
+            self.token_config = json.load(f)
+
+        with open("config/prompts.json", "r", encoding="utf-8") as f:
+            self.prompts = json.load(f)
+
+        with open("config/config.json", "r", encoding="utf-8") as f:
+            self.general = json.load(f)
+
 
 def default_debug(**data):
     print()

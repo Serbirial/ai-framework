@@ -1,0 +1,18 @@
+{
+    "main_llm_path": "/content/ai-framework/Llama-3.2-8B-Instruct-Q6_K.gguf",
+    "sub_concurrent_llm_path": "/content/ai-framework/Llama-3.2-3B-Instruct-Q4_0.gguf",
+    
+    "web_access": true,
+    
+    "custom_gpt2": false, 
+
+    "sub_concurrent_max_interactions": 3,
+
+    "mood_instruction":  {
+        "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",
+        "annoyed": "Be clearly annoyed, sarcastic, and express mild irritation in every sentence if not stated otherwise.",
+        "angry": "Be clearly mad, extremely sarcastic, and show extreme irritation in every sentence if not stated otherwise.",
+
+        "neutral": "Use a calm and balanced tone if not stated otherwise."
+    }
+}

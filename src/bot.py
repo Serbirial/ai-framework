@@ -21,9 +21,12 @@ from . import static_prompts
 from utils import openai
 
 from log import log
-from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, DEBUG_FUNC, BASE_MAX_TOKENS
+from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer, DEBUG_FUNC, Config
+
+CONFIG_VAR = Config()
+
 MODEL_VAR = Llama(
-            model_path=mainLLM,
+            model_path=CONFIG_VAR.general["main_llm_path"],
             n_ctx=18000,              # TODO use CTX setter 
             n_threads=4,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
@@ -36,6 +39,7 @@ MODEL_VAR = Llama(
             #numa=False
         )
 tokenizer = DummyTokenizer() # FiXME
+
 
 class StringStreamer:
     def __init__(self):
@@ -417,9 +421,13 @@ class ChatBot:
 
         return usertone, moods, mood, mood_sentence, persona_prompt, category
 
-    def chat(self, username, user_input, identifier, max_new_tokens=BASE_MAX_TOKENS, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
+    def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
         cnn_output_formatted = None
+        
+        if not max_new_tokens:
+            max_new_tokens = CONFIG_VAR.token_config[tier]["BASE_MAX_TOKENS"]
+        
         if cnn_file_path:
             if streamer:
                 streamer.add_special(f"Image Detetcted, starting processing (may take a while)...")
@@ -429,7 +437,7 @@ class ChatBot:
                     cnn_response = requests.post(
                         f"http://localhost:6006/describe_image",  # or your actual CNN endpoint
                         files={"image": f},
-                        timeout=300
+                        timeout=500
                     )
                 if cnn_response.status_code == 200:
                     cnn_output = cnn_response.json().get("description", None)
@@ -463,7 +471,7 @@ class ChatBot:
             
         if tiny_mode:
             prompt = tiny_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
-        elif CUSTOM_GPT2:
+        elif CONFIG_VAR.general["custom_gpt2"]:
             prompt = custom_gpt2_prompts.build_base_prompt_tiny(self, username, user_input, identifier, usertone, context)
         else:
             prompt = self.build_prompt(persona_prompt, username, user_input, identifier, usertone, context if context else None, cnn_output=cnn_output_formatted)
@@ -510,7 +518,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveWork(self, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveWork(self, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
@@ -534,7 +542,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -559,7 +567,7 @@ class ChatBot:
                 if streamer:
                     streamer.add_special(f"Forcing recursive (will take longer).")
                 
-                thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
@@ -586,7 +594,7 @@ class ChatBot:
                     short_context = self.get_recent_history(identifier, limit=10)
                 else:
                     short_context = context
-                thinker = RecursiveThinker(self, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
                 thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)

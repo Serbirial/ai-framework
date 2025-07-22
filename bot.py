@@ -458,6 +458,7 @@ class ChatBot(discord.Client):
         self.is_generating = False
         self.generate_lock = asyncio.Lock()
         self.chat_contexts = {} #userID:Object
+        self.config = static.Config()
 
 
     async def get_chat_context(self, message):
@@ -519,7 +520,6 @@ class ChatBot(discord.Client):
             "clearlivehistory": False,
             "rawmemstore": False,
             "listmem": False,
-            # new flags:
             "clear_section": None,   # string name of section to clear
             "add_section": None,     # string name of section to add to
             "add_text": None,        # string text to add to section
@@ -528,7 +528,7 @@ class ChatBot(discord.Client):
             "category": None,  # New: override input category (e.g., "factual_question")
             "orp": False,  
             "stream": False,
-            "tinymode": False,  
+            "tinymode": False,
 
         }
 
@@ -636,6 +636,8 @@ class ChatBot(discord.Client):
                 "`!clear <section>`- Clears a personality section (goals, traits, likes, dislikes).\n"
                 "`!add <section> <text>` - Adds a line of text to a personality section.\n"
                 "`!personality`   - Lists all personality sections and their contents.\n"
+                "`!view_tier`     - Shows your current tier (ai model limitations).\n"
+
                 "`!help`          - Shows this help message.\n"
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -647,8 +649,94 @@ class ChatBot(discord.Client):
 
 
     async def on_message(self, message: discord.Message) -> None:
+        tier = "t0"
         if message.author == self.user:
             return
+        elif message.author.id == 1270040138948411442:
+            if message.content.startswith("!set_tier"):
+                parts = message.content.strip().split()
+                if len(parts) != 2:
+                    await message.channel.send("Usage: `!set_tier t0|t1|t2`")
+                    return
+                tier_value = parts[1]
+                if tier_value not in ["t0", "t1", "t2"]:
+                    await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t2`.")
+                    return
+
+                import sqlite3
+                from log import DB_PATH  # update this path if your DB is located elsewhere
+
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    INSERT INTO tier (userid, tier)
+                    VALUES (?, ?)
+                    ON CONFLICT(userid) DO UPDATE SET tier=excluded.tier;
+                """, (str(message.author.id), tier_value))
+
+                conn.commit()
+                conn.close()
+
+                return await message.channel.send(f"Tier for <@{message.author.id}> set to `{tier_value}`.")
+                
+                
+        elif message.content.startswith("!view_tier"):
+            # Default: show the tier of the person who issued the command
+            target_user = message.author
+
+            # If the caller is the admin and supplied a mention or ID
+            parts = message.content.strip().split()
+            if len(parts) == 2 and message.author.id == 1270040138948411442:
+                user_id_raw = parts[1].strip("<@!>")
+                try:
+                    target_user = await self.fetch_user(int(user_id_raw))
+                except Exception:
+                    await message.channel.send("Could not find that user.")
+                    return
+
+            import sqlite3
+            from log import DB_PATH
+
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT tier FROM tier WHERE userid = ?", (str(target_user.id),))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                tier = row[0]
+            else:
+                tier = "t0"  # Default to t0 if no tier set
+
+            # Access token limits from config
+            limits = self.config.token_config.get(tier, {})
+            token_window = limits.get("BASE_TOKEN_WINDOW", "?")
+            base_max = limits.get("BASE_MAX_TOKENS", "?")
+            work_step = limits.get("WORK_MAX_TOKENS_PER_STEP", "?")
+            work_final = limits.get("WORK_MAX_TOKENS_FINAL", "?")
+            rec_step = limits.get("RECURSIVE_MAX_TOKENS_PER_STEP", "?")
+            rec_final = limits.get("RECURSIVE_MAX_TOKENS_FINAL", "?")
+            
+            step_limit = limits.get("MAX_STEPS", "?")
+
+            msg = (
+                f"**<@{target_user.id}> is currently tier `{tier}`.**\n"
+                f"- Max context window: **{token_window} tokens**\n"
+                f"- General reply max output: **{base_max} tokens max**\n"
+                f"- RecursiveTask steps: **{work_step} tokens/step**, final step: **{work_final}**\n"
+                f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n\n"
+                f"- Max Depth limit: **{step_limit}**"
+                f"_Higher tiers allow deeper tasks, longer context, and more thoughtful answers._"
+                f"_Tier 0 is the mini-model, used for basic users when the main model is being used_"
+                f"_Tier 1 is the full-model (limited), basic users get access to this when the main model is free_"
+                f"_Tier 2 is the full model, only VIPs or Supporters get this._"
+                
+                
+            )
+
+            return await message.channel.send(msg)
+            
         cnn_file_path = await download_image_attachment(message)
 
         tokenizer = static.DummyTokenizer()
@@ -927,11 +1015,11 @@ class ChatBot(discord.Client):
             
             
             return await message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
-        if int(flags["depth"]) > 75:
+        if int(flags["depth"]) > self.config.token_config[tier]["MAX_STEPS"]:
             
             
-            return await message.reply("Maximum recursion limit is **75** due to token/context windows. 75 is MORE than enough.")
-        depth = 4
+            return await message.reply(f"Maximum recursion limit is for {tier} (your tier) is **{self.config.token_config[tier]['MAX_STEPS']}**.")
+        depth = 3
         
         if flags["depth"] != None and type(flags["depth"]) == int:
             depth = flags["depth"]
@@ -953,6 +1041,7 @@ class ChatBot(discord.Client):
                             recursive_depth=depth,
                             tiny_mode=flags["tinymode"],
                             debug=flags["debug"],
+                            tier=tier,
                             cnn_file_path=cnn_file_path
                         )
                         await msg_to_edit.delete()
@@ -976,6 +1065,7 @@ class ChatBot(discord.Client):
                             recursive_depth=depth,
                             category_override="instruction_memory",
                             debug=flags["debug"],
+                            tier=tier,
                             cnn_file_path=cnn_file_path
                         )
                         await msg_to_edit.delete()
@@ -1000,6 +1090,7 @@ class ChatBot(discord.Client):
                             tiny_mode=flags["tinymode"],
                             context=history,
                             debug=flags["debug"],
+                            tier=tier,
                             cnn_file_path=cnn_file_path
                         )
                         await msg_to_edit.delete()

@@ -389,7 +389,7 @@ def determine_moods_from_social_classification(classification, top_n=3):
 
 
 
-def classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
+def legacy_classify_moods_into_sentence(model, tokenizer, moods_dict: dict):
     """
     Converts mood signal dictionary into a single expressive sentence reflecting the AI's current emotional state.
 
