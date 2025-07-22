@@ -64,5 +64,5 @@ CREATE TABLE IF NOT EXISTS LASTFM_SESSIONS (
 
 CREATE TABLE IF NOT EXISTS tier (
     userid TEXT PRIMARY KEY,        
-    tier TEXT NOT NULL,      -- t0 = sub, small mode, t1 = sub / main med mode, t2 = VIP main mode
+    tier TEXT NOT NULL      -- t0 = sub, small mode, t1 = sub / main med mode, t2 = VIP main mode
 );

@@ -685,9 +685,6 @@ class ChatBot(discord.Client):
                     await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t2`.")
                     return
 
-                import sqlite3
-                from log import DB_PATH  # update this path if your DB is located elsewhere
-
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
 
@@ -1171,11 +1168,12 @@ class ChatBot(discord.Client):
                     self.main_llm_generating = False
                     pass
                 except Exception as e:                    
+                    print(e)
                     self.main_llm_generating = False
-                    if response != None:
-                        await message.reply(response)
-                    import traceback
-                    await message.reply(traceback.format_exception_only(e))
+                    #if response != None:
+                    #    await message.reply(response)
+                    #import traceback
+                    #await message.reply(traceback.format_exception_only(e))
 
     def process_input(self, message):
         """ Process the input message """
