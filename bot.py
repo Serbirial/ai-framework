@@ -31,7 +31,7 @@ class DiscordBufferedUpdater:
         self.cooldown = cooldown
         self.max_chars = max_chars
         self.buffer = ""
-        self.special_buffer = {}
+        self.special_buffer = []
         self.last_edit_time = 0
         self._lock = asyncio.Lock()
         self._scheduled_task = None

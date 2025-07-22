@@ -235,10 +235,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             if action_result != "NOACTION":
                 if type(action_result) == list: # multiple actions = multiple results
                     for result in action_result:
-                        extra_context_lines.append(result)
                         full += f"\n{result}" # add result to full prompt
                 else:
-                    extra_context_lines.append(action_result)
                     full += f"\n{result}" # add result to full prompt
             # Your checkpoint logic remains the same
             if step != 0 and step % 5 == 0 and step != self.depth - 1:
