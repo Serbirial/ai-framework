@@ -21,7 +21,7 @@ import time
 import asyncio
 import time
 
-import static_prompts
+from src import static_prompts
 
 from src import concurrent_generation
 
