@@ -208,20 +208,20 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             full
             + discord_formatting_prompt
             + f"### Responding to {username}\n"
-            + "**Task:** Summarize to the user. If the task is unfinished, explain what progress has been made and what steps remain.\n\n"
+            + "**Task:** Respond to the user, if the task is unfinished, explain what progress has been made and what steps remain.\n\n"
             + "**Rules**:\n"
-            + "- Do NOT mention or list internal step names, action calls, or raw execution details unless asked.\n"
-
-            + "- When referencing something from your earlier steps, clearly restate it so the user can understand it without seeing your internalized steps.\n"
-            + "- Include disclaimers when accessing the web through actions.\n"
-            + "- You may NOT execute any new actions — only use previously obtained data.\n"
-            + "- Present the answer directly and concisely — speak in the first person as if you are directly replying to the user.\n"
-            + "- If the task is complete, clearly state it and provide a helpful concluding summary.\n"
-            + "- If more steps remain, clearly list only the next immediate steps without excess detail.\n"
-            + "- When presenting results from any external tool or action, explain them clearly and conversationally without mentioning internal commands or raw data; focus on making the information accessible and helpful to the user.\n\n"
+            + "- DO NOT mention or list internal step names, function calls, or raw action metadata unless the user explicitly asks.\n"
+            + "- The user cannot see your internal thoughts or steps — always restate anything important from earlier as if explaining it from scratch.\n"
+            + "- Explain your reasoning and what has been done so far in plain, conversational language.\n"
+            + "- Include clear disclaimers if your response includes web data, scraped content, or summaries from tools.\n"
+            + "- DO NOT execute new actions — only summarize based on information already gathered.\n"
+            + "- Speak naturally in the first person, as if you’re talking directly to the user.\n"
+            + "- If the task is complete, say so clearly and offer a concise  summary.\n"
+            + "- If the task is still in progress, list ONLY the next immediate steps in as few words as possible while still clearly communicating to both the user and yourself when reviewing chat history.\n"
+            + "- When sharing results from a tool, restate what was found in your own words — never show raw action data, JSON, or internal tokens.\n"
 
             # end sys prompt
-            + "<|eot_id|>"
+            + "<|eot_id|>\n"
 
 
             + to_add # add the steps

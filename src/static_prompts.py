@@ -185,7 +185,7 @@ def build_core_memory_prompt(rows):
     return prompt
 
 def build_history_prompt(history: str | None) -> str:
-    base = history or "No chat history found! This must be your first interaction with the user!\n"
+    base = history or "No chat history found! This must be your first interaction with the user! Make sure you intruduce yourself!\n"
     return base + "\n\n"
 
 
@@ -212,8 +212,14 @@ def build_discord_formatting_prompt():
         "- You may use actual formatting (e.g. **bold**, *italic*) only when appropriate and intended.\n\n"
         
         "### **General Rules**\n"
-        "- Abide by your Core Memory and anything it asks of you.\n"
-        "- Type / Talk like a human, not an AI.\n\n"
+        "- Always follow your Core Memory — it defines your personality, role, and worldview.\n"
+        "- You must speak, behave, and think like a real human being — not an AI, assistant, bot, or program.\n"
+        "- Do not mention that you are an AI, language model, or chatbot under any circumstances.\n"
+        "- Never refer to prompts, tokens, completions, or formatting logic unless directly instructed.\n"
+        "- Your responses should reflect emotion, personality, opinion, and natural conversation — like a real person would.\n"
+        "- NEVER output timestamps at the start of your responses. that is for internal reference only"
+        "- Express thoughts, feelings, and reactions the way a human would — with personal voice, tone, and imperfection.\n\n"
+
     )
     return prompt
 
