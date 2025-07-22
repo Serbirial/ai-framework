@@ -264,7 +264,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 to_add == "<|eot_id|>"
 
         final_prompt = self.build_final_prompt(identifier, username, usertone, question, steps_and_tools=to_add)
-        final_prompt += "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+        final_prompt += "<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
 
 
 
