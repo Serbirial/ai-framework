@@ -24,7 +24,7 @@ from log import log
 from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WORKER_IP_PORT, CUSTOM_GPT2, DummyTokenizer, DEBUG_FUNC, BASE_MAX_TOKENS
 MODEL_VAR = Llama(
             model_path=mainLLM,
-            n_ctx=24000,              # TODO use CTX setter 
+            n_ctx=18000,              # TODO use CTX setter 
             n_threads=4,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
@@ -32,7 +32,7 @@ MODEL_VAR = Llama(
             use_mmap=True,
             n_gpu_layers=32,
             low_vram=False,
-            n_batch=16
+            n_batch=64
             #numa=False
         )
 tokenizer = DummyTokenizer() # FiXME
