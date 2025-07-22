@@ -8,7 +8,6 @@ import sqlite3
 from src import bot
 from src import static
 from src import classify
-import custom_gpt2_prompts
 import json, io
 DB_PATH = static.DB_PATH
 import asyncio
@@ -762,12 +761,14 @@ class ChatBot(discord.Client):
 
         tokenizer = static.DummyTokenizer()
         if message.author.id not in self.chat_contexts:
-            # max_tokens = total context window your model supports (40k)
-            # reserved_tokens = tokens reserved for other parts of the prompt + output generation (e.g. 20k reserved)
-            # so chat history max is max_tokens - reserved_tokens = 20k tokens
-            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=8000, reserved_tokens=4000)
+            # Access token limits from config
+            limits = self.config.token_config.get(tier, {})
+            token_window = limits.get("BASE_TOKEN_WINDOW", "4096")
             
-            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=4000, tokenizer=tokenizer)
+            # Half of the token window is reserved 
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=token_window, reserved_tokens=token_window/2)
+            #Load half of token window worth of chat history if avalible
+            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=token_window/2, tokenizer=tokenizer)
             for entry in db_history:
                 context.add_line(entry["content"], entry["role"])
 
@@ -798,8 +799,6 @@ class ChatBot(discord.Client):
         flags, processed_input = self.parse_command_flags(processed_input)
         stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
-        if static.CUSTOM_GPT2:
-            await message.reply("CUSTOM GPT2 MODEL IS BEING USED! RECURSIVE THINKING MIGHT BREAK! THIS MODEL IS UNSAFE / NSFW!`")
         if flags["orp"] == True:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():

@@ -20,7 +20,19 @@ class Concurrent_Llama_Gen:
 		self.generations: dict[int, dict] = {
 			i: {
 				"in_use": None,
-				"model": ChatBot(name=botname, model=Llama()),
+				"model": ChatBot(name=botname, model=Llama(
+				model_path=config.general["sub_concurrent_llm_path"],
+                n_ctx=8096,              # TODO use CTX setter 
+                n_threads=3,             # tune to setup
+                use_mlock=False,
+                logits_all=False,
+                verbose=False,
+                use_mmap=True,
+                n_gpu_layers=32,
+                low_vram=False,
+                n_batch=64
+                #numa=False
+                )),
 			}
 			for i in range(max_concurrent)
 		}
