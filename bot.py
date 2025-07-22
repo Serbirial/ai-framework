@@ -22,6 +22,10 @@ import time
 import asyncio
 import time
 
+import static_prompts
+
+from src import concurrent_generation
+
 class DiscordBufferedUpdater:
     def __init__(self, discord_message, cooldown=2.4, max_chars=1900):
         self.discord_message = discord_message
@@ -445,7 +449,7 @@ class ChatBot(discord.Client):
     """ChatBot handles discord communication. This class runs its own thread that
     persistently watches for new messages, then acts on them when the bots username
     is mentioned. It will use the ChatAI class to generate messages then send them
-    back to the configured server channel.
+    back to the ping originator.
 
     ChatBot inherits the discord.Client class from discord.py
     """
@@ -455,10 +459,18 @@ class ChatBot(discord.Client):
         super().__init__()
         #super().__init__(intents=intents)
         self.ai = AiChatBot(db_path="memory.db")
-        self.is_generating = False
         self.generate_lock = asyncio.Lock()
         self.chat_contexts = {} #userID:Object
         self.config = static.Config()
+
+        self.sub_llm_concurrency_limit = self.config.general["sub_concurrent_max_interactions"] # defaults to 3
+        
+        self.main_llm_generating = False
+        self.sub_llm_at_capacity = False
+        
+        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"])
+
+        print(f"Up to {self.sub_model.max_concurrent} concurrent interactions with the sub model allowed.")
 
 
     async def get_chat_context(self, message):
@@ -649,7 +661,57 @@ class ChatBot(discord.Client):
 
 
     async def on_message(self, message: discord.Message) -> None:
-        tier = "t0"
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT tier FROM tier WHERE userid = ?", (str(message.author.id),))
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            tier = row[0]
+        else:
+            tier = "t0"  # Default to t0 if no tier set
+        
+        if self.main_llm_generating:
+            if tier == "t2":
+                await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
+            else:
+                if not self.sub_model.has_free_slot():
+                    await message.channel.send("Too many users are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
+                    return
+                conn = sqlite3.connect(static.DB_PATH)
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT data, timestamp FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
+                    (message.author.id,)
+                )
+                rows = cursor.fetchall()
+                conn.close()
+
+                if not rows:
+                    rows = None
+                prompt = (
+                    f"{static_prompts.build_base_chat_task_prompt(self.ai.name, message.author.display_name)}"
+                    f"{static_prompts.build_core_memory_prompt(rows)}"
+                    f"{static_prompts.build_discord_formatting_prompt()}"
+                )
+                slot = self.sub_model.assign(
+                    identifier=message.author.id,
+                    full_prompt=prompt,
+                    user_input=self.process_input(message.content),
+                )
+                if slot is None:
+                    await message.channel.send("Too many users are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
+                    return
+                else:
+                    await message.channel.send("Working on a reply...")
+                    while not self.sub_model.generations[slot]["is_ready"]:
+                        await asyncio.sleep(5)
+                    output = self.sub_model.generations[slot]["output"] or "(no response? error possibly?)"
+                    self.sub_model.remove(slot)
+                    return await message.reply(output)
+
+
         if message.author == self.user:
             return
         elif message.author.id == 1270040138948411442:
@@ -695,8 +757,6 @@ class ChatBot(discord.Client):
                     await message.channel.send("Could not find that user.")
                     return
 
-            import sqlite3
-            from log import DB_PATH
 
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
@@ -1023,7 +1083,8 @@ class ChatBot(discord.Client):
         
         if flags["depth"] != None and type(flags["depth"]) == int:
             depth = flags["depth"]
-        async with self.generate_lock:  # ✅ Thread-safe section
+        async with self.generate_lock:
+            self.main_llm_generating = True 
             response = None
             async with message.channel.typing():
                 try:
@@ -1044,6 +1105,7 @@ class ChatBot(discord.Client):
                             tier=tier,
                             cnn_file_path=cnn_file_path
                         )
+                        self.main_llm_generating = False
                         await msg_to_edit.delete()
                         await message.reply(response)
                         
@@ -1068,6 +1130,7 @@ class ChatBot(discord.Client):
                             tier=tier,
                             cnn_file_path=cnn_file_path
                         )
+                        self.main_llm_generating = False
                         await msg_to_edit.delete()
                         await message.reply(response)
                         context.add_line(processed_input, "user")
@@ -1093,6 +1156,7 @@ class ChatBot(discord.Client):
                             tier=tier,
                             cnn_file_path=cnn_file_path
                         )
+                        self.main_llm_generating = False
                         await msg_to_edit.delete()
                         await message.reply(response)
                         context.add_line(processed_input, "user")
