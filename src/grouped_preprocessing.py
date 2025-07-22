@@ -8,7 +8,7 @@ def basic_preprocessing(
     likes: List[str],
     dislikes: List[str],
     history: str | None = None,
-    max_new_tokens: int = 60,
+    max_new_tokens: int = 256,
 ) -> Tuple[Dict[str, str], str, str]:
     """
     Performs social tone classification, category classification,
