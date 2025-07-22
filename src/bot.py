@@ -25,12 +25,12 @@ from .static import mood_instruction, StopOnSpeakerChange, DB_PATH, mainLLM, WOR
 MODEL_VAR = Llama(
             model_path=mainLLM,
             n_ctx=24000,              # TODO use CTX setter 
-            n_threads=12,             # tune to setup
+            n_threads=4,             # tune to setup
             use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
             logits_all=False,
             verbose=False,
             use_mmap=True,
-            n_gpu_layers=0,
+            n_gpu_layers=32,
             low_vram=False,
             n_batch=16
             #numa=False
@@ -442,16 +442,15 @@ class ChatBot:
             cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
             streamer(f"- Image processed.\n")
             
-        
+        streamer("- Pre-processing input\n")
         usertone, moods, mood, mood_sentence, persona_prompt, category = self.run_classifiers(tokenizer, user_input, category_override, identifier, context)
         
         self.mood = mood
         
         
         self.mood_sentence = mood_sentence
-        if debug:
-            streamer(f"- Setting mood to {self.mood}\n")
-            streamer(f"- Setting mood sentence to {self.mood_sentence}\n")
+        streamer(f"- Setting mood to {self.mood}\n")
+        streamer(f"- Setting mood sentence to {self.mood_sentence}\n")
             
             
             
@@ -493,6 +492,8 @@ class ChatBot:
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
 
         elif category == "task": # The user wants the AI to do something task based- and it will be done step by step.
+            streamer(f"- Trying to complete the task...\n\n")
+
             if not context:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
@@ -509,6 +510,8 @@ class ChatBot:
             response = final
 
         elif category == "preference_query":
+            streamer(f"- Internally reasoning...\n\n")
+            
             # Use recursive thinker for more elaborate introspection
             # Extract just memory lines for context
             
@@ -557,6 +560,8 @@ class ChatBot:
             if not force_recursive:
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)
             elif force_recursive:
+                streamer(f"- Forcing recursive (will take longer).\n\n")
+                
                 # Use recursive thinker for more elaborate introspection
                 # Extract just memory lines for context
                 
