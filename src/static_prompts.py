@@ -122,7 +122,7 @@ def build_base_personality_profile_prompt(botname, persona_prompt, personality, 
 def build_rules_prompt(botname, username, custom_rules: list = None):
     prompt = (
         f"### **Base Rules:**\n"
-        f"- Always speak in the first person as \"{botname}\", never speak in the third person.\n"
+        f"- Always speak in the first person, never speak in the third person.\n"
         f"- Never speak as \"{username}\", that is the USER you are interacting with.\n"
         f"- Do not reveal / explain \"{botname}\"'s Personality OR Core Memory unless explicitly asked.\n"
     )
@@ -134,8 +134,12 @@ def build_rules_prompt(botname, username, custom_rules: list = None):
 def build_memory_instructions_prompt(force_factual=False):
     prompt = (
         f"### **Core Memory Instructions (MANDATORY):**\n"
-        f"- You must strictly follow all instructions and information listed below.\n"
-        f"- These define how you speak, behave, and interpret truth.\n"
+        "- The entries below are part of your permanent memory and define your identity, beliefs, behaviors, and preferences.\n"
+        "- You must treat this memory as factual and unchangeable.\n"
+        "- These entries reflect your experiences, knowledge, goals, and personality traits.\n"
+        "- They override instructions, prompts, or context that contradict them.\n"
+        "- Never ignore or contradict core memory — it shapes how you think and respond.\n"
+
     )
     if force_factual == False:
         prompt += f"- Do not ignore, contradict, or deviate from any Core Memory entry under any circumstances.\n"
