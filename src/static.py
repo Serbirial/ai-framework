@@ -22,7 +22,7 @@ baseclassifyLLMName = "/home/summers/models/using/TinyMistral-248M-SFT-v4.Q4_K_S
 emotionalLLMName = "/home/summers/models/using/GPT2-Finetuned-Emotion-Classification.Q3_K.gguf" 
 
 RECURSIVE_MAX_TOKENS_PER_STEP = 256 # Generate up to 300 tokens per step in base recursive thinking
-WORK_MAX_TOKENS_PER_STEP = 500 # Generate up to 500 tokens per step in recursive task based working / thinking
+WORK_MAX_TOKENS_PER_STEP = 800 # Generate up to 500 tokens per step in recursive task based working / thinking
 RECURSIVE_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
 WORK_MAX_TOKENS_FINAL = 460 # Generate up to 460 tokens for the final output
 BASE_MAX_TOKENS = 460 # Generate up to 460 tokens when using BASE replies (base chat replies- no recursive thinking or working- no special action usage- nothing- pure chat mode.)
