@@ -616,7 +616,10 @@ class ChatBot(discord.Client):
             "stream": False,
             "tinymode": False,
             "view_tier": False,
-            "explain": False
+            "explain": False,
+            "change_personality": False,
+            "list_personalities": False
+            
 
         }
 
@@ -643,6 +646,10 @@ class ChatBot(discord.Client):
                 flags["memstore"] = True
             elif token == "!stream":
                 flags["stream"] = True
+            elif token == "!change_personality":
+                flags["change_personality"] = True
+            elif token == "!list_personalities":
+                flags["list_personalities"] = True
             elif token == "!tiny" or token == "!tinymode":
                 flags["tinymode"] = True
             elif token == "!rawmemstore" or token == "!rms":
@@ -726,6 +733,8 @@ class ChatBot(discord.Client):
                 "`!clear <section>`- Clears a personality section (goals, traits, likes, dislikes).\n"
                 "`!add <section> <text>` - Adds a line of text to a personality section.\n"
                 "`!personality`   - Lists all personality sections and their contents.\n"
+                "`!change_personality [name]` - Changes your personality to [name] named personality.\n"
+                
                 "`!view_tier`     - Shows your current tier (ai model limitations).\n"
                 "`!help`          - Shows this help message.\n"
                 "`![explain|whatareyou]` - What am i? Who am i? Are you confused? Run this!\n"
@@ -973,7 +982,20 @@ class ChatBot(discord.Client):
                 await message.reply(f"Failed to set active personality: {e}")
                 conn.close()
                 return
-
+        if flags["list_personalities"]:
+            conn = sqlite3.connect(static.DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name FROM BOT_PROFILE WHERE owner = ?",
+                (message.author.id,)
+            )
+            rows = cursor.fetchall()
+            conn.close()
+            data = "All of your personalities:\n"
+            for row in rows:
+                data += f"  - {row}"
+            return await message.reply(data)
+        
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
