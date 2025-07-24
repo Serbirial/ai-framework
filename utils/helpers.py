@@ -19,7 +19,7 @@ def get_mem_tokens_n(identifier, limit):
     for row in rows:
         entry = row[0]
         tokens = tokenizer.count_tokens(entry)
-        if total_tokens + len(tokens) > limit:
+        if total_tokens + tokens > limit:
             break
         total_tokens += tokens
 
