@@ -5,9 +5,9 @@
     "SUMMARY_MINIMUM_TOKEN_LIMIT": 512,
 
     "t3+": {
-        "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 400,
 
-        "WORK_MAX_TOKENS_PER_STEP": 800,
+        "WORK_MAX_TOKENS_PER_STEP": 675,
 
         "RECURSIVE_MAX_TOKENS_FINAL": 460,
         "WORK_MAX_TOKENS_FINAL": 460, 
@@ -17,15 +17,15 @@
 
         "BASE_MAX_TOKENS": 460,
 
-        "BASE_TOKEN_WINDOW": 18000,
+        "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 8,
 
-        "MAX_CHAT_WINDOW": 8000
+        "MAX_CHAT_WINDOW": 6000
 
     },
     "t3": {
-        "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
-        "WORK_MAX_TOKENS_PER_STEP": 800,
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 300,
+        "WORK_MAX_TOKENS_PER_STEP": 575,
 
         "RECURSIVE_MAX_TOKENS_FINAL": 460,
         "WORK_MAX_TOKENS_FINAL": 460, 
@@ -43,7 +43,7 @@
     },
     "t2": {
         "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
-        "WORK_MAX_TOKENS_PER_STEP": 550,
+        "WORK_MAX_TOKENS_PER_STEP": 475,
 
         "RECURSIVE_MAX_TOKENS_FINAL": 460,
         "WORK_MAX_TOKENS_FINAL": 460, 
@@ -56,7 +56,7 @@
         "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 7,
 
-        "MAX_CHAT_WINDOW": 6000
+        "MAX_CHAT_WINDOW": 5096
 
     },
     "t1+": {
