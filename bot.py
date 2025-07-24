@@ -780,7 +780,7 @@ class ChatBot(discord.Client):
                 user_value = parts[2]
                 user = self.get_user(user_value)
                 if not user:
-                    return await message.reply(f"Couldnt find user for id: {user_value}")
+                    await message.reply(f"WARNING: Couldnt find user for id: {user_value}")
 
                 
                 if tier_value not in ["t0", "t1", "t1+", "t2", "t3", "t3+"]:
@@ -809,7 +809,7 @@ class ChatBot(discord.Client):
                 user_value = parts[1]
                 user = await self.fetch_user(user_value)
                 if not user:
-                    return await message.reply(f"Couldn't find user for ID: {user_value}")
+                    await message.reply(f"WARNING: Couldn't find user for ID: {user_value}")
 
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
