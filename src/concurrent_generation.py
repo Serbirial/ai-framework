@@ -22,8 +22,8 @@ def _model_worker(conn, model_path, botname, core_ids, n_threads):
 		logits_all=False,
 		verbose=False,
 		use_mmap=False,
-		n_gpu_layers=32,
-		low_vram=False,
+		n_gpu_layers=0,
+		low_vram=True,
 		n_batch=64
 	))
 
