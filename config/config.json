@@ -6,7 +6,7 @@
     
     "custom_gpt2": false, 
 
-    "sub_concurrent_max_interactions": 3,
+    "sub_concurrent_max_interactions": 2,
 
     "mood_instruction":  {
         "happy": "Express joy, warmth, and positivity in your thoughts if not stated otherwise.",

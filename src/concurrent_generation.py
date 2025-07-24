@@ -11,6 +11,7 @@ from src.bot import ChatBot
 config = Config()
 def _model_worker(conn, model_path, botname, core_ids, n_threads):
 	import psutil, os
+	from multiprocessing.connection import Connection
 	psutil.Process(os.getpid()).cpu_affinity(core_ids)
 
 	model = ChatBot(name=botname, model=Llama(
@@ -28,11 +29,18 @@ def _model_worker(conn, model_path, botname, core_ids, n_threads):
 
 	try:
 		msg = conn.recv()
-		response = model.chat(**msg)
-		conn.send(response)
+
+		def streamer(text):
+			conn.send({"token": text})
+
+		result = model.chat(**msg, streamer=streamer)
+		conn.send({"done": True, "final": result})
+
 	except Exception as e:
 		conn.send({"error": str(e)})
+	finally:
 		conn.close()
+
 
 
 class Concurrent_Llama_Gen:
@@ -57,6 +65,8 @@ class Concurrent_Llama_Gen:
 				"identifier": None,
 				"pipe": parent_conn,
 				"proc": proc,
+				"output": "",
+				"done": False
 			}
 
 
@@ -76,7 +86,9 @@ class Concurrent_Llama_Gen:
 		self.generations[slot].update(
 			{
 				"in_use": False,
-				"identifier": None
+				"identifier": None,
+				"output": "",
+				"done": False
 			}
 		)
 
@@ -99,7 +111,6 @@ class Concurrent_Llama_Gen:
 			"top_p": top_p,
 			"user_input": user_input,
 			"temperature": temperature,
-			"streamer": None,
 			"recursive_depth": recursive_depth,
 			"identifier": identifier,
 			"category_override": category_override,
@@ -111,4 +122,22 @@ class Concurrent_Llama_Gen:
 			"force_recursive": force_recursive
 		}
 		conn.send(data)
-		return conn.recv()
+
+		self.generations[slot]["output"] = ""
+		self.generations[slot]["done"] = False
+
+		while True:
+			if conn.poll(0.05):
+				msg = conn.recv()
+				if "token" in msg:
+					self.generations[slot]["output"] += msg["token"]
+					if streamer != None:
+						streamer(msg["token"])
+				if "done" in msg:
+					self.generations[slot]["done"] = True
+					break
+				if "error" in msg:
+					self.generations[slot]["done"] = True
+					self.generations[slot]["output"] += f"[ERROR: {msg['error']}]"
+					break
+			return self.generations[slot]["output"]
