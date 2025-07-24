@@ -30,12 +30,13 @@ def log_action_execution(action_name, action_params, action_label, result):
 RATE_LIMITS = {
     # action_name: min_seconds_between_calls
     "duckduckgo_query": 1.5,
-    "get_current_time": 1.0,
-    "wikipedia_query_scraper": 1.0,
-    "coingecko_price": 1.0,
-    "run_calculus_wolfram_alpha": 1.0,
-    "simple_url_scraper": 1.0,
-    "get_weather": 1.0
+    "get_current_time": 1.5,
+    "wikipedia_query_scraper": 1.5,
+    "coingecko_price": 1.5,
+    "run_calculus_wolfram_alpha": 1.5,
+    "raw_url_scraper": 2.0,
+    "get_weather": 5.0,
+    "raw_file_scraper": 2.0
     # Add other actions here as needed
 }
 
@@ -84,7 +85,7 @@ def find_token_limit(data_tokens, compression_ratio, minimum_summary_size):
     
     
     
-def process_raw_web_output(model, max_output_tokens, summary_compression, summary_nested_compression):
+def process_raw_web_output(result, model, max_output_tokens, summary_compression, summary_nested_compression):
     if "error" in result.keys():
         result = result
     else:
@@ -117,6 +118,53 @@ def process_raw_web_output(model, max_output_tokens, summary_compression, summar
                     final_summary_compressed_token_limit = find_token_limit(final_tokens, compression_ratio, minimum_summary_size)
                     final_summary_compressed = compress_summary(model, combined, category=category_string, max_tokens=final_summary_compressed_token_limit)
                     result = {"summary": final_summary_compressed, "url": result["url"]}
+                else:
+                    result = {"summary": final_summary, "url": result["url"]}
+            else:
+                result = {"summary": combined, "url": result["url"]}
+
+        else:
+            data_tokens = tokenizer.encode(result["raw_html"])
+            summary_token_limit = max(int(data_tokens * summary_compression), minimum_summary_size)
+            summary = summarize_raw_scraped_data(model, result["raw_html"], summary_token_limit)
+            result = {"summary": summary, "url": result["url"]}
+    return result
+
+def process_raw_file_output(result, model, max_output_tokens, summary_compression, summary_nested_compression):
+    if "error" in result.keys():
+        result = result
+    else:
+        token_buffer = min(512, int(0.1 * max_output_tokens)) # 'reserve' a buffer of 512 tokens
+        minimum_summary_size = config.token_config["SUMMARY_MINIMUM_TOKEN_LIMIT"]
+        raw_token_count = len(tokenizer.encode(result))
+        if raw_token_count >= max_output_tokens:
+            chunked_html_parts = chunk_data(max_output_tokens, result)
+
+            chunked_summaries = []
+            for i, chunk_text in enumerate(chunked_html_parts):
+                _chunk_size = tokenizer.encode(chunk_text)
+                chunk_summary_token_limit = find_token_limit(_chunk_size, summary_compression, minimum_summary_size)
+                chunked_summaries.append(summarize_raw_scraped_data(model, chunk_text, chunk_summary_token_limit))
+
+            combined = format_chunks(chunked_summaries)
+
+            data_tokens = tokenizer.encode(combined)
+            if data_tokens >= max_output_tokens:
+                category_string = f"Pre-Summarized sections of a '{result['type']}'"
+
+                final_summary_token_limit = find_token_limit(_chunk_size, summary_nested_compression, minimum_summary_size)
+
+                final_summary = summarize_chunks(model, combined, category=category_string, max_tokens=final_summary_token_limit)
+                
+                # One last try by compressing the summary
+                final_tokens = tokenizer.encode(final_summary)
+                if final_tokens >= max_output_tokens:
+                    compression_ratio = find_compression_ratio(max_output_tokens, token_buffer, final_tokens)
+                    final_summary_compressed_token_limit = find_token_limit(final_tokens, compression_ratio, minimum_summary_size)
+                    final_summary_compressed = compress_summary(model, combined, category=category_string, max_tokens=final_summary_compressed_token_limit)
+                    result = {"summary": final_summary_compressed, "url": result["url"]}
+                else:
+                    result = {"summary": final_summary, "url": result["url"]}
             else:
                 result = {"summary": combined, "url": result["url"]}
 
@@ -178,7 +226,9 @@ def check_for_actions_and_run(model, text, max_token_window, max_chat_window, pr
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
 
                         if action_name == "raw_url_scraper":
-                            result = process_raw_web_output(model, max_output_tokens, summary_compression, summary_nested_compression)
+                            result = process_raw_web_output(result, model, max_output_tokens, summary_compression, summary_nested_compression)
+                        elif action_name == "raw_file_scraper":
+                            result = process_raw_file_output(result, model, max_output_tokens, summary_compression, summary_nested_compression)
 
                         # Replace <ActionResultX> with <|ipython|> block
                         output = f"<|ipython|>\n# {action_name} result\n{json.dumps(result, indent=2)}\n<|eot_id|>"

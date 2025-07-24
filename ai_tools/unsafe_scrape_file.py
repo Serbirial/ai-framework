@@ -10,14 +10,32 @@ banned_hosts = ["localhost", "127.0.0.1", "192.168"]
 
 # Allowed file extensions (non-image)
 allowed_extensions = {
-    ".pdf", ".txt", ".csv", ".json", ".xml", ".html", ".htm", ".md", ".log",
-    ".css", ".tsv", ".yaml", ".yml", ".rtf", ".doc", ".docx", ".xls", ".xlsx"
-    
-    ".js", ".py"
+    ".pdf": "PDF document",
+    ".txt": "Plain text file",
+    ".csv": "Comma-separated values file",
+    ".json": "JSON data file",
+    ".xml": "XML data file",
+    ".md": "Markdown document",
+    ".log": "Log file",
+    ".css": "Cascading Style Sheets",
+    ".tsv": "Tab-separated values file",
+    ".yaml": "YAML data file",
+    ".yml": "YAML data file",
+    ".rtf": "Rich Text Format document",
+    ".doc": "Microsoft Word document",
+    ".docx": "Microsoft Word (OpenXML) document",
+    ".xls": "Microsoft Excel spreadsheet",
+    ".xlsx": "Microsoft Excel (OpenXML) spreadsheet",
+
+    ".js": "JavaScript code file",
+    ".py": "Python code file",
+    ".go": "Go source code file",
+    ".ts": "TypeScript code file"
 }
 
+
 # Image extensions to exclude
-image_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico"}
+image_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".htm", ".html"}
 
 def simple_file_scraper(params: dict) -> dict:
     url = params.get("url")
@@ -36,13 +54,13 @@ def simple_file_scraper(params: dict) -> dict:
         ext = path[path.rfind("."):]
     else:
         # No extension found, reject
-        return {"error": "URL does not point to a file"}
+        return {"error": "URL does not end in a file extension"}
 
     # Reject if extension is image or not in allowed
     if ext in image_extensions:
         return {"error": "Image URLs are not allowed"}
 
-    if ext not in allowed_extensions:
+    if ext not in allowed_extensions.keys():
         return {"error": f"File extension '{ext}' is not allowed"}
 
     try:
@@ -52,15 +70,15 @@ def simple_file_scraper(params: dict) -> dict:
 
         html_raw = res.text
 
-        return {"url": url, "raw_html": html_raw}
+        return {"url": url, "raw_data": html_raw, "type": allowed_extensions[ext]}
 
     except Exception as e:
         return {"error": f"Exception during scraping: {str(e)}"}
 
 
 EXPORT = {
-    "file_scraper": {
-        "help": "Scrapes any URL with a supported file ending into a either a single summary.",  # this gets intercepted and summarized in the action executor.
+    "raw_file_scraper": {
+        "help": "Scrapes any URL with a supported file ending and get either the raw data (if under token limit) or a summary of the file contents.",  # this gets intercepted and summarized in the action executor.
         "callable": simple_file_scraper,
         "params": {
             "url": "string, required"
