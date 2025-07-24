@@ -74,7 +74,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log("TASK PROMPT", base)
         return base
     
-    def build_final_prompt(self, identifier, username, usertone, question, steps_and_tools):
+    def build_final_prompt(self, identifier, username, usertone, question, steps_and_tools, context):
         personality = bot.list_personality(identifier)
 
         persona_prompt = self.persona_prompt
@@ -92,6 +92,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
+        history_section = static_prompts.build_history_prompt(context)
         
         
         base = (
@@ -122,7 +123,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             "- The user can only see this reply, they cant see ANY previous steps- only what you reply with below- so make sure to re-state anything when referencing steps.\n\n"
             
             f"<|eot_id|>\n" # end system prompt
-            
+            f"{history_section}"
         )
         
         
@@ -143,19 +144,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         full = f"{prompt}"
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
-        history_section = static_prompts.build_history_prompt(context)
 
         to_add = ""
         for step in range(self.depth):
             # start with the system prompt or base context
             step_prompt = f"{full}"
 
-                
-            step_prompt += f"### Current Step:\n"
-            step_prompt += f"**Task Reminder:** {question}\n\n" # Reinforce the task every step
-
             step_prompt += (
-                "**Step Rules:**\n"
+                "**Current Step Rules:**\n"
                 "- You must ONLY generate content for the **current step**.\n"
                 "- You may leave yourself instructions or a plan for the *next* step, but do NOT write its contents.\n"
                 "- Stay entirely within the scope of this current step, you are NOT ALLOWED to create numbered steps.\n"
@@ -178,13 +174,16 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
-                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n\n"
+                "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n"
                 #"- Do NOT output any '###' or '### Step...' headings.\n\n"
-
             )
+            step_prompt += f"**Task Reminder:** {question}\n" # Reinforce the task every step
+            
             # end sys prompt
             step_prompt += "<|eot_id|>"
-
+            
+            # Add chat history every step so the AI can see its possible previous steps and build off anything previous
+            step_prompt += static_prompts.build_history_prompt(context)
 
             # add previous steps and tool results
             step_prompt += to_add
@@ -223,7 +222,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             # Check for and run any actions
             token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
             chat_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-            prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
+            prompt_window = self.config.token_config["PROMPT_RESERVATION"]
             
             
             action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)

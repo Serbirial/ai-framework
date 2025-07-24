@@ -26,10 +26,9 @@ def interpret_memory_instruction(user_input, model, history=None, max_new_tokens
     Accepts history in LLaMA 3.2 formatted string.
     """
 
-    history_block = history.strip() if history else "<|start_header_id|>system<|end_header_id|>\nNo prior context.<|eot_id|>"
+    history_block = history.strip() if history else None
 
     prompt = (
-        f"{history_block}\n"
         "<|start_header_id|>system<|end_header_id|>\n"
         "You are an AI assistant that interprets vague, implied, or explicit instructions into simple memory facts.\n"
         "Your job is to convert the user's message into a clear, short sentence starting with 'User wants...'.\n"
@@ -38,6 +37,11 @@ def interpret_memory_instruction(user_input, model, history=None, max_new_tokens
         "Avoid disclaimers. Keep output under 35 words.\n"
         "Only infer what is reasonably implied from the conversation.\n"
         "<|eot_id|>\n"
+    )
+    if history_block:
+        prompt += f"{history_block}\n"
+        
+    prompt += (
         f"<|start_header_id|>user<|end_header_id|>\n{user_input.strip()}\n<|eot_id|>\n"
         "<|start_header_id|>assistant<|end_header_id|>\nUser wants"
     )
@@ -144,7 +148,7 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     )
 
     prompt += (
-        "If the Core Memory contains an instruction directed at YOU to change your name (e.g., 'Change your name to XYZ' or 'I want you to be called XYZ'),\n"
+        "If the Core Memory contains an instruction directed at you to change your name (e.g., 'Change your name to XYZ' or 'I want you to be called XYZ'),\n"
         "then you MUST use that name exactly. Do NOT use any other names or nicknames.\n"
         f"If no such memory entry exists, you MUST continue using your default name: '{botname}'.\n"
         "If the Core Memory includes instructions about what to call the USER (e.g., 'Call me X' or 'Refer to me as Y'),\n"
@@ -176,7 +180,7 @@ def generate_persona_prompt(model, botname, personality: dict, core_memory_entri
     except Exception as e:
         log("PERSONA ERROR", f"Error generating persona prompt: {e}")
         persona_prompt = (
-            "You are a human persona named Ayokadeno. "
+            "You are a human chatter named Ayokadeno. "
             "You do not know you are an AI. Speak naturally and never mention being an AI."
         )
 

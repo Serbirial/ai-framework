@@ -20,6 +20,7 @@ from . import classify
 from . import grouped_preprocessing
 from . import static_prompts
 from utils import openai
+from utils.helpers import get_mem_tokens_n
 
 from log import log
 from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer, DEBUG_FUNC, Config
@@ -226,10 +227,10 @@ class ChatBot:
 
         prompt = (
             #"<|begin_of_text|>"
-            f"{history_section}"
             "<|start_header_id|>system<|end_header_id|>\n"
             f"{system_prompt}\n"
             "<|eot_id|>"
+            f"{history_section}"
             "<|start_header_id|>user<|end_header_id|>\n"
             f"{user_input.strip()}\n"
             "<|eot_id|>"
@@ -424,6 +425,8 @@ class ChatBot:
         
         if not max_new_tokens:
             max_new_tokens = CONFIG_VAR.token_config[tier]["BASE_MAX_TOKENS"]
+            
+        max_memory_tokens = CONFIG_VAR.token_config[tier]["MAX_MEMORY_TOKENS"]
         
         if cnn_file_path:
             if streamer:
@@ -488,6 +491,8 @@ class ChatBot:
             if streamer:
                 streamer.add_special(f"Trying to save to memory...")
 
+            if get_mem_tokens_n(identifier, max_memory_tokens) > max_memory_tokens:
+                return "I cant store anything in my memory right now. (AT LIMIT)"
             memory_data = classify.interpret_memory_instruction(user_input, self.model)
             if memory_data:
                 raw_text = memory_data  # make sure this is a string

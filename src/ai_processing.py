@@ -1,5 +1,98 @@
 from utils import openai
 
+
+def summarize_midprocess_thoughts(model, previous_steps, max_tokens=512):
+    """
+    Summarizes steps in the middle of a thought chain.
+    
+    This is used to compress thoughts before continuing, preserving clarity and freeing context space.
+
+    Args:
+        model: LLaMA or HuggingFace-style model with `create_completion()`.
+        previous_steps (str): A full string of earlier recursive thought steps.
+        max_tokens (int): Maximum number of tokens in the summary.
+
+    Returns:
+        str: A short, neutral summary of the earlier steps suitable for continued reasoning.
+    """
+
+    prompt = (
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
+        "You are a summarizer that compresses internal thought steps before more reasoning continues.\n\n"
+        "Your job:\n"
+        "- Summarize what has been thought so far.\n"
+        "- Do NOT conclude or resolve anything.\n"
+        "- Be short, clear, and reusable for continued reasoning.\n"
+        "- Output should sound neutral and open-ended.\n\n"
+        "<|start_header_id|>user<|end_header_id|>\n"
+        "Summarize the following internal reasoning steps:\n\n"
+        f"{previous_steps.strip()}\n\n"
+        "Give a mid-process summary that helps continue the thinking process.\n"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
+    )
+
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=0.3,
+        top_p=0.9,
+        stream=False,
+    )
+
+    summary = openai.extract_generated_text(output).strip()
+    return summary if summary else "No useful summary generated."
+
+
+def summarize_summaries(model, summaries, max_tokens=512):
+    """
+    Summarizes steps in the middle of a thought chain.
+    
+    This is used to compress thoughts before continuing, preserving clarity and freeing context space.
+
+    Args:
+        model: LLaMA or HuggingFace-style model with `create_completion()`.
+        previous_steps (str): A full string of earlier recursive thought steps.
+        max_tokens (int): Maximum number of tokens in the summary.
+
+    Returns:
+        str: A short, neutral summary of the earlier steps suitable for continued reasoning.
+    """
+
+    prompt = (
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n"
+        "You are a summarizer that compresses a block of summaries.\n\n"
+        "Your job:\n"
+        "- Summarize what has been found so far.\n"
+        "- Do NOT conclude or resolve anything.\n"
+        "- Be short, clear, and reusable for continued reasoning.\n"
+        "- Output should sound neutral and open-ended.\n\n"
+        "<|start_header_id|>user<|end_header_id|>\n"
+        "Summarize the following block of summaries:\n\n"
+        f"{summaries.strip()}\n\n"
+        "Give a mid-process summary that helps continue the thinking process.\n"
+        "<|start_header_id|>assistant<|end_header_id|>\n"
+    )
+
+    output = model.create_completion(
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=0.3,
+        top_p=0.9,
+        stream=False,
+    )
+
+    summary = openai.extract_generated_text(output).strip()
+    return summary if summary else "No useful summary generated."
+
+
+
+
+
+
+
+
+
+
 def summarize_raw_scraped_data(model, input_text, max_tokens=2048): # TODO: move to seperate file that can summarize any raw data and go through it in chunks if its too large
     """
     Summarizes arbitrary scraped or raw input into a brief, coherent summary. (Web input 99% of time)

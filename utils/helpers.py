@@ -1,4 +1,32 @@
 import sqlite3
+from src.static import DummyTokenizer, DB_PATH
+
+
+def get_mem_tokens_n(identifier, limit):
+    tokenizer = DummyTokenizer()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT data FROM MEMORY
+        WHERE userid = ?
+        ORDER BY timestamp DESC
+    """, (identifier,))
+
+    rows = cursor.fetchall()
+    total_tokens = 0
+
+    for row in rows:
+        entry = row[0]
+        tokens = tokenizer.count_tokens(entry)
+        if total_tokens + len(tokens) > limit:
+            break
+        total_tokens += tokens
+
+    conn.close()
+    return total_tokens
+
+
 
 def pick_ctx_size(available_mb: int, model_size_mb: int) -> int:
     """

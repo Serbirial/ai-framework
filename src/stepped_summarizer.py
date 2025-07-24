@@ -2,29 +2,27 @@ from log import log
 from .static import StopOnSpeakerChange
 from utils.helpers import DummyTokenizer
 from utils import openai
+from .ai_processing import compress_summary
 
 
 def chunk_data(max_output_tokens, data):
     tokenizer = DummyTokenizer()
+    
+    chunk_size = int(max_output_tokens // 4)
 
-    chunk_size = max_output_tokens / 4
+    all_tokens = tokenizer.encode(data)
+    raw_token_count = len(all_tokens)
 
-    raw_token_count = len(tokenizer.encode(data))
     if raw_token_count >= max_output_tokens:
-        all_tokens = tokenizer.encode(data)
-        chunks = [all_tokens[i:i+chunk_size] for i in range(0, len(all_tokens), chunk_size)]
+        chunks = [all_tokens[i:i + chunk_size] for i in range(0, raw_token_count, chunk_size)]
         return [tokenizer.decode(chunk) for chunk in chunks]
     else:
-        return [tokenizer.decode(data)]
+        return [data]
 
-def find_compression_ratio(max_output_tokens, token_buffer, data_tokens):
-    compression_ratio = (max_output_tokens - token_buffer) / data_tokens
-    # Clip between a floor and ceiling to avoid overcompression or undercompression
-    return max(0.5, min(0.9, compression_ratio))
 
 def find_token_limit(data_tokens, compression_ratio, minimum_summary_size):
-    max(int(data_tokens * compression_ratio), minimum_summary_size)
-    
+    return max(int(data_tokens * compression_ratio), minimum_summary_size)
+
 def format_chunks(chunks: list):
     combined = ""
     i = 0
@@ -34,7 +32,54 @@ def format_chunks(chunks: list):
         combined += f"{chunk}\n\n"
     return combined
 
-class SteppedSummarizing: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
+def get_token_availability(
+    current_prompt_tokens: int,
+    other_tokens: int,
+    total_token_window: int,
+    reserved_buffer: int = 512,
+):
+    """
+    Calculates available space in the token window and overflow amount.
+
+    Args:
+        current_prompt_tokens: Tokens used by the current prompt (system, user message, prior context).
+        other_tokens: Any non-prompt tokens.
+        total_token_window: Model's full context window.
+        reserved_buffer: Headroom buffer to leave unused (default 512).
+
+    Returns:
+        available_tokens: How many tokens are still available for data.
+        overflow: How many tokens over budget (0 if not over).
+    """
+    allowed_tokens = total_token_window - reserved_buffer
+    total_needed = current_prompt_tokens + other_tokens
+
+    overflow = max(0, total_needed - allowed_tokens)
+    available_tokens = max(0, allowed_tokens - current_prompt_tokens)
+
+    return available_tokens, overflow
+
+def find_compression_ratio(available_tokens, raw_data_tokens, min_ratio=0.5, max_ratio=0.80):
+    """
+    Dynamically calculates a compression ratio to fit data within available token space.
+
+    Args:
+        available_tokens (int): Remaining space in the token window.
+        raw_data_tokens (int): Actual token count of the data you're compressing.
+        min_ratio (float): Lower bound to prevent excessive compression.
+        max_ratio (float): Upper bound to prevent undercompression.
+
+    Returns:
+        float: Clamped compression ratio.
+    """
+    if raw_data_tokens == 0:
+        return max_ratio
+
+    ratio = available_tokens / raw_data_tokens
+    return max(min_ratio, min(max_ratio, ratio))
+
+
+class SteppedSummarizing:
     def __init__(self, model, config, tier: str, data: str, streamer=None):
         self.model = model  # Reference to ChatBot
         self.data = data
@@ -49,7 +94,7 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
 
         self.max_token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
         self.max_chat_window = self.config.token_config[tier]["MAX_CHAT_WINDOW"]
-        self.prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
+        self.prompt_window = self.config.token_config["PROMPT_RESERVATION"]
         self.max_output_tokens = (self.max_token_window - self.max_chat_window) - self.prompt
         
         self.token_buffer = min(512, int(0.1 * self.max_output_tokens)) # 'reserve' a buffer of 512 tokens
@@ -86,28 +131,40 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
     def think(self, username):
         tokenizer = DummyTokenizer()
         if self.streamer:
-            self.streamer.add_special(f"Summarizing web output")
+            self.streamer.add_special(f"Summarizing data")
         prompt = self.build_prompt()
+        
 
         i = 0
         for chunk in self.chunks:
             i += 1
-            # start with the system prompt or base context
-            summary_prompt = f"{prompt}"
-            summary_prompt += f"### **To Summarize**:\n{chunk}\n"
-            # end sys prompt
-            summary_prompt += "<|eot_id|>"
 
+            current_prompt_tokens = tokenizer.count_tokens(prompt)
+            raw_chunk_tokens = tokenizer.count_tokens(chunk)
 
+            available_tokens, _ = get_token_availability(
+                current_prompt_tokens=current_prompt_tokens,
+                other_tokens=raw_chunk_tokens,
+                total_token_window=self.max_token_window,
+                reserved_buffer=1024,
+            )
 
-            stop_criteria = StopOnSpeakerChange() 
+            compression_ratio = find_compression_ratio(available_tokens, raw_chunk_tokens)
+            summary_token_limit = find_token_limit(
+                data_tokens=raw_chunk_tokens,
+                compression_ratio=compression_ratio,
+                minimum_summary_size=128
+            )
+
+            summary_prompt = "<|begin_of_text|>" + prompt
+            summary_prompt += f"### Section {i}:\n{chunk}\n"
+            summary_prompt += "<|eot_id|>\n"
             summary_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
-            # response begins here
-            log(f"SUMMARY {i} of {len(self.chunks)} PROMPT\n", summary_prompt)
-            
-            summary_token_limit = find_token_limit(tokenizer.encode(chunk), self.summary_compression, self.minimum_summary_size)
 
-            
+            log(f"SUMMARY {i} of {len(self.chunks)} PROMPT\n", summary_prompt)
+
+            stop_criteria = StopOnSpeakerChange()
+
             response = self.model.create_completion(
                 prompt=summary_prompt,
                 max_tokens=summary_token_limit,
@@ -115,51 +172,81 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
                 top_p=0.9,
                 stop_criteria=stop_criteria,
             )
+
             summary_output = openai.extract_generated_text(response).strip()
             clean_summary_output = summary_output.replace("<|begin_of_text|>", "").strip()
 
             self.summaries.append(clean_summary_output)
-
             log(f"DEBUG: SUMMARY STEP {i}", clean_summary_output)
-            
-
-        formatted_summaries = format_chunks(self.summaries)
-
-        final_prompt = self.build_final_prompt()
-        final_prompt += "\n"
-        final_prompt += formatted_summaries
-        final_prompt += "<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>"
-
 
 
         tokenizer = DummyTokenizer()
-        final_tokens = tokenizer.count_tokens(final_prompt)
 
-        log(f"DEBUG: FINAL SUMMARY PROMPT:\n",final_prompt)
-        log(f"\nDEBUG: FINAL PROMPT TOKENS", final_tokens)
+        formatted_summaries = format_chunks(self.summaries)
+        base_prompt = self.build_final_prompt()
+        suffix = "<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>"
+
+        base_tokens = tokenizer.count_tokens(base_prompt)
+        suffix_tokens = tokenizer.count_tokens(suffix)
+        summary_tokens = tokenizer.count_tokens(formatted_summaries)
+
+        generation_token_budget = self.max_token_window / 2
+        prompt_budget = self.max_token_window - generation_token_budget
+
+        available_summary_tokens = prompt_budget - base_tokens - suffix_tokens
+        overflow = summary_tokens - available_summary_tokens
+
+        if overflow > 0:
+            # compress summaries to fit
+            compressed_summary = compress_summary(
+                self.model,
+                formatted_summaries,
+                category="summary",
+                max_tokens=available_summary_tokens
+            )
+            formatted_summaries = compressed_summary
+            summary_tokens = tokenizer.count_tokens(formatted_summaries)
+
+        final_prompt = base_prompt + "\n" + formatted_summaries + suffix
+
+        if self.streamer:
+            self.streamer.add_special("Finalizing the summary!")
 
         stop_criteria = StopOnSpeakerChange()
-        if self.streamer:
-            self.streamer.add_special(f"Finalizing the summary!")
-
-        compression_ratio = find_compression_ratio(self, self.token_buffer, formatted_summaries)
-        log("\nSUMMARY COMPRESSION RATIO", compression_ratio)
-        final_summary_compressed_token_limit = find_token_limit(final_tokens, compression_ratio, self.minimum_summary_size)
-        log("\SUMMARY FINAL TOKEN LIMIT", final_summary_compressed_token_limit)
-        
         _final_summary = self.model.create_completion(
-            max_tokens=final_summary_compressed_token_limit,
+            max_tokens=generation_token_budget,
             temperature=0.7,
             top_p=0.9,
             stop_criteria=stop_criteria,
             prompt=final_prompt,
         )
+
         final_summary = openai.extract_generated_text(_final_summary).strip()
-        log("\n\nDEBUG: SUMMARY WORK",final_summary)
         final_tokens_used = tokenizer.count_tokens(final_prompt)
 
-        log(f"DEBUG: FINAL TOKEN SIZE:", final_tokens_used)
-
+        log("DEBUG: FINAL PROMPT TOKENS:", final_tokens_used)
+        log("DEBUG: FINAL SUMMARY PROMPT:", final_prompt)
+        log("DEBUG: FINAL GENERATED SUMMARY:", final_summary)
 
         return final_prompt, final_summary
 
+
+def fit_summary(model, config, tier, data, streamer=None, max_passes=3):
+    current_data = data
+    for pass_num in range(max_passes):
+        thinker = SteppedSummarizing(model, config, tier, current_data, streamer)
+        _, summary = thinker.think(username="recursive_summarizer")
+
+        # Token count of the summary
+        tokenizer = DummyTokenizer()
+        tokens = tokenizer.count_tokens(summary)
+
+        if tokens < config.token_config[tier]["BASE_TOKEN_WINDOW"] * 0.7:
+            # Summary fits comfortably, stop here
+            return summary
+
+        # Otherwise, set current_data to this summary and compress again
+        current_data = summary
+    
+    # After max_passes, return whatever summary we have
+    return current_data

@@ -1,8 +1,10 @@
 {
-    "PROMPT_RESERVATION": 1000,
+    "PROMPT_RESERVATION": 1200,
     "SUMMARY_COMPRESSION_PERCENT": 0.66,
     "SUMMARY_NESTED_COMPRESSION_PERCENT": 0.80,
     "SUMMARY_MINIMUM_TOKEN_LIMIT": 512,
+
+    "TOTAL_TOKEN_WINDOW": 16000,
 
     "t3+": {
         "RECURSIVE_MAX_TOKENS_PER_STEP": 400,
@@ -20,7 +22,8 @@
         "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 8,
 
-        "MAX_CHAT_WINDOW": 6000
+        "MAX_CHAT_WINDOW": 6000,
+        "MAX_MEMORY_TOKENS": 1024
 
     },
     "t3": {
@@ -38,7 +41,8 @@
         "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 8,
 
-        "MAX_CHAT_WINDOW": 6000
+        "MAX_CHAT_WINDOW": 6000,
+        "MAX_MEMORY_TOKENS": 512
 
     },
     "t2": {
@@ -56,7 +60,9 @@
         "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 7,
 
-        "MAX_CHAT_WINDOW": 5096
+        "MAX_CHAT_WINDOW": 5096,
+        "MAX_MEMORY_TOKENS": 456
+
 
     },
     "t1+": {
@@ -74,7 +80,9 @@
         "BASE_TOKEN_WINDOW": 16000,
         "MAX_STEPS": 4,
 
-        "MAX_CHAT_WINDOW": 4096
+        "MAX_CHAT_WINDOW": 4096,
+        "MAX_MEMORY_TOKENS": 512
+
 
     },
     "t1": {
@@ -92,7 +100,9 @@
         "BASE_TOKEN_WINDOW": 8096,
         "MAX_STEPS": 4,
 
-        "MAX_CHAT_WINDOW": 4096
+        "MAX_CHAT_WINDOW": 4096,
+        "MAX_MEMORY_TOKENS": 375
+
 
     },
     "t0": {
@@ -110,7 +120,8 @@
         "BASE_TOKEN_WINDOW": 4096,
         "MAX_STEPS": 3,
 
-        "MAX_CHAT_WINDOW": 2048
+        "MAX_CHAT_WINDOW": 2048,
+        "MAX_MEMORY_TOKENS": 275
 
     }
 }

@@ -7,7 +7,7 @@ import aiohttp
 import sqlite3
 from src import bot
 from src import static
-from src import classify
+from utils.helpers import get_mem_tokens_n
 import json, io
 DB_PATH = static.DB_PATH
 import asyncio
@@ -923,6 +923,8 @@ class ChatBot(discord.Client):
             # Access token limits from config
             limits = self.config.token_config.get(tier, {})
             token_window = limits.get("BASE_TOKEN_WINDOW", "?")
+            memory_limit = limits.get("MAX_MEMORY_TOKENS", "?")
+            
             base_max = limits.get("BASE_MAX_TOKENS", "?")
             work_step = limits.get("WORK_MAX_TOKENS_PER_STEP", "?")
             work_final = limits.get("WORK_MAX_TOKENS_FINAL", "?")
@@ -934,6 +936,7 @@ class ChatBot(discord.Client):
             msg = (
                 f"**<@{target_user.id}> is currently tier `{tier}`.**\n"
                 f"- Max token window: **{token_window} tokens**\n"
+                f"- Max Memory size: **{memory_limit} tokens**\n"
                 f"- General reply max output: **{base_max} tokens max**\n"
                 f"- RecursiveTask: **{work_step} tokens/step**, final step: **{work_final}**\n"
                 f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n"
@@ -1178,6 +1181,9 @@ class ChatBot(discord.Client):
             return
 
         elif flags["rawmemstore"]:
+            max_memory_tokens = self.config.token_config[tier]["MAX_MEMORY_TOKENS"]
+            if get_mem_tokens_n(message.author.id, max_memory_tokens) > max_memory_tokens:
+                    return await message.reply(f"Your `memory` is at its limit of **{max_memory_tokens} tokens**.")
             self.ai.add_to_remember(message.author.id, processed_input)
             await message.reply(f"Added `{processed_input}` to the AI's memory.")
             
@@ -1185,6 +1191,9 @@ class ChatBot(discord.Client):
             return
 
         elif flags["listmem"]:
+            max_memory_tokens = self.config.token_config[tier]["MAX_MEMORY_TOKENS"]
+            used_tokens = get_mem_tokens_n(message.author.id, max_memory_tokens)
+
             conn = sqlite3.connect(static.DB_PATH)
             cursor = conn.cursor()
             cursor.execute(
@@ -1204,10 +1213,19 @@ class ChatBot(discord.Client):
                 f"• `{row[0]}` *(stored at {row[1]})*"
                 for row in rows
             )
+
+            bar_length = 20
+            filled_length = int(round(bar_length * used_tokens / max_memory_tokens))
+            bar = "█" * filled_length + "-" * (bar_length - filled_length)
+            percent = (used_tokens / max_memory_tokens) * 100            
+
             if len(formatted) > 1800:
                 formatted = formatted[:1800] + "\n...and more."
-            await message.reply(f"**Stored Memory Entries:**\n{formatted}")
-            
+
+            await message.reply(
+                f"**Stored Memory Entries:**\n{formatted}\n\n"
+                f"**Memory Usage:** [{bar}] {used_tokens}/{max_memory_tokens} tokens ({percent:.1f}%)"
+            )
             
             return
         valid_categories = [
