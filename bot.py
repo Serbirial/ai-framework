@@ -980,6 +980,7 @@ class ChatBot(discord.Client):
                 conn.commit()
                 conn.close()
                 await message.reply(f"Personality set to `{new_name}`.")
+                return
             except Exception as e:
                 await message.reply(f"Failed to set active personality: {e}")
                 conn.close()
