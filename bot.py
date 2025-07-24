@@ -699,63 +699,8 @@ class ChatBot(discord.Client):
 
                 return await message.channel.send(f"Tier for <@{message.author.id}> set to `{tier_value}`.")
                 
-                
-        if flags["view_tier"]:
-            # Default: show the tier of the person who issued the command
-            target_user = message.author
-
-            # If the caller is the admin and supplied a mention or ID
-            parts = message.content.strip().split()
-            if len(parts) == 3 and message.author.id == 1270040138948411442:
-                user_id_raw = parts[1].strip("<@!>")
-                try:
-                    target_user = await self.fetch_user(int(user_id_raw))
-                except Exception:
-                    await message.channel.send("Could not find that user.")
-                    return
 
 
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute("SELECT tier FROM tier WHERE userid = ?", (str(target_user.id),))
-            row = cursor.fetchone()
-            conn.close()
-
-            if row:
-                tier = row[0]
-            else:
-                tier = "t0"  # Default to t0 if no tier set
-
-            # Access token limits from config
-            limits = self.config.token_config.get(tier, {})
-            token_window = limits.get("BASE_TOKEN_WINDOW", "?")
-            base_max = limits.get("BASE_MAX_TOKENS", "?")
-            work_step = limits.get("WORK_MAX_TOKENS_PER_STEP", "?")
-            work_final = limits.get("WORK_MAX_TOKENS_FINAL", "?")
-            rec_step = limits.get("RECURSIVE_MAX_TOKENS_PER_STEP", "?")
-            rec_final = limits.get("RECURSIVE_MAX_TOKENS_FINAL", "?")
-            
-            step_limit = limits.get("MAX_STEPS", "?")
-
-            msg = (
-                f"**<@{target_user.id}> is currently tier `{tier}`.**\n"
-                f"- Max token window: **{token_window} tokens**\n"
-                f"- General reply max output: **{base_max} tokens max**\n"
-                f"- RecursiveTask: **{work_step} tokens/step**, final step: **{work_final}**\n"
-                f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n"
-                f"- Max Depth limit: **{step_limit}**\n"
-                f"_Higher tiers allow deeper thoughts, longer token windows, and generally more thoughtful answers._\n"
-                f"_Tier 0 is the half size model, very low limits._\n"
-                f"_Tier 1 is the normal model, with normal limits._\n"
-                f"_Tier 2 is the full model, with large limits (Supporter/VIP only)._\n"
-                f"_Tier 3 is the full+ model, same as t2 but with bigger limits and more depth._\n"
-                f"_Tier 3+ is the same as t3 but with a bigger token window._\n"
-                
-                "Do you want a higher tier? DM `athazaa` (t1 is free!).\n"
-            )
-
-            return await message.channel.send(msg)
-            
         cnn_file_path = await download_image_attachment(message)
 
         tokenizer = static.DummyTokenizer()
@@ -799,6 +744,61 @@ class ChatBot(discord.Client):
         flags, processed_input = self.parse_command_flags(processed_input)
         stop_criteria = static.StopOnSpeakerChange("assistant", 1, 20, None)
         valid_sections = {"likes", "dislikes", "goals", "traits"}
+        if flags["view_tier"]:
+            # Default: show the tier of the person who issued the command
+            target_user = message.author
+
+            # If the caller is the admin and supplied a mention or ID
+            parts = message.content.strip().split()
+            if len(parts) == 3 and message.author.id == 1270040138948411442:
+                user_id_raw = parts[1].strip("<@!>")
+                try:
+                    target_user = await self.fetch_user(int(user_id_raw))
+                except Exception:
+                    await message.channel.send("Could not find that user.")
+                    return
+
+
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT tier FROM tier WHERE userid = ?", (str(message.author.id),))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                tier = row[0]
+            else:
+                tier = "t0"  # Default to t0 if no tier set
+
+            # Access token limits from config
+            limits = self.config.token_config.get(tier, {})
+            token_window = limits.get("BASE_TOKEN_WINDOW", "?")
+            base_max = limits.get("BASE_MAX_TOKENS", "?")
+            work_step = limits.get("WORK_MAX_TOKENS_PER_STEP", "?")
+            work_final = limits.get("WORK_MAX_TOKENS_FINAL", "?")
+            rec_step = limits.get("RECURSIVE_MAX_TOKENS_PER_STEP", "?")
+            rec_final = limits.get("RECURSIVE_MAX_TOKENS_FINAL", "?")
+            
+            step_limit = limits.get("MAX_STEPS", "?")
+
+            msg = (
+                f"**<@{target_user.id}> is currently tier `{tier}`.**\n"
+                f"- Max token window: **{token_window} tokens**\n"
+                f"- General reply max output: **{base_max} tokens max**\n"
+                f"- RecursiveTask: **{work_step} tokens/step**, final step: **{work_final}**\n"
+                f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n"
+                f"- Max Depth limit: **{step_limit}**\n"
+                f"_Higher tiers allow deeper thoughts, longer token windows, and generally more thoughtful answers._\n"
+                f"_Tier 0 is the half size model, very low limits._\n"
+                f"_Tier 1 is the normal model, with normal limits._\n"
+                f"_Tier 2 is the full model, with large limits (Supporter/VIP only)._\n"
+                f"_Tier 3 is the full+ model, same as t2 but with bigger limits and more depth._\n"
+                f"_Tier 3+ is the same as t3 but with a bigger token window._\n"
+                
+                "Do you want a higher tier? DM `athazaa` (t1 is free!).\n"
+            )
+
+            return await message.channel.send(msg)
         if flags["orp"] == True:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
