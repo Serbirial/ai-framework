@@ -516,7 +516,7 @@ class ChatBot:
             else:
                 short_context = context
             thinker = RecursiveWork(self, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
-            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(tier=tier, question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
                 DEBUG_FUNC(thoughts=thoughts, final=final)
