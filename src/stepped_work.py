@@ -195,7 +195,9 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
             log(f"STEP {step+1} PROMPT\n", step_prompt)
-            self.streamer.add_special(f"Moving on to step {step+1} of the task!")
+            if self.streamer:
+
+                self.streamer.add_special(f"Moving on to step {step+1} of the task!")
             
             response = self.bot._straightforward_generate(
                 step_prompt,
@@ -275,7 +277,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-        self.streamer.add_special(f"Finalizing the task response!")
+        if self.streamer:
+            self.streamer.add_special(f"Finalizing the task response!")
         
         final_answer = self.bot._straightforward_generate(
             max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400

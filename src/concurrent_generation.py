@@ -72,11 +72,9 @@ class Concurrent_Llama_Gen:
 
 	def remove(self, slot: int):
 		"""Free a slot (but keep its pre‑instantiated model object)."""
-		model = self.generations[slot]["model"]
 		self.generations[slot].update(
 			{
-				"identifier": None,
-				"model": model,
+				"in_use": False,
 			}
 		)
 
@@ -86,14 +84,14 @@ class Concurrent_Llama_Gen:
 	def chat(self, slot: int, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9,
 			context=None, debug=False, streamer=None, force_recursive=False, recursive_depth=3,
 			category_override=None, tiny_mode=False, cnn_file_path=None):
-		conn = self.generations[slot]["conn"]
+		conn = self.generations[slot]["pipe"]
 		data = {
 			"max_new_tokens": max_new_tokens,
 			"username": username,
 			"top_p": top_p,
 			"user_input": user_input,
 			"temperature": temperature,
-			"streamer": streamer,
+			"streamer": None,
 			"recursive_depth": recursive_depth,
 			"identifier": identifier,
 			"category_override": category_override,

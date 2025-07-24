@@ -84,8 +84,8 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
 
     def think(self, username):
         tokenizer = DummyTokenizer()
-
-        self.streamer.add_special(f"Summarizing web output")
+        if self.streamer:
+            self.streamer.add_special(f"Summarizing web output")
         prompt = self.build_prompt()
 
         full = f"{prompt}"
@@ -144,8 +144,9 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
         log(f"DEBUG: FINAL SUMMARY PROMPT:\n",final_prompt)
         log(f"\nDEBUG: FINAL PROMPT TOKENS", final_tokens)
 
-        stop_criteria = StopOnSpeakerChange() 
-        self.streamer.add_special(f"Finalizing the summary!")
+        stop_criteria = StopOnSpeakerChange()
+        if self.streamer:
+            self.streamer.add_special(f"Finalizing the summary!")
 
         compression_ratio = find_compression_ratio(self, self.token_buffer, formatted_summaries)
         log("\nSUMMARY COMPRESSION RATIO", compression_ratio)
