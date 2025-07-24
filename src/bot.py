@@ -30,13 +30,6 @@ tokenizer = DummyTokenizer() # FiXME
 
 
 
-class StringStreamer:
-    def __init__(self):
-        self.text = ""
-
-    def on_text(self, new_text):
-        self.text += new_text
-
 def get_user_botname(userid):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -522,7 +515,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveWork(self, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveWork(self, tier=tier, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
@@ -548,7 +541,7 @@ class ChatBot:
                 short_context = context
             thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
-            thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
@@ -572,7 +565,7 @@ class ChatBot:
                     streamer.add_special(f"Forcing recursive (will take longer).")
                 
                 thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
-                thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+                thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
@@ -600,7 +593,7 @@ class ChatBot:
                     short_context = context
                 thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
 
-                thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+                thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)

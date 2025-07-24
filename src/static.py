@@ -181,28 +181,25 @@ class ChatContext:
         lines (List[str]): List of chat message lines in chronological order.
         tokenizer: Tokenizer instance with a `count_tokens(str) -> int` method.
         max_tokens (int): Maximum allowed tokens for the entire prompt plus output.
-        reserved_tokens (int): Tokens reserved for prompt overhead and generation output.
 
     Example usage:
-        context = ChatContext(tokenizer, max_tokens=1024, reserved_tokens=600) # Leaving 600 tokens for the prompt AND generation,. 
+        context = ChatContext(tokenizer, max_tokens=1024) 
         context.add_line("[12:00] user: Hello!")
         context.add_line("[12:01] bot: Hi there!")
         prompt_context = context.get_context_text()
     """
 
-    def __init__(self, tokenizer, max_tokens, reserved_tokens=150):
+    def __init__(self, tokenizer, max_tokens):
         """
         Initializes the ChatContext.
 
         Args:
             tokenizer: A tokenizer object providing a count_tokens(string) method to measure token usage for given text.
-            max_tokens (int): Total token limit for prompt + output.
-            reserved_tokens (int, optional): Tokens reserved for prompt overhead and model output generation. Defaults to 150.
+            max_tokens (int): Total token limit for held chat context.
         """
         self.lines = []
         self.tokenizer = tokenizer
         self.max_tokens = max_tokens
-        self.reserved_tokens = reserved_tokens
 
     def add_line(self, line: str, role: str):
         """
@@ -234,12 +231,11 @@ class ChatContext:
     def _trim_to_token_limit(self):
         """
         Private method that trims the oldest lines until the total token count
-        of the context is within the allowed budget:
-        (max_tokens - reserved_tokens).
+        of the context is within the allowed budget.
         
         This ensures the prompt fits inside the model's context window.
         """
-        while self.token_count() > self.max_tokens - self.reserved_tokens:
+        while self.token_count() > self.max_tokens:
             self.remove_line()
 
     def token_count(self) -> int:

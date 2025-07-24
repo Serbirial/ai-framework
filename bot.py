@@ -465,7 +465,6 @@ class ChatBot(discord.Client):
         self.sub_llm_concurrency_limit = self.config.general["sub_concurrent_max_interactions"] # defaults to 3
         
         self.main_llm_generating = False
-        self.sub_llm_at_capacity = False
         
         self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name)
 
@@ -540,6 +539,7 @@ class ChatBot(discord.Client):
             "orp": False,  
             "stream": False,
             "tinymode": False,
+            "view_tier": False
 
         }
 
@@ -700,13 +700,13 @@ class ChatBot(discord.Client):
                 return await message.channel.send(f"Tier for <@{message.author.id}> set to `{tier_value}`.")
                 
                 
-        elif message.content.startswith("!view_tier"):
+        if flags["view_tier"]:
             # Default: show the tier of the person who issued the command
             target_user = message.author
 
             # If the caller is the admin and supplied a mention or ID
             parts = message.content.strip().split()
-            if len(parts) == 2 and message.author.id == 1270040138948411442:
+            if len(parts) == 3 and message.author.id == 1270040138948411442:
                 user_id_raw = parts[1].strip("<@!>")
                 try:
                     target_user = await self.fetch_user(int(user_id_raw))
@@ -739,17 +739,19 @@ class ChatBot(discord.Client):
 
             msg = (
                 f"**<@{target_user.id}> is currently tier `{tier}`.**\n"
-                f"- Max context window: **{token_window} tokens**\n"
+                f"- Max token window: **{token_window} tokens**\n"
                 f"- General reply max output: **{base_max} tokens max**\n"
-                f"- RecursiveTask steps: **{work_step} tokens/step**, final step: **{work_final}**\n"
-                f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n\n"
-                f"- Max Depth limit: **{step_limit}**"
-                f"_Higher tiers allow deeper tasks, longer context, and more thoughtful answers._"
-                f"_Tier 0 is the mini-model, used for basic users when the main model is being used_"
-                f"_Tier 1 is the full-model (limited), basic users get access to this when the main model is free_"
-                f"_Tier 2 is the full model, only VIPs or Supporters get this._"
+                f"- RecursiveTask: **{work_step} tokens/step**, final step: **{work_final}**\n"
+                f"- RecursiveBase: **{rec_step} tokens/step**, final summary: **{rec_final}**\n"
+                f"- Max Depth limit: **{step_limit}**\n"
+                f"_Higher tiers allow deeper thoughts, longer token windows, and generally more thoughtful answers._\n"
+                f"_Tier 0 is the half size model, very low limits._\n"
+                f"_Tier 1 is the normal model, with normal limits._\n"
+                f"_Tier 2 is the full model, with large limits (Supporter/VIP only)._\n"
+                f"_Tier 3 is the full+ model, same as t2 but with bigger limits and more depth._\n"
+                f"_Tier 3+ is the same as t3 but with a bigger token window._\n"
                 
-                
+                "Do you want a higher tier? DM `athazaa` (t1 is free!).\n"
             )
 
             return await message.channel.send(msg)
@@ -760,12 +762,13 @@ class ChatBot(discord.Client):
         if message.author.id not in self.chat_contexts:
             # Access token limits from config
             limits = self.config.token_config.get(tier, {})
-            token_window = limits.get("BASE_TOKEN_WINDOW", "4096")
             
+            chat_window = limits.get("MAX_CHAT_WINDOW", 2048)
+
             # Half of the token window is reserved 
-            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=token_window, reserved_tokens=token_window/2)
+            context = self.chat_contexts[message.author.id] = static.ChatContext(tokenizer, max_tokens=chat_window)
             #Load half of token window worth of chat history if avalible
-            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=token_window/2, tokenizer=tokenizer)
+            db_history = load_recent_history_from_db(message.author.id, botname=self.ai.name, max_tokens=chat_window, tokenizer=tokenizer)
             for entry in db_history:
                 context.add_line(entry["content"], entry["role"])
 
@@ -786,7 +789,7 @@ class ChatBot(discord.Client):
         conn.close()
         
         msg_to_edit = await message.reply("Thinking...")
-        streamer = DiscordBufferedUpdater(msg_to_edit)
+        streamer = DiscordBufferedUpdater(msg_to_edit, 1980)
 
         if row:
             botname = row[0]
@@ -1057,7 +1060,7 @@ class ChatBot(discord.Client):
                     async with message.channel.typing():
                         response = await asyncio.to_thread(
                             self.sub_model.chat,
-                            max_new_tokens=460,
+                            max_new_tokens=self.config.token_config[tier]["BASE_MAX_TOKENS"],
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
@@ -1078,8 +1081,12 @@ class ChatBot(discord.Client):
                         context.add_line(response, "assistant")
                         await send_file(message)
                         self.sub_model.remove(slot)
+                        special = ""
+                        for line in streamer.special_buffer:
+                            special += f"- {line}\n"
+                        await message.reply(special)
                         return await message.reply(response)
-                
+
         async with self.generate_lock:
             self.main_llm_generating = True 
             response = None
@@ -1088,7 +1095,7 @@ class ChatBot(discord.Client):
                     if flags["recursive"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=460,
+                            max_new_tokens=self.config.token_config[tier]["BASE_MAX_TOKENS"],
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
@@ -1108,13 +1115,17 @@ class ChatBot(discord.Client):
                         
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        special = ""
+                        for line in streamer.special_buffer:
+                            special += f"- {line}\n"
+                        await message.reply(special)
                         await send_file(message)
-                        
+
                         return
                     elif flags["memstore"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=460,
+                            max_new_tokens=self.config.token_config[tier]["BASE_MAX_TOKENS"],
                             username=message.author.display_name,
                             user_input=processed_input,
                             identifier=message.author.id,
@@ -1132,14 +1143,17 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        special = ""
+                        for line in streamer.special_buffer:
+                            special += f"- {line}\n"
+                        await message.reply(special)
                         await send_file(message)
-                        
                         
                         return
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
-                            max_new_tokens=460,
+                            max_new_tokens=self.config.token_config[tier]["BASE_MAX_TOKENS"],
                             username=message.author.display_name,
                             user_input=processed_input,
                             temperature=0.8,
@@ -1158,6 +1172,10 @@ class ChatBot(discord.Client):
                         await message.reply(response)
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
+                        special = ""
+                        for line in streamer.special_buffer:
+                            special += f"- {line}\n"
+                        await message.reply(special)
                         await send_file(message)
                         
                         

@@ -1,4 +1,9 @@
 {
+    "PROMPT_RESERVATION": 1000,
+    "SUMMARY_COMPRESSION_PERCENT": 0.66,
+    "SUMMARY_NESTED_COMPRESSION_PERCENT": 0.80,
+    "SUMMARY_MINIMUM_TOKEN_LIMIT": 512,
+
     "t3+": {
         "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
         "WORK_MAX_TOKENS_PER_STEP": 800,
@@ -9,7 +14,9 @@
         "BASE_MAX_TOKENS": 460,
 
         "BASE_TOKEN_WINDOW": 18000,
-        "MAX_STEPS": 8
+        "MAX_STEPS": 8,
+
+        "MAX_CHAT_WINDOW": 8000
 
     },
     "t3": {
@@ -22,7 +29,9 @@
         "BASE_MAX_TOKENS": 460,
 
         "BASE_TOKEN_WINDOW": 16000,
-        "MAX_STEPS": 8
+        "MAX_STEPS": 8,
+
+        "MAX_CHAT_WINDOW": 6000
 
     },
     "t2": {
@@ -35,7 +44,9 @@
         "BASE_MAX_TOKENS": 460,
 
         "BASE_TOKEN_WINDOW": 16000,
-        "MAX_STEPS": 7
+        "MAX_STEPS": 7,
+
+        "MAX_CHAT_WINDOW": 6000
 
     },
     "t1": {
@@ -48,7 +59,9 @@
         "BASE_MAX_TOKENS": 400,
 
         "BASE_TOKEN_WINDOW": 8096,
-        "MAX_STEPS": 4
+        "MAX_STEPS": 4,
+
+        "MAX_CHAT_WINDOW": 4096
 
     },
     "t0": {
@@ -61,7 +74,9 @@
         "BASE_MAX_TOKENS": 256,
 
         "BASE_TOKEN_WINDOW": 4096,
-        "MAX_STEPS": 3
+        "MAX_STEPS": 3,
+
+        "MAX_CHAT_WINDOW": 2048
 
     }
 }

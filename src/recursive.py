@@ -161,7 +161,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log("RECURSIVE PROMPT", base)
         return base
 
-    def think(self, question, username, query_type, usertone, context="", include_reflection=False, identifier=None):
+    def think(self, question, username, query_type, usertone, tier, context=None, include_reflection=False, identifier=None):
         tokenizer = DummyTokenizer()
 
         # Build base prompt first (before context)
@@ -202,8 +202,6 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             # add the current step header only for clarity in logs and generation
             step_prompt += f"### Current Step\n"
-            # insert previous action result just before generation (but after thought header)
-                
             custom_stops = [f"<|{username}|>", f"<|{self.bot.name}|>"]
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             
@@ -212,7 +210,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=self.config.token_config["t1"]["RECURSIVE_MAX_TOKENS_PER_STEP"],
+                max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_PER_STEP"],
                 temperature=0.8,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -222,8 +220,13 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             step_content = response.strip()
             log(f"DEBUG: THOUGHT STEP {step}", step_content)
             
-            action_result = check_for_actions_and_run(self.bot.model, response)
-
+            # Check for and run any actions
+            token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+            chat_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+            prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
+            
+            
+            action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)
 
@@ -253,7 +256,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=self.config.token_config["t1"]["RECURSIVE_MAX_TOKENS_PER_STEP"],
+                    max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_PER_STEP"],
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
@@ -319,7 +322,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
         self.streamer.add_special(f"Finalizing my recursive reply")
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=self.config.token_config["t1"]["RECURSIVE_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
+            max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,

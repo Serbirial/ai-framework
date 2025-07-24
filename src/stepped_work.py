@@ -134,7 +134,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log("FINAL TASK PROMPT", base)
         return base
 
-    def think(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None):
+    def think(self, question, username, query_type, usertone, tier, context=None, include_reflection=False, identifier=None):
         tokenizer = DummyTokenizer()
 
 
@@ -199,7 +199,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=self.config.token_config["t1"]["WORK_MAX_TOKENS_PER_STEP"],
+                max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_PER_STEP"],
                 temperature=0.7,
                 top_p=0.9,
                 streamer=self.streamer,
@@ -219,7 +219,12 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             to_add == "<|eot_id|>\n"
             
             # Check for and run any actions
-            action_result = check_for_actions_and_run(self.bot.model, response)
+            token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+            chat_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+            prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
+            
+            
+            action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             
             # queue action result for next step input
             if action_result != "NOACTION":
@@ -246,7 +251,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops)
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=self.config.token_config["t1"]["WORK_MAX_TOKENS_PER_STEP"],
+                    max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_PER_STEP"],
                     temperature=0.8,
                     top_p=0.9,
                     streamer=self.streamer,
@@ -273,7 +278,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         self.streamer.add_special(f"Finalizing the task response!")
         
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=self.config.token_config["t1"]["WORK_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
+            max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
             streamer=self.streamer,

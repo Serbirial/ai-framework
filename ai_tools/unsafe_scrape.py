@@ -29,8 +29,8 @@ def simple_webpage_scraper(params: dict) -> dict:
 
 
 EXPORT = {
-    "simple_url_scraper": {
-        "help": "Scrapes any URL into a either a single summary- or chunked summaries.", # this gets intercepted and summarized in the action executor.
+    "raw_url_scraper": {
+        "help": "Scrapes any URL into a single bare-bones summary.", # this gets intercepted and summarized in the action executor.
         "callable": simple_webpage_scraper,
         "params": {
             "url": "string, required"
