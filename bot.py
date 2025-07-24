@@ -675,6 +675,13 @@ class ChatBot(discord.Client):
 
         if message.author == self.user:
             return
+        elif message.content.startswith("!view_model_usage") or message.content.startswith("!view_usage"):
+            active = 0
+            total = self.sub_llm_concurrency_limit + 1
+            if self.main_llm_generating:
+                active += 1
+            active += self.sub_model.count_active()
+            return await message.reply(f"There are currently {active} out of {total} models being used.")
         elif message.author.id == 1270040138948411442:
             if message.content.startswith("!set_tier"):
                 parts = message.content.strip().split()
@@ -1047,19 +1054,20 @@ class ChatBot(discord.Client):
             
         if self.main_llm_generating:
             if tier in ['t2', 't3', 't3+']:
-                await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
+                await message.reply("Im currently busy replying to someone else, but ill get to you soon! (tier too high to use mini model, you are in the queue)")
             else:
                 if self.sub_model.check_for_identifier(message.author.id) or message.author.id == self.current_user:
                     return await message.reply("Im already replying to one of your messages!")
                 if not self.sub_model.has_free_slot():
-                    await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
+                    await message.reply("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
                     return
   
                 slot = self.sub_model.assign(identifier=message.author.id)
                 if slot is None:
-                    await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (No open spots or models)")
+                    await message.reply("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
                     return
                 else:
+                    await message.reply(f"Notice: using mini model (tier {tier} limits) while main model is busy.")
                     async with message.channel.typing():
                         response = await asyncio.to_thread(
                             self.sub_model.chat,
