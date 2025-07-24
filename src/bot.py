@@ -81,7 +81,7 @@ def list_personality(userid):
     cursor = conn.cursor()
 
     for key, (table, column) in sections.items():
-        cursor.execute(f"SELECT {column} FROM {table} WHERE botname = ?", (botname,))
+        cursor.execute(f"SELECT {column} FROM {table} WHERE botname = ? AND owner = ?", (botname,userid,))
         rows = cursor.fetchall()
         result[key] = [row[0] for row in rows]
 
