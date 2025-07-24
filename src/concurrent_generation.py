@@ -54,6 +54,7 @@ class Concurrent_Llama_Gen:
 			proc.start()
 			self.generations[i] = {
 				"in_use": False,
+				"identifier": None,
 				"pipe": parent_conn,
 				"proc": proc,
 			}
@@ -75,11 +76,18 @@ class Concurrent_Llama_Gen:
 		self.generations[slot].update(
 			{
 				"in_use": False,
+				"identifier": None
 			}
 		)
 
+	def check_for_identifier(self, identifier):
+		for slot in self.generations.keys():
+			if self.generations[slot]["identifier"] == identifier:
+				return True
+		return None
+
 	def count_active(self) -> int:
-		return sum(1 for g in self.generations.values() if g["identifier"] is not None)
+		return sum(1 for g in self.generations.values() if g["in_use"] is not False)
 
 	def chat(self, slot: int, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9,
 			context=None, debug=False, streamer=None, force_recursive=False, recursive_depth=3,

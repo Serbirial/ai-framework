@@ -1048,6 +1048,8 @@ class ChatBot(discord.Client):
             if tier in ['t2', 't3', 't3+']:
                 await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
             else:
+                if self.sub_model.check_for_identifier(message.author.id):
+                    return await message.reply("Im already replying to one of your messages!")
                 if not self.sub_model.has_free_slot():
                     await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
                     return
