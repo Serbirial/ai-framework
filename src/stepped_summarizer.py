@@ -1,0 +1,1 @@
+# need to make class that mimics stepped_work but for summarizing data

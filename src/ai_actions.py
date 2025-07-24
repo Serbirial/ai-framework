@@ -84,7 +84,8 @@ def find_token_limit(data_tokens, compression_ratio, minimum_summary_size):
     max(int(data_tokens * compression_ratio), minimum_summary_size)
     
     
-    
+# TODO: turn below process_ funcs into stepped thinker type class 
+
 def process_raw_web_output(result, model, max_output_tokens, summary_compression, summary_nested_compression):
     if "error" in result.keys():
         result = result
