@@ -540,7 +540,8 @@ class ChatBot(discord.Client):
             "orp": False,  
             "stream": False,
             "tinymode": False,
-            "view_tier": False
+            "view_tier": False,
+            "explain": False
 
         }
 
@@ -579,6 +580,8 @@ class ChatBot(discord.Client):
                 flags["clearlivehistory"] = True
             elif token == "!clearmem":
                 flags["clearmem"] = True
+            elif token == "!explain":
+                flags["explain"] = True
             elif token == "!wipectx" or token == "!clearchat" or token == "!clearhistory":
                 flags["clearhistory"] = True
             elif token == "!orp" or token == "!overrideprompt" or token == "!customprompt":
@@ -631,9 +634,9 @@ class ChatBot(discord.Client):
         if flags["help"]:
             help_text = (
                 "**Available Command Flags:**\n"
-                "`!tiny           - Forces the bot to exclusively use tiny prompts. strip most functioanlity but speed things up drastically.`"
+                "`!tiny           - Forces the bot to exclusively use tiny prompts. strip most functioanlity but speed things up drastically.`\n"
 
-                "`!orp data       - Forces the bot to exclusively use YOUR given prompt. this will use the RAW model and skip everything, use at your own peril.`"
+                "`!orp data       - Forces the bot to exclusively use YOUR given prompt. this will use the RAW model and skip everything, use at your own peril.`\n"
                 "`!recursive [N]` - Forces the bot to use recursive reasoning (default depth = 3, or use a number).\n"
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
                 "`!memstore`      - Forces the bot to treat this as a memory instruction.\n"
@@ -649,8 +652,9 @@ class ChatBot(discord.Client):
                 "`!add <section> <text>` - Adds a line of text to a personality section.\n"
                 "`!personality`   - Lists all personality sections and their contents.\n"
                 "`!view_tier`     - Shows your current tier (ai model limitations).\n"
-
                 "`!help`          - Shows this help message.\n"
+                "`![explain|whatareyou]` - What am i? Who am i? Are you confused? Run this!\n"
+                
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
             return flags, help_text
@@ -681,7 +685,7 @@ class ChatBot(discord.Client):
             if self.main_llm_generating:
                 active += 1
             active += self.sub_model.count_active()
-            return await message.reply(f"There are currently {active} out of {total} models being used.")
+            return await message.reply(f"There are currently {active} out of {total} models being used ({self.sub_llm_concurrency_limit}/{total - self.sub_llm_concurrency_limit} being mini models).")
         elif message.author.id == 1270040138948411442:
             if message.content.startswith("!set_tier"):
                 parts = message.content.strip().split()
@@ -804,9 +808,12 @@ class ChatBot(discord.Client):
                 f"_Tier 3+ is the same as t3 but with a bigger token window._\n"
                 
                 "Do you want a higher tier? DM `athazaa` (t1 is free!).\n"
+                "Note: Tier 2 and above CANNOT use the mini model."
             )
 
             return await message.channel.send(msg)
+        if flags["explain"] or message.content.startswith("!whatareyou"):
+            return await message.reply(f"Im a 100% custom made AI! My current global name is set to `{self.ai.name}`.\nI have many capabilities! Feel free to ask me about them!\nYou have nearly full control over WHO i am as a being, and can shape or customize my personality at will!\n\nJust think of me as a more personalized version of ChatGPT! Im slowly acquiring more and more of their features and abilities! (Funfact: My first capable self was made in around 2 months with 6000 lines of code!)")
         if flags["orp"] == True:
             async with self.generate_lock:  # ✅ Thread-safe section
                 async with message.channel.typing():
@@ -815,10 +822,7 @@ class ChatBot(discord.Client):
                     
                     return await message.reply(data)
         if flags["help"]:
-            await message.reply(processed_input)
-            
-            
-            return
+            return await message.reply(processed_input)
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
