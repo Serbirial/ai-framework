@@ -958,6 +958,8 @@ class ChatBot(discord.Client):
             return await message.reply(processed_input)
         if flags["change_personality"]:
             new_name = processed_input
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
             try:
                 if new_name == "default":
                     cursor.execute("""
