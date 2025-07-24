@@ -646,6 +646,8 @@ class ChatBot(discord.Client):
                 flags["memstore"] = True
             elif token == "!stream":
                 flags["stream"] = True
+            elif token == "!view_tier":
+                flags["view_tier"] = True
             elif token == "!change_personality":
                 flags["change_personality"] = True
             elif token == "!list_personalities":
