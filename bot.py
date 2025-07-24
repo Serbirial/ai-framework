@@ -778,7 +778,7 @@ class ChatBot(discord.Client):
                     return
                 tier_value = parts[1]
                 user_value = parts[2]
-                user = await self.fetch_user(user_value)
+                user = self.get_user(user_value)
                 if not user:
                     return await message.reply(f"Couldnt find user for id: {user_value}")
 
