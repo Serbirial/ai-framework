@@ -228,4 +228,4 @@ class AutonomousPassiveThinker:
             identifier=identifier,
             botname=bot.get_user_botname(identifier),
         )
-        return final_prompt, final_summary
+        return final_summary, send_to_user, user_message

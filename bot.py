@@ -17,13 +17,15 @@ import time
 import os
 
 import asyncio
-import time
+import random
 import asyncio
 import time
 
 from src import static_prompts
 
 from src import concurrent_generation
+
+from utils.concurrency import BackgroundThinkerProcess
 
 class DiscordBufferedUpdater:
     def __init__(self, discord_message, cooldown=2.4, max_chars=1900):
@@ -218,6 +220,35 @@ def initialize_default_personality():
     finally:
         conn.close()
 
+def has_background_thinking_enabled(userid):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT enabled FROM BACKGROUND_THINKING WHERE userid = ?", (str(userid),))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return True
+    return False
+
+def get_all_background_thinkers():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT userid FROM BACKGROUND_THINKING WHERE enabled = 1")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        return rows
+    return None
+
+def get_background_thinking_instructions(userid):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT data FROM BACKGROUND_THINKING_INSTRUCTIONS WHERE userid = ?", (str(userid),))
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        return rows
+    return None
 
 def get_user_botname(userid):
     conn = sqlite3.connect(DB_PATH)
@@ -469,8 +500,50 @@ class ChatBot(discord.Client):
         
         self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name)
 
+        thinkers = get_all_background_thinkers()
+
+        self.background_thinkers = []
+        self.background_thinker_history = {} #identifier : timestamp
+        
+        for thinker in thinkers:
+            self.background_thinkers.append(int(thinker))
+            
+        print(f"{len(self.background_thinkers)} people have background enabled thinking (background thinking is ACTIVE)")
+
         print(f"Up to {self.sub_model.max_concurrent} concurrent interactions with the sub model allowed.")
 
+    # todo: add triggers for this and have a seperate triggered background thinker class also in `background_thinking.py`
+    async def background_thinker_loop(self): # FIXME add intervals to json config
+        MIN_THINK_INTERVAL = 180   # 3 minutes
+        MAX_THINK_INTERVAL = 900   # 15 minutes
+        while True:
+            current_time = time.time()
+            for thinker_identifier in self.background_thinkers:
+                next_time = self.background_thinker_history.get(thinker_identifier, 0)
+                if current_time >= next_time:
+                    # Set next scheduled think time first
+                    next_interval = random.uniform(MIN_THINK_INTERVAL, MAX_THINK_INTERVAL)
+                    self.background_thinker_history[thinker_identifier] = current_time + next_interval
+
+                    # Fetch tier
+                    conn = sqlite3.connect(DB_PATH)
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT tier FROM tier WHERE userid = ?", (str(thinker_identifier),))
+                    row = cursor.fetchone()
+                    conn.close()
+                    tier = row[0] if row else "t0"
+
+                    username = (await self.fetch_user(int(thinker_identifier))).display_name
+                    token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+
+                    thinker = BackgroundThinkerProcess(
+                        self.config.general["sub_concurrent_llm_path"],
+                        tier, thinker_identifier, username, self, token_window
+                    )
+                    output = thinker.run()
+                    print(f"BACKGROUND THINKER OUTPUT: {output}")
+            
+            await asyncio.sleep(5)
 
     async def get_chat_context(self, message):
         channel: discord.TextChannel = self.get_channel(message.channel.id)
@@ -510,7 +583,9 @@ class ChatBot(discord.Client):
         print(f"Logged on as {self.user}")
         print(f"Total memories stored: {mem_count} (unique users: {mem_unique_users})")
         print(f"Total messages in history: {hist_count} (unique users: {hist_unique_users})")
-
+        await asyncio.to_thread(
+            self.background_thinker_loop
+                        )
 
     def parse_command_flags(self, content: str):
         """
@@ -689,12 +764,18 @@ class ChatBot(discord.Client):
         elif message.author.id == 1270040138948411442:
             if message.content.startswith("!set_tier"):
                 parts = message.content.strip().split()
-                if len(parts) != 2:
-                    await message.channel.send("Usage: `!set_tier t0|t1|t2`")
+                if len(parts) != 3:
+                    await message.channel.send("Usage: `!set_tier t0|t1|t2 userid`")
                     return
                 tier_value = parts[1]
-                if tier_value not in ["t0", "t1", "t2"]:
-                    await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t2`.")
+                user_value = parts[2]
+                user = await self.fetch_user(user_value)
+                if not user:
+                    return await message.reply(f"Couldnt find user for id: {user_value}")
+
+                
+                if tier_value not in ["t0", "t1", "t2", "t3", "t3+"]:
+                    await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t2` ... `t3+`.")
                     return
 
                 conn = sqlite3.connect(DB_PATH)
@@ -704,13 +785,46 @@ class ChatBot(discord.Client):
                     INSERT INTO tier (userid, tier)
                     VALUES (?, ?)
                     ON CONFLICT(userid) DO UPDATE SET tier=excluded.tier;
-                """, (str(message.author.id), tier_value))
+                """, (str(user.id), tier_value))
 
                 conn.commit()
                 conn.close()
 
-                return await message.channel.send(f"Tier for <@{message.author.id}> set to `{tier_value}`.")
-                
+                return await message.channel.send(f"Tier for <@{user_value}> set to `{tier_value}`.")
+            elif message.content.startswith("!background_thinking"):
+                parts = message.content.strip().split()
+                if len(parts) != 2:
+                    await message.channel.send("Usage: `!background_thinking userid`")
+                    return
+
+                user_value = parts[1]
+                user = await self.fetch_user(user_value)
+                if not user:
+                    return await message.reply(f"Couldn't find user for ID: {user_value}")
+
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+
+                cursor.execute("SELECT enabled FROM BACKGROUND_THINKING WHERE userid = ?", (str(user.id),))
+                row = cursor.fetchone()
+
+                if row is None:
+                    cursor.execute("""
+                        INSERT INTO BACKGROUND_THINKING (userid, enabled)
+                        VALUES (?, 1)
+                    """, (str(user.id),))
+                    await message.reply(f"Background thinking **enabled** for {user.display_name}.")
+                else:
+                    new_status = 0 if row[0] == 1 else 1
+                    cursor.execute("""
+                        UPDATE BACKGROUND_THINKING
+                        SET enabled = ?
+                        WHERE userid = ?
+                    """, (new_status, str(user.id)))
+                    await message.reply(f"Background thinking {'**enabled**' if new_status else '**disabled**'} for {user.display_name}.")
+
+                conn.commit()
+                conn.close()
 
 
         cnn_file_path = await download_image_attachment(message)
