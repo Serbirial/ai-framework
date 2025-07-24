@@ -140,4 +140,4 @@ class Concurrent_Llama_Gen:
 					self.generations[slot]["done"] = True
 					self.generations[slot]["output"] += f"[ERROR: {msg['error']}]"
 					break
-			return self.generations[slot]["output"]
+		return self.generations[slot]["output"]
