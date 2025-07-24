@@ -465,6 +465,7 @@ class ChatBot(discord.Client):
         self.sub_llm_concurrency_limit = self.config.general["sub_concurrent_max_interactions"] # defaults to 3
         
         self.main_llm_generating = False
+        self.current_user = None
         
         self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name)
 
@@ -1048,7 +1049,7 @@ class ChatBot(discord.Client):
             if tier in ['t2', 't3', 't3+']:
                 await message.reply("Im currently busy replying to someone else, but ill get to you soon!")
             else:
-                if self.sub_model.check_for_identifier(message.author.id):
+                if self.sub_model.check_for_identifier(message.author.id) or message.author.id == self.current_user:
                     return await message.reply("Im already replying to one of your messages!")
                 if not self.sub_model.has_free_slot():
                     await message.channel.send("Too many people are trying to talk to me! :face_with_spiral_eyes:\nPlease give me a bit to reply to other people. (All the models are being used!)")
@@ -1092,6 +1093,7 @@ class ChatBot(discord.Client):
 
         async with self.generate_lock:
             self.main_llm_generating = True 
+            self.current_user = message.author.id
             response = None
             async with message.channel.typing():
                 try:
@@ -1113,6 +1115,7 @@ class ChatBot(discord.Client):
                             cnn_file_path=cnn_file_path
                         )
                         self.main_llm_generating = False
+                        self.current_user = None
                         await msg_to_edit.delete()
                         await message.reply(response)
                         
@@ -1142,6 +1145,8 @@ class ChatBot(discord.Client):
                             cnn_file_path=cnn_file_path
                         )
                         self.main_llm_generating = False
+                        self.current_user = None
+                        
                         await msg_to_edit.delete()
                         await message.reply(response)
                         context.add_line(processed_input, "user")
@@ -1171,6 +1176,8 @@ class ChatBot(discord.Client):
                             cnn_file_path=cnn_file_path
                         )
                         self.main_llm_generating = False
+                        self.current_user = None
+                        
                         await msg_to_edit.delete()
                         await message.reply(response)
                         context.add_line(processed_input, "user")
@@ -1187,16 +1194,18 @@ class ChatBot(discord.Client):
 
                 except aiohttp.client_exceptions.ClientConnectorError:
                     self.main_llm_generating = False
+                    self.current_user = None
+
                     pass
                 except Exception as e:                    
                     print(e)
                     self.main_llm_generating = False
+                    self.current_user = None
+
                     #if response != None:
                     #    await message.reply(response)
                     #import traceback
                     #await message.reply(traceback.format_exception_only(e))
-                self.main_llm_generating = False
-                return
         return
 
     def process_input(self, message):
