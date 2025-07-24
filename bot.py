@@ -967,7 +967,7 @@ class ChatBot(discord.Client):
                         VALUES (?, ?, CURRENT_TIMESTAMP)
                     """, (str(message.author.id), new_name))
                 else:
-                    cursor.execute("SELECT name FROM BOT_PROFILE WHERE name = ? and owner = ?", (new_name, message.author.id,))
+                    cursor.execute("SELECT name FROM BOT_PROFILE WHERE name = ? AND owner = ?", (new_name, message.author.id,))
                     if cursor.fetchone() is None:
                         await message.reply(f"Personality `{new_name}` does not exist (Personalities are isolated per-user).")
                         conn.close()

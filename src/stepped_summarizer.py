@@ -51,9 +51,10 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
         self.max_chat_window = self.config.token_config[tier]["MAX_CHAT_WINDOW"]
         self.prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
         self.max_output_tokens = (self.max_token_window - self.max_chat_window) - self.prompt
-            
+        
         self.token_buffer = min(512, int(0.1 * self.max_output_tokens)) # 'reserve' a buffer of 512 tokens
 
+        self.chunks = chunk_data(self.max_output_tokens, self.data)
 
     def build_prompt(self):
         base = (
@@ -88,14 +89,11 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
             self.streamer.add_special(f"Summarizing web output")
         prompt = self.build_prompt()
 
-        full = f"{prompt}"
-
-        to_add = ""
         i = 0
         for chunk in self.chunks:
             i += 1
             # start with the system prompt or base context
-            summary_prompt = f"{full}"
+            summary_prompt = f"{prompt}"
             summary_prompt += f"### **To Summarize**:\n{chunk}\n"
             # end sys prompt
             summary_prompt += "<|eot_id|>"
@@ -124,10 +122,6 @@ class SteppedSummarizing: # TODO: check during steps if total tokens are reachin
 
             log(f"DEBUG: SUMMARY STEP {i}", clean_summary_output)
             
-            to_add += "<|start_header_id|>assistant<|end_header_id|>\n"
-            # append the full step (header + content) to the full conversation log
-            to_add += f"### Section {i}:\n{clean_summary_output}\n"
-            to_add == "<|eot_id|>\n"
 
         formatted_summaries = format_chunks(self.summaries)
 
