@@ -799,7 +799,7 @@ class ChatBot(discord.Client):
                 conn.commit()
                 conn.close()
 
-                return await message.channel.send(f"Tier for <@{user.id}> set to `{tier_value}`.")
+                return await message.channel.send(f"Tier for <@{user_value}> set to `{tier_value}`.")
             elif message.content.startswith("!background_thinking"):
                 parts = message.content.strip().split()
                 if len(parts) != 2:
@@ -814,7 +814,7 @@ class ChatBot(discord.Client):
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
 
-                cursor.execute("SELECT enabled FROM BACKGROUND_THINKING WHERE userid = ?", (str(user.id),))
+                cursor.execute("SELECT enabled FROM BACKGROUND_THINKING WHERE userid = ?", (str(user_value),))
                 row = cursor.fetchone()
 
                 if row is None:
@@ -830,7 +830,7 @@ class ChatBot(discord.Client):
                         SET enabled = ?
                         WHERE userid = ?
                     """, (new_status, str(user.id)))
-                    await message.reply(f"Background thinking {'**enabled**' if new_status else '**disabled**'} for {user.display_name}.")
+                    await message.reply(f"Background thinking {'**enabled**' if new_status else '**disabled**'} for {user_value}.")
                 conn.commit()
                 conn.close()
 
