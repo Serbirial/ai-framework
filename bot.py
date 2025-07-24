@@ -498,7 +498,7 @@ class ChatBot(discord.Client):
         self.main_llm_generating = False
         self.current_user = None
         
-        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name)
+        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name, self.sub_llm_concurrency_limit)
 
         thinkers = get_all_background_thinkers()
 
