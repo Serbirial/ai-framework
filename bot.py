@@ -1084,7 +1084,8 @@ class ChatBot(discord.Client):
                         special = ""
                         for line in streamer.special_buffer:
                             special += f"- {line}\n"
-                        await message.reply(special)
+                        if special != "":
+                            await message.reply(special)
                         return await message.reply(response)
 
         async with self.generate_lock:
@@ -1118,10 +1119,10 @@ class ChatBot(discord.Client):
                         special = ""
                         for line in streamer.special_buffer:
                             special += f"- {line}\n"
-                        await message.reply(special)
+                        if special != "":
+                            await message.reply(special)
                         await send_file(message)
 
-                        return
                     elif flags["memstore"]:
                         response = await asyncio.to_thread(
                             self.ai.chat,
@@ -1146,10 +1147,10 @@ class ChatBot(discord.Client):
                         special = ""
                         for line in streamer.special_buffer:
                             special += f"- {line}\n"
-                        await message.reply(special)
+                        if special != "":
+                            await message.reply(special)
                         await send_file(message)
                         
-                        return
                     else:
                         response = await asyncio.to_thread(
                             self.ai.chat,
@@ -1175,11 +1176,11 @@ class ChatBot(discord.Client):
                         special = ""
                         for line in streamer.special_buffer:
                             special += f"- {line}\n"
-                        await message.reply(special)
+                        if special != "":
+                            await message.reply(special)
                         await send_file(message)
                         
                         
-                        return
 
 
                 except aiohttp.client_exceptions.ClientConnectorError:
@@ -1192,6 +1193,9 @@ class ChatBot(discord.Client):
                     #    await message.reply(response)
                     #import traceback
                     #await message.reply(traceback.format_exception_only(e))
+                self.main_llm_generating = False
+                return
+        return
 
     def process_input(self, message):
         """ Process the input message """
