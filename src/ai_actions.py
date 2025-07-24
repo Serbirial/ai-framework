@@ -226,6 +226,7 @@ def check_for_actions_and_run(model, text, max_token_window, max_chat_window, pr
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
                         result = VALID_ACTIONS[action_name]["callable"](action_params)
 
+                        # FIXME: make this use the stepped summarizer
                         if action_name == "raw_url_scraper":
                             result = process_raw_web_output(result, model, max_output_tokens, summary_compression, summary_nested_compression)
                         elif action_name == "raw_file_scraper":
