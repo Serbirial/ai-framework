@@ -783,8 +783,8 @@ class ChatBot(discord.Client):
                     return await message.reply(f"Couldnt find user for id: {user_value}")
 
                 
-                if tier_value not in ["t0", "t1", "t2", "t3", "t3+"]:
-                    await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t2` ... `t3+`.")
+                if tier_value not in ["t0", "t1", "t1+", "t2", "t3", "t3+"]:
+                    await message.channel.send("Invalid tier. Must be one of: `t0`, `t1`, `t1+`, `t2` ... `t3+`.")
                     return
 
                 conn = sqlite3.connect(DB_PATH)
