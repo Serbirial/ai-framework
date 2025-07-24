@@ -583,8 +583,8 @@ class ChatBot(discord.Client):
         print(f"Logged on as {self.user}")
         print(f"Total memories stored: {mem_count} (unique users: {mem_unique_users})")
         print(f"Total messages in history: {hist_count} (unique users: {hist_unique_users})")
-        await asyncio.to_thread(
-            self.background_thinker_loop
+        await asyncio.create_task(
+            self.background_thinker_loop()
                         )
 
     def parse_command_flags(self, content: str):
