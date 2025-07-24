@@ -794,7 +794,7 @@ class ChatBot(discord.Client):
                     INSERT INTO tier (userid, tier)
                     VALUES (?, ?)
                     ON CONFLICT(userid) DO UPDATE SET tier=excluded.tier;
-                """, (str(user.id), tier_value))
+                """, (str(user_value), tier_value))
 
                 conn.commit()
                 conn.close()
