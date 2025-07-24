@@ -1389,10 +1389,10 @@ class ChatBot(discord.Client):
                     self.current_user = None
 
                     pass
-                except Exception as e:                    
-                    print(e)
-                    self.main_llm_generating = False
-                    self.current_user = None
+                #except Exception as e:                    
+                #    print(e)
+                #    self.main_llm_generating = False
+                #    self.current_user = None
 
                     #if response != None:
                     #    await message.reply(response)
