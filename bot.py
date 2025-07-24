@@ -900,8 +900,11 @@ class ChatBot(discord.Client):
                 try:
                     target_user = await self.fetch_user(int(user_id_raw))
                 except Exception:
-                    await message.channel.send("Could not find that user.")
-                    return
+                    await message.channel.send("WARNING: Could not find the user.")
+                    pass
+                if target_user == None:
+                    await message.channel.send("WARNING: Could not find the user.")
+                    target_user = message.author
 
 
             conn = sqlite3.connect(DB_PATH)
@@ -936,6 +939,7 @@ class ChatBot(discord.Client):
                 f"_Higher tiers allow deeper thoughts, longer token windows, and generally more thoughtful answers._\n"
                 f"_Tier 0 is the half size model, very low limits._\n"
                 f"_Tier 1 is the normal model, with normal limits._\n"
+                f"_Tier 1+ is the normal model, with a t2 token window._\n"
                 f"_Tier 2 is the full model, with large limits (Supporter/VIP only)._\n"
                 f"_Tier 3 is the full+ model, same as t2 but with bigger limits and more depth._\n"
                 f"_Tier 3+ is the same as t3 but with a bigger token window._\n"

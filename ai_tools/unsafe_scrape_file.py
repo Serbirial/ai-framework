@@ -34,8 +34,8 @@ allowed_extensions = {
 }
 
 
-# Image extensions to exclude
-image_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".htm", ".html"}
+# extensions to exclude
+exclude_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".htm", ".html"}
 
 def simple_file_scraper(params: dict) -> dict:
     url = params.get("url")
@@ -57,11 +57,11 @@ def simple_file_scraper(params: dict) -> dict:
         return {"error": "URL does not end in a file extension"}
 
     # Reject if extension is image or not in allowed
-    if ext in image_extensions:
-        return {"error": "Image URLs are not allowed"}
+    if ext in exclude_extensions:
+        return {"error": "Image/Video and HTML files are not allowed."}
 
     if ext not in allowed_extensions.keys():
-        return {"error": f"File extension '{ext}' is not allowed"}
+        return {"error": f"File extension '{ext}' is not allowed."}
 
     try:
         res = requests.get(url, headers=headers, timeout=10)
