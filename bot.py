@@ -822,9 +822,19 @@ class ChatBot(discord.Client):
                         WHERE userid = ?
                     """, (new_status, str(user.id)))
                     await message.reply(f"Background thinking {'**enabled**' if new_status else '**disabled**'} for {user.display_name}.")
-
                 conn.commit()
                 conn.close()
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT enabled FROM BACKGROUND_THINKING WHERE userid = ?", (str(message.author.id),))
+        row = cursor.fetchone()
+        # add user to backgroun_thinkers if they have thinking enabled + werent loaded at startup
+        if row != None:
+            if message.author.id not in self.background_thinkers:
+                self.background_thinkers.append(message.author.id)
+                self.background_thinker_history[message.author.id] = 0
 
 
         cnn_file_path = await download_image_attachment(message)
