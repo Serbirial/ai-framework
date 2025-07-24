@@ -504,9 +504,9 @@ class ChatBot(discord.Client):
 
         self.background_thinkers = []
         self.background_thinker_history = {} #identifier : timestamp
-        
-        for thinker in thinkers:
-            self.background_thinkers.append(int(thinker))
+        if thinkers != None:
+            for thinker in thinkers:
+                self.background_thinkers.append(int(thinker))
             
         print(f"{len(self.background_thinkers)} people have background enabled thinking (background thinking is ACTIVE)")
 
