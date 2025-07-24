@@ -9,6 +9,31 @@ import os
 from src.bot import ChatBot
 
 config = Config()
+def _model_worker(conn, model_path, botname, core_ids, n_threads):
+	import psutil, os
+	psutil.Process(os.getpid()).cpu_affinity(core_ids)
+
+	model = ChatBot(name=botname, model=Llama(
+		model_path=model_path,
+		n_ctx=8096,
+		n_threads=n_threads,
+		use_mlock=False,
+		logits_all=False,
+		verbose=False,
+		use_mmap=True,
+		n_gpu_layers=32,
+		low_vram=False,
+		n_batch=64
+	))
+
+	try:
+		msg = conn.recv()
+		response = model.chat(**msg)
+		conn.send(response)
+	except Exception as e:
+		conn.send({"error": str(e)})
+		conn.close()
+
 
 class Concurrent_Llama_Gen:
 	"""
@@ -23,7 +48,7 @@ class Concurrent_Llama_Gen:
 		for i in range(self.max_concurrent):
 			parent_conn, child_conn = Pipe()
 			proc = Process(
-				target=self._model_worker,
+				target=_model_worker,
 				args=(child_conn, model_path, botname, [i*2, i*2+1], 3)
 			)
 			proc.start()
@@ -32,31 +57,6 @@ class Concurrent_Llama_Gen:
 				"pipe": parent_conn,
 				"proc": proc,
 			}
-
-	def _model_worker(self, conn, model_path, botname, core_ids, n_threads):
-		import psutil, os
-		psutil.Process(os.getpid()).cpu_affinity(core_ids)
-
-		model = ChatBot(name=botname, model=Llama(
-			model_path=model_path,
-			n_ctx=8096,
-			n_threads=n_threads,
-			use_mlock=False,
-			logits_all=False,
-			verbose=False,
-			use_mmap=True,
-			n_gpu_layers=32,
-			low_vram=False,
-			n_batch=64
-		))
-
-		try:
-			msg = conn.recv()
-			response = model.chat(**msg)
-			conn.send(response)
-		except Exception as e:
-			conn.send({"error": str(e)})
-			conn.close()
 
 
 	def has_free_slot(self) -> bool:
