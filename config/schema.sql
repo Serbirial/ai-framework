@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS HISTORY (
 
 -- Bot personality base
 CREATE TABLE IF NOT EXISTS BOT_PROFILE (
-    name TEXT PRIMARY KEY
+    owner TEXT PRIMARY KEY,
+    name TEXT
 );
 
 -- Goals tied to bot

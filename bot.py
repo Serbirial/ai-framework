@@ -815,7 +815,7 @@ class ChatBot(discord.Client):
         if flags["explain"] or message.content.startswith("!whatareyou"):
             return await message.reply(f"Im a 100% custom made AI! My current global name is set to `{self.ai.name}`.\nI have many capabilities! Feel free to ask me about them!\nYou have nearly full control over WHO i am as a being, and can shape or customize my personality at will!\n\nJust think of me as a more personalized version of ChatGPT! Im slowly acquiring more and more of their features and abilities! (Funfact: My first capable self was made in around 2 months with 6000 lines of code!)")
         if flags["orp"] == True:
-            async with self.generate_lock:  # ✅ Thread-safe section
+            async with self.generate_lock:
                 async with message.channel.typing():
                     data = self.ai._straightforward_generate(processed_input, 350, 0.8, 0.9, None, stop_criteria, processed_input)
                     
@@ -823,6 +823,27 @@ class ChatBot(discord.Client):
                     return await message.reply(data)
         if flags["help"]:
             return await message.reply(processed_input)
+        if flags["change_personality"]:
+            new_name = processed_input
+            try:
+                cursor.execute("SELECT name FROM BOT_PROFILE WHERE name = ? and owner = ?", (new_name, message.author.id,))
+                if cursor.fetchone() is None:
+                    await message.reply(f"Personality `{new_name}` does not exist.")
+                    conn.close()
+                    return
+
+                cursor.execute("""
+                    INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                """, (str(message.author.id), new_name))
+                conn.commit()
+                conn.close()
+                await message.reply(f"Personality set to `{new_name}`.")
+            except Exception as e:
+                await message.reply(f"Failed to set active personality: {e}")
+                conn.close()
+                return
+
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
@@ -847,7 +868,7 @@ class ChatBot(discord.Client):
 
             try:
                 # Insert new personality profile
-                cursor.execute("INSERT INTO BOT_PROFILE (name) VALUES (?)", (new_name,))
+                cursor.execute("INSERT INTO BOT_PROFILE (owner, name) VALUES (?, ?)", (message.author.id, new_name,))
 
                 if not personality_data:
                     # Copy personality data from default if none supplied
