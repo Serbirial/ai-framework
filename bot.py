@@ -799,7 +799,7 @@ class ChatBot(discord.Client):
                 conn.commit()
                 conn.close()
 
-                return await message.channel.send(f"Tier for <@{user_value}> set to `{tier_value}`.")
+                return await message.channel.send(f"Tier for <@{user.id}> set to `{tier_value}`.")
             elif message.content.startswith("!background_thinking"):
                 parts = message.content.strip().split()
                 if len(parts) != 2:
