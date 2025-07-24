@@ -12,6 +12,8 @@ from .safe_wikipedia import EXPORT as GET_WIKIPEDIA
 from .safe_python_sandbox import EXPORT as SAFE_PYTHON_SANDBOX
 from .unsafe_youtube_scraper import EXPORT as UNSANFE_YOUTUBE_SCRAPE
 from .unsafe_scrape import EXPORT as UNSAFE_RAW_SCRAPER
+from .unsafe_scrape_file import EXPORT as UNSAFE_RAW_FILE_SCRAPER
+
 from .website_ping import EXPORT as WEBSITE_PING
 
 from .local_lastfm_api import EXPORT as FM_RECENT
@@ -51,6 +53,8 @@ if WEB_ACCESS:
     VALID_ACTIONS.update(WEBSITE_PING)
     VALID_ACTIONS.update(GET_TIME_LIVE)
     VALID_ACTIONS.update(UNSAFE_RAW_SCRAPER)
+    VALID_ACTIONS.update(UNSAFE_RAW_FILE_SCRAPER)
+    
 
 
 VALID_ACTIONS.update(SAFE_MATH_EXPORT)
