@@ -158,7 +158,7 @@ def initialize_default_personality():
 
     try:
         # Insert default personality base
-        cursor.execute("INSERT OR IGNORE INTO BOT_PROFILE (name) VALUES ('default')")
+        cursor.execute("INSERT OR IGNORE INTO BOT_PROFILE (name, owner) VALUES ('default', 'none')")
 
         # Insert default goals (check existence manually to avoid duplicates)
         cursor.execute("""
@@ -950,16 +950,22 @@ class ChatBot(discord.Client):
         if flags["change_personality"]:
             new_name = processed_input
             try:
-                cursor.execute("SELECT name FROM BOT_PROFILE WHERE name = ? and owner = ?", (new_name, message.author.id,))
-                if cursor.fetchone() is None:
-                    await message.reply(f"Personality `{new_name}` does not exist (Personalities are isolated per-user).")
-                    conn.close()
-                    return
+                if new_name == "default":
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                    """, (str(message.author.id), new_name))
+                else:
+                    cursor.execute("SELECT name FROM BOT_PROFILE WHERE name = ? and owner = ?", (new_name, message.author.id,))
+                    if cursor.fetchone() is None:
+                        await message.reply(f"Personality `{new_name}` does not exist (Personalities are isolated per-user).")
+                        conn.close()
+                        return
 
-                cursor.execute("""
-                    INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
-                    VALUES (?, ?, CURRENT_TIMESTAMP)
-                """, (str(message.author.id), new_name))
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO BOT_SELECTION (userid, botname, timestamp)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                    """, (str(message.author.id), new_name))
                 conn.commit()
                 conn.close()
                 await message.reply(f"Personality set to `{new_name}`.")
