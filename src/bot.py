@@ -515,7 +515,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveWork(self, tier=tier, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveWork(self, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
             thoughts, final = thinker.think(question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
