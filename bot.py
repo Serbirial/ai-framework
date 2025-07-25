@@ -1,31 +1,31 @@
 import random
 import discord
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
-import re
 import aiohttp
+import json
+import psutil
 import sqlite3
 from src import bot
 from src import static
 from utils.helpers import get_mem_tokens_n
-import json, io
 DB_PATH = static.DB_PATH
 import asyncio
 
 import time
 
-import os
 
 import asyncio
 import random
 import asyncio
 import time
 
-from src import static_prompts
 
 from src import concurrent_generation
 
 from utils.concurrency import BackgroundThinkerProcess
+
+from flask import Flask, jsonify, request
+
 
 class DiscordBufferedUpdater:
     def __init__(self, discord_message, cooldown=2.4, max_chars=1900):
@@ -508,9 +508,86 @@ class ChatBot(discord.Client):
             for thinker in thinkers:
                 self.background_thinkers.append(int(thinker))
             
+        self.flask_app = Flask("ChatBotWeb")
+        self._setup_flask_routes()
+        self.flask_thread = threading.Thread(target=self._run_flask, daemon=True)
+        self.flask_thread.start()
+            
         print(f"{len(self.background_thinkers)} people have background enabled thinking (background thinking is ACTIVE)")
 
         print(f"Up to {self.sub_model.max_concurrent} concurrent interactions with the sub model allowed.")
+
+    def _setup_flask_routes(self): # NOTE: moving this to ./apis
+        app = self.flask_app
+
+        @app.route('/')
+        def dashboard():
+            chat_contexts_size = self._get_size(self.chat_contexts)
+
+            process = psutil.Process()
+            mem_info = process.memory_info()
+
+            html = f"""
+            <html>
+                <head><title>ChatBot Monitoring Dashboard</title></head>
+                <body>
+                    <h1>ChatBot Monitoring Dashboard</h1>
+                    <h2>Memory Usage</h2>
+                    <ul>
+                        <li><b>chat_contexts approximate size:</b> {chat_contexts_size / 1024:.2f} KB</li>
+                        <li><b>Process RSS (resident set size):</b> {mem_info.rss / 1024 / 1024:.2f} MB</li>
+                        <li><b>Process VMS (virtual memory size):</b> {mem_info.vms / 1024 / 1024:.2f} MB</li>
+                    </ul>
+                    <h2>Config</h2>
+                    <pre>{json.dumps(self.config.token_config, indent=4)}</pre>
+                </body>
+            </html>
+            """
+            return html
+        
+        @app.route('/status')
+        def status():
+            return jsonify({
+                "main_llm_generating": self.main_llm_generating,
+                "current_user": str(self.current_user),
+                "chats_in_memory": len(self.chat_contexts),
+                "sub_llms_generating": self.sub_model.count_active()
+            })
+
+        @app.route('/chat_contexts')
+        def chat_contexts():
+            return jsonify({str(k): str(v) for k,v in self.chat_contexts.items()})
+
+        @app.route('/trigger_action', methods=['POST'])
+        def trigger_action():
+            data = request.json
+            action = data.get("action", "")
+            if action == "clear_contexts":
+                self.chat_contexts.clear()
+                return jsonify({"status": "cleared chat contexts"})
+            return jsonify({"error": "unknown action"}), 400
+    
+    def _get_size(self, obj, seen=None):
+        """Recursively finds size of objects in bytes."""
+        import sys
+        if seen is None:
+            seen = set()
+        size = sys.getsizeof(obj)
+        if id(obj) in seen:
+            return 0
+        seen.add(id(obj))
+
+        if isinstance(obj, dict):
+            size += sum([self._get_size(v, seen) + self._get_size(k, seen) for k, v in obj.items()])
+        elif hasattr(obj, '__dict__'):
+            size += self._get_size(vars(obj), seen)
+        elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+            size += sum([self._get_size(i, seen) for i in obj])
+        return size
+
+    def _run_flask(self):
+        self.flask_app.run(host='0.0.0.0', port=8888, threaded=True)
+
 
     # todo: add triggers for this and have a seperate triggered background thinker class also in `background_thinking.py`
     async def background_thinker_loop(self): # FIXME add intervals to json config

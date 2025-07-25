@@ -409,25 +409,25 @@ class ChatBot:
                     "mood": self.get_moods_social(usertone)
                 }
             } # TODO Set mood based on all moods
-            
+
         moods = get_moods()
-        
+
         # Set the base mood based on highest score social mood
         social_moods = moods["Social Intents Mood Factor"]["mood"]
         mood = social_moods[0] if social_moods else "uncertain (api error)"
-        
+
 
         return usertone, moods, mood, mood_sentence, persona_prompt, category
 
     def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
         cnn_output_formatted = None
-        
+
         if not max_new_tokens:
             max_new_tokens = CONFIG_VAR.token_config[tier]["BASE_MAX_TOKENS"]
-            
+
         max_memory_tokens = CONFIG_VAR.token_config[tier]["MAX_MEMORY_TOKENS"]
-        
+
         if cnn_file_path:
             if streamer:
                 streamer.add_special(f"Image Detetcted, starting processing (may take a while)...")
