@@ -71,12 +71,12 @@ class SanicStreamer:
                 chunk = self.queue.get(timeout=0.5)
                 if chunk is None:
                     break
-                yield f"data: {chunk}\n\n"
+                yield f"{chunk}"
                 last_heartbeat = time.monotonic()
             except Empty:
                 now = time.monotonic()
                 if now - last_heartbeat > heartbeat_interval:
-                    yield "data: <|heartbeat|>\n\n"
+                    yield "<|heartbeat|>"
                     last_heartbeat = now
 
             while True:
@@ -85,7 +85,7 @@ class SanicStreamer:
                         break
                     special_line = self.special_buffer.pop(0)
 
-                yield f"data: SPECIAL:{special_line}\n\n"
+                yield f"SPECIAL:{special_line}\n"
 
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
