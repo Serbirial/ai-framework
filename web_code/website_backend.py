@@ -1,20 +1,23 @@
 import time
 import threading
 from queue import Queue, Empty
-from flask import Flask, request, Response, stream_with_context
 import asyncio
 import functools
+
+from sanic import Sanic, response
+from sanic_ext import Extend
 
 from src import bot
 from src import static
 
-app = Flask(__name__)
+app = Sanic("AyokPT")
+Extend(app)
 
 context = static.ChatContext(static.DummyTokenizer(), 1024)
 chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)
-generate_lock = asyncio.Lock()  # single global lock until using sanic
+generate_lock = asyncio.Lock()
 
-class FlaskStreamer:
+class SanicStreamer:
     def __init__(self, cooldown=0.3, max_chars=500):
         self.cooldown = cooldown
         self.max_chars = max_chars
@@ -55,7 +58,11 @@ class FlaskStreamer:
         self.closed = True
         self.queue.put(None)
 
-    def generator(self):
+    def add_special(self, data):
+        with self.lock:
+            self.special_buffer.append(data)
+
+    async def generator(self):
         last_heartbeat = time.monotonic()
         heartbeat_interval = 15  # seconds
 
@@ -64,13 +71,12 @@ class FlaskStreamer:
                 chunk = self.queue.get(timeout=0.5)
                 if chunk is None:
                     break
-                yield f"{chunk}"
+                yield f"data: {chunk}\n\n"
                 last_heartbeat = time.monotonic()
             except Empty:
-                # send heartbeat if needed
                 now = time.monotonic()
                 if now - last_heartbeat > heartbeat_interval:
-                    yield "<|heartbeat|>" 
+                    yield "data: <|heartbeat|>\n\n"
                     last_heartbeat = now
 
             while True:
@@ -79,23 +85,19 @@ class FlaskStreamer:
                         break
                     special_line = self.special_buffer.pop(0)
 
-                yield f"SPECIAL:{special_line}\n\n"
+                yield f"data: SPECIAL:{special_line}\n\n"
 
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
 
 
-    def add_special(self, data):
-        with self.lock:
-            self.special_buffer.append(data)
-
-
 async def generate_ai_response(
     user_input,
     streamer,
+    ip,
     username="web_user",
     tier="t0",
-    max_new_tokens=512,
+    max_new_tokens=226,
     temperature=0.7,
     top_p=0.9,
     debug=False,
@@ -105,18 +107,13 @@ async def generate_ai_response(
     tiny_mode=False,
     cnn_file_path=None,
 ):
-    """
-    Calls your bot.ChatBot.chat synchronously in a thread,
-    passing streamer for chunked output.
-    """
     async with generate_lock:
-
         loop = asyncio.get_running_loop()
         partial_chat = functools.partial(
             chatbot_ai.chat,
             username=username,
             user_input=user_input,
-            identifier="web_session_1",
+            identifier=ip,
             tier=tier,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
@@ -130,19 +127,11 @@ async def generate_ai_response(
             tiny_mode=tiny_mode,
             cnn_file_path=cnn_file_path,
         )
-
         await loop.run_in_executor(None, partial_chat)
-
         streamer.close()
 
-def run_async_loop(coro):
-    """Run an async coroutine from sync context (Flask route)"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
-
-@app.route("/api/chat", methods=["POST"])
-def chat():
+@app.post("/api/chat")
+async def chat(request):
     data = request.json or {}
 
     user_input = data.get("message", "")
@@ -150,24 +139,23 @@ def chat():
     tier = data.get("tier", "t0")
     temperature = float(data.get("temperature", 0.7))
     top_p = float(data.get("top_p", 0.9))
-    recursive_depth = data.get("recursive_depth", 3)
+    recursive_depth = int(data.get("recursive_depth", 3))
     category_override = data.get("category_override", None)
     debug = bool(data.get("debug", False))
     force_recursive = bool(data.get("force_recursive", False))
 
-    try:
-        recursive_depth = int(recursive_depth)
-    except Exception:
-        recursive_depth = 3
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
 
-    streamer = FlaskStreamer(cooldown=0.3, max_chars=100)
 
-    def stream_response():
+    streamer = SanicStreamer(cooldown=0.3, max_chars=100)
+
+    async def stream_response(_):
         def worker():
-            run_async_loop(
+            asyncio.run(
                 generate_ai_response(
                     user_input=user_input,
                     streamer=streamer,
+                    identifier=ip,
                     username=username,
                     tier=tier,
                     temperature=temperature,
@@ -181,21 +169,22 @@ def chat():
 
         threading.Thread(target=worker, daemon=True).start()
 
-        yield from streamer.generator()
+        async for chunk in streamer.generator():
+            yield chunk
 
-    headers = {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-    }
+    return response.stream(
+        stream_response,
+        content_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
-    return Response(stream_with_context(stream_response()), headers=headers)
-
-
-@app.route("/")
-def index():
+@app.get("/")
+async def index(_):
     with open("./index.html", "r", encoding="utf-8") as f:
-        return f.read()
+        return response.html(f.read())
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=8000, debug=False)
