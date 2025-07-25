@@ -7,306 +7,299 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 	:root {
-	--bg: #1e1e1e;
-	--fg: #e6e6e6;
-	--accent: #10a37f;
-	--divider: #2f2f2f;
-	--user-color: #58a6ff;
+		--bg: #1e1e1e;
+		--fg: #e6e6e6;
+		--accent: #10a37f;
+		--divider: #2f2f2f;
+		--user-color: #58a6ff;
 	}
 
 	* {
-	box-sizing: border-box;
+		box-sizing: border-box;
 	}
 
 	body {
-	margin: 0;
-	padding: 0;
-	background-color: var(--bg);
-	color: var(--fg);
-	font-family: system-ui, sans-serif;
-	display: flex;
-	flex-direction: column;
-	height: 100vh;
+		margin: 0;
+		padding: 0;
+		background-color: var(--bg);
+		color: var(--fg);
+		font-family: system-ui, sans-serif;
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
 	}
 
 	nav {
-	padding: 0.5rem 1rem;
-	background-color: #161b22;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border-bottom: 1px solid var(--divider);
+		padding: 0.5rem 1rem;
+		background-color: #161b22;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border-bottom: 1px solid var(--divider);
 	}
 
 	nav strong {
-	font-weight: bold;
+		font-weight: bold;
 	}
 
 	main {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	overflow: hidden;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		overflow: hidden;
 	}
 
 	#chat {
-	width: 100%;
-	max-width: 768px;
-	flex: 1;
-	padding: 1rem;
-	overflow-y: auto;
+		width: 100%;
+		max-width: 768px;
+		flex: 1;
+		padding: 1rem;
+		overflow-y: auto;
 	}
 
 	.message {
-	padding: 1rem 0;
-	border-bottom: 1px solid var(--divider);
+		padding: 1rem 0;
+		border-bottom: 1px solid var(--divider);
 	}
 
 	.message.user {
-	color: var(--user-color);
+		color: var(--user-color);
 	}
 
 	.message .markdown {
-	padding: 0.2rem 0;
+		padding: 0.2rem 0;
 	}
 
 	pre {
-	background: #2d2d2d;
-	padding: 0.5rem;
-	border-radius: 6px;
-	overflow-x: auto;
+		background: #2d2d2d;
+		padding: 0.5rem;
+		border-radius: 6px;
+		overflow-x: auto;
 	}
 
 	code {
-	font-family: monospace;
+		font-family: monospace;
 	}
 
 	.chat-footer {
-	display: flex;
-	justify-content: center;
-	padding: 0.75rem;
-	background-color: #161b22;
-	border-top: 1px solid var(--divider);
+		display: flex;
+		justify-content: center;
+		padding: 0.75rem;
+		background-color: #161b22;
+		border-top: 1px solid var(--divider);
 	}
 
 	.input-area {
-	display: flex;
-	align-items: flex-end;
-	width: 100%;
-	max-width: 768px;
-	gap: 0.5rem;
+		display: flex;
+		align-items: flex-end;
+		width: 100%;
+		max-width: 768px;
+		gap: 0.5rem;
 	}
 
 	textarea {
-	flex: 1;
-	resize: none;
-	padding: 0.75rem;
-	border-radius: 6px;
-	background-color: #0d1117;
-	border: 1px solid var(--divider);
-	color: var(--fg);
-	font-size: 1rem;
+		flex: 1;
+		resize: none;
+		padding: 0.75rem;
+		border-radius: 6px;
+		background-color: #0d1117;
+		border: 1px solid var(--divider);
+		color: var(--fg);
+		font-size: 1rem;
 	}
 
 	button {
-	padding: 0.6rem 1rem;
-	background: var(--accent);
-	color: white;
-	border: none;
-	border-radius: 5px;
-	font-weight: bold;
-	cursor: pointer;
+		padding: 0.6rem 1rem;
+		background: var(--accent);
+		color: white;
+		border: none;
+		border-radius: 5px;
+		font-weight: bold;
+		cursor: pointer;
 	}
 
 	.tools {
-	color: #888;
-	font-size: 0.8rem;
-	min-width: 120px;
-	text-align: right;
+		color: #888;
+		font-size: 0.8rem;
+		min-width: 120px;
+		text-align: right;
 	}
 
 	.thinking-toggle {
-	margin-top: 1rem;
-	cursor: pointer;
-	font-size: 0.9rem;
-	color: #aaa;
+		margin-top: 1rem;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #aaa;
+		user-select: none;
+	}
+
+	.thinking-toggle:hover {
+		color: var(--accent);
 	}
 
 	.pulse {
-	display: inline-block;
-	animation: pulseAnim 1.4s infinite;
+		display: inline-block;
+		animation: pulseAnim 1.4s infinite;
 	}
 
 	@keyframes pulseAnim {
-	0%, 100% { opacity: 0.3; }
-	50% { opacity: 1; }
+		0%, 100% { opacity: 0.3; }
+		50% { opacity: 1; }
 	}
 
-.thinking-window {
-	display: none;
-	background-color: #161b22;
-	color: #aaa;
-	font-size: 0.9rem;
-	padding: 1rem;
-	border-radius: 5px;
-	max-height: 300px;
-	overflow-y: auto;
-	margin-top: 0.5rem;
-	width: 100%;
-	max-width: 768px;
-	white-space: pre-wrap;
+	.thinking-window {
+		display: none;
+		background-color: #161b22;
+		color: #aaa;
+		font-size: 0.9rem;
+		padding: 1rem;
+		border-radius: 5px;
+		max-height: 300px;
+		overflow-y: auto;
+		margin-top: 0.5rem;
+		width: 100%;
+		max-width: 768px;
+		white-space: pre-wrap;
 	}
 
 	aside#settingsPanel {
-	position: fixed;
-	top: 0;
-	right: -320px;
-	width: 300px;
-	height: 100%;
-	background: #161b22;
-	border-left: 1px solid #30363d;
-	padding: 1.5rem;
-	transition: right 0.3s ease;
-	z-index: 1000;
-	overflow-y: auto;
+		position: fixed;
+		top: 0;
+		right: -320px;
+		width: 300px;
+		height: 100%;
+		background: #161b22;
+		border-left: 1px solid #30363d;
+		padding: 1.5rem;
+		transition: right 0.3s ease;
+		z-index: 1000;
+		overflow-y: auto;
 	}
 
 	aside#settingsPanel.open {
-	right: 0;
+		right: 0;
 	}
 
 	#settingsOverlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	height: 100%;
-	width: 100%;
-	background: transparent;
-	display: none;
-	z-index: 999;
+		position: fixed;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+		background: transparent;
+		display: none;
+		z-index: 999;
 	}
 
 	aside h3 {
-	color: #fff;
-	margin-top: 0;
+		color: #fff;
+		margin-top: 0;
 	}
 
 	aside label {
-	margin-top: 1rem;
-	display: block;
-	font-weight: bold;
+		margin-top: 1rem;
+		display: block;
+		font-weight: bold;
 	}
 
 	aside input,
 	aside select {
-	width: 100%;
-	margin-top: 0.25rem;
-	background: #0d1117;
-	color: #fff;
-	border: 1px solid #444;
-	border-radius: 4px;
-	padding: 0.5rem;
+		width: 100%;
+		margin-top: 0.25rem;
+		background: #0d1117;
+		color: #fff;
+		border: 1px solid #444;
+		border-radius: 4px;
+		padding: 0.5rem;
 	}
+
 	#toolsMenu button.toolOption {
-	display: block;       /* full width */
-	width: 100%;
-	margin: 0.3rem 0;     /* vertical spacing between buttons */
-	padding: 0.4rem 0.6rem;
-	background: var(--bg); /* or #161b22, match your menu bg */
-	border: 1px solid var(--divider);
-	border-radius: 4px;
-	color: var(--fg);
-	font-size: 1rem;
-	cursor: pointer;
-	text-align: left;    /* nice for buttons with text */
+		display: block;
+		width: 100%;
+		margin: 0.3rem 0;
+		padding: 0.4rem 0.6rem;
+		background: var(--bg);
+		border: 1px solid var(--divider);
+		border-radius: 4px;
+		color: var(--fg);
+		font-size: 1rem;
+		cursor: pointer;
+		text-align: left;
 	}
 
 	#toolsMenu button.toolOption:hover {
-	background: var(--accent);
-	color: white;
-	border-color: var(--accent);
+		background: var(--accent);
+		color: white;
+		border-color: var(--accent);
 	}
-
 </style>
 </head>
 <body>
 
 <nav>
-<strong>Ayok</strong>
-<div>
-	<a href="#" id="settingsToggle">⚙️ Settings</a>
-</div>
+	<strong>Ayok</strong>
+	<div>
+		<a href="#" id="settingsToggle">⚙️ Settings</a>
+	</div>
 </nav>
 
-
-<div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
-  <span class="pulse">Thinking...</span> (click to expand)
-</div>
-<div id="thinkingWindow"></div>
-
-
+<div id="chat"></div>
 
 <div class="chat-footer">
-<div class="input-area">
-	<textarea id="userInput" rows="1" placeholder="Message Ayok..."></textarea>
-	<button id="sendBtn">Send</button>
-	<div style="position: relative; display: inline-block;">
-	<button id="toolsBtn" aria-haspopup="true" aria-expanded="false">🔧 Tools</button>
-	<div id="toolsMenu" style="
-		display: none;
-		position: absolute;
-		bottom: 100%;  /* right above the button */
-		right: 0;    /* align right edges */
-		background: #161b22;
-		border: 1px solid #30363d;
-		border-radius: 6px;
-		padding: 0.5rem;
-		min-width: 140px;
-		box-shadow: 0 0 10px rgba(0,0,0,0.5);
-		z-index: 1000;
-	">
-
-		<button class="toolOption">Clear Chat</button>
-		<button class="toolOption">Clear Memory</button>
-		<button class="toolOption">Export Full History</button>
-
+	<div class="input-area">
+		<textarea id="userInput" rows="1" placeholder="Message Ayok..."></textarea>
+		<button id="sendBtn">Send</button>
+		<div style="position: relative; display: inline-block;">
+			<button id="toolsBtn" aria-haspopup="true" aria-expanded="false">🔧 Tools</button>
+			<div id="toolsMenu" style="
+				display: none;
+				position: absolute;
+				bottom: 100%;
+				right: 0;
+				background: #161b22;
+				border: 1px solid #30363d;
+				border-radius: 6px;
+				padding: 0.5rem;
+				min-width: 140px;
+				box-shadow: 0 0 10px rgba(0,0,0,0.5);
+				z-index: 1000;">
+				<button class="toolOption">Clear Chat</button>
+				<button class="toolOption">Clear Memory</button>
+				<button class="toolOption">Export Full History</button>
+			</div>
 		</div>
 	</div>
-	</div>
-
 </div>
 
 <div id="settingsOverlay"></div>
 <aside id="settingsPanel">
-<h3>Settings</h3>
-<label for="username">Username</label>
-<input id="username" type="text" />
-<label for="depth">Recursive Depth</label>
-<input type="number" id="depth" min="1" max="10" value="3" />
-<label for="category">Category Override</label>
-<input type="text" id="category" />
-<label for="tier">Tier</label>
-<select id="tier">
-	<option value="t0">t0</option>
-	<option value="t1">t1</option>
-	<option value="t3">t3</option>
-</select>
-<label for="temperature">Temperature</label>
-<input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7" />
-<label for="topP">Top P</label>
-<input type="range" id="topP" min="0" max="1" step="0.01" value="0.9" />
-<label><input type="checkbox" id="debugToggle" /> Debug Mode</label><br>
-<label><input type="checkbox" id="forceRecursiveToggle" /> Force Recursive</label><br><br>
-<button onclick="saveSettings()">Save</button>
+	<h3>Settings</h3>
+	<label for="username">Username</label>
+	<input id="username" type="text" />
+	<label for="depth">Recursive Depth</label>
+	<input type="number" id="depth" min="1" max="10" value="3" />
+	<label for="category">Category Override</label>
+	<input type="text" id="category" />
+	<label for="tier">Tier</label>
+	<select id="tier">
+		<option value="t0">t0</option>
+		<option value="t1">t1</option>
+		<option value="t3">t3</option>
+	</select>
+	<label for="temperature">Temperature</label>
+	<input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7" />
+	<label for="topP">Top P</label>
+	<input type="range" id="topP" min="0" max="1" step="0.01" value="0.9" />
+	<label><input type="checkbox" id="debugToggle" /> Debug Mode</label><br />
+	<label><input type="checkbox" id="forceRecursiveToggle" /> Force Recursive</label><br /><br />
+	<button onclick="saveSettings()">Save</button>
 </aside>
 
 <script>
 const chatDiv = document.getElementById('chat');
 const inputBox = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
-const thinkingToggle = document.getElementById('thinkingToggle');
-const thinkingWindow = document.getElementById('thinkingWindow');
 const settingsToggle = document.getElementById('settingsToggle');
 const settingsPanel = document.getElementById('settingsPanel');
 const settingsOverlay = document.getElementById('settingsOverlay');
@@ -322,20 +315,16 @@ settingsOverlay.onclick = () => {
 	settingsOverlay.style.display = 'none';
 };
 
-function toggleThinking() {
-	thinkingWindow.style.display = thinkingWindow.style.display === 'none' ? 'block' : 'none';
-}
-
 function saveSettings() {
 	const settings = {
-	username: document.getElementById('username').value,
-	recursive_depth: parseInt(document.getElementById('depth').value),
-	category_override: document.getElementById('category').value,
-	tier: document.getElementById('tier').value,
-	temperature: parseFloat(document.getElementById('temperature').value),
-	top_p: parseFloat(document.getElementById('topP').value),
-	debug: document.getElementById('debugToggle').checked,
-	force_recursive: document.getElementById('forceRecursiveToggle').checked
+		username: document.getElementById('username').value,
+		recursive_depth: parseInt(document.getElementById('depth').value),
+		category_override: document.getElementById('category').value,
+		tier: document.getElementById('tier').value,
+		temperature: parseFloat(document.getElementById('temperature').value),
+		top_p: parseFloat(document.getElementById('topP').value),
+		debug: document.getElementById('debugToggle').checked,
+		force_recursive: document.getElementById('forceRecursiveToggle').checked
 	};
 	localStorage.setItem('thinker_settings', JSON.stringify(settings));
 	settingsPanel.classList.remove('open');
@@ -343,75 +332,85 @@ function saveSettings() {
 }
 
 async function streamMessage(msg) {
-const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+	const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
 
-messages.push({ role: 'user', content: msg });
-renderMessages();
-
-const assistantMsg = { role: 'assistant', content: '' };
-messages.push(assistantMsg);
-renderMessages();
-
-// Find last assistant message div
-const assistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
-const lastAssistantDiv = assistantDivs[assistantDivs.length - 1];
-if (!lastAssistantDiv) return;
-
-// Find toggle and thinking window inside last assistant message
-const toggleDiv = lastAssistantDiv.querySelector('.thinking-toggle');
-const windowDiv = lastAssistantDiv.querySelector('.thinking-window');
-if (toggleDiv) toggleDiv.style.display = 'block';
-if (windowDiv) windowDiv.textContent = ''; // Clear previous content
-if (windowDiv) windowDiv.style.display = 'none'; // Start hidden
-
-const response = await fetch('/api/chat', {
-	method: 'POST',
-	headers: { 'Content-Type': 'application/json' },
-	body: JSON.stringify({
-	message: msg,
-	username: settings.username || "web_user",
-	tier: settings.tier || "t0",
-	temperature: settings.temperature || 0.7,
-	top_p: settings.top_p || 0.9,
-	recursive_depth: settings.recursive_depth || 3,
-	category_override: settings.category_override || null,
-	debug: settings.debug || false,
-	force_recursive: settings.force_recursive || false
-	})
-});
-
-const reader = response.body.getReader();
-const decoder = new TextDecoder();
-
-while (true) {
-	const { done, value } = await reader.read();
-	if (done) break;
-	const chunk = decoder.decode(value, { stream: true });
-
-	if (chunk.startsWith('SPECIAL:')) {
-	if (windowDiv) windowDiv.textContent += chunk.substring(8).trim() + '\n';
-	} else {
-	assistantMsg.content += chunk;
+	messages.push({ role: 'user', content: msg });
 	renderMessages();
 
-	// After re-render, re-select windowDiv & toggleDiv to keep updating properly
-	const updatedAssistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
-	const updatedLastAssistantDiv = updatedAssistantDivs[updatedAssistantDivs.length - 1];
-	if (!updatedLastAssistantDiv) continue;
+	const assistantMsg = { role: 'assistant', content: '' };
+	messages.push(assistantMsg);
+	renderMessages();
 
-	const updatedWindowDiv = updatedLastAssistantDiv.querySelector('.thinking-window');
-	const updatedToggleDiv = updatedLastAssistantDiv.querySelector('.thinking-toggle');
-	if (updatedWindowDiv) {
-		updatedWindowDiv.style.display = updatedWindowDiv.style.display || 'none';
-	}
-	if (updatedToggleDiv) {
-		updatedToggleDiv.style.display = 'block';
-	}
-	chatDiv.scrollTop = chatDiv.scrollHeight;
-	}
-}
+	// Find last assistant message div
+	const assistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
+	const lastAssistantDiv = assistantDivs[assistantDivs.length - 1];
+	if (!lastAssistantDiv) return;
 
-if (toggleDiv) toggleDiv.style.display = 'none';
+	// Find toggle and thinking window inside last assistant message
+	let toggleDiv = lastAssistantDiv.querySelector('.thinking-toggle');
+	let windowDiv = lastAssistantDiv.querySelector('.thinking-window');
+	if (toggleDiv) toggleDiv.style.display = 'block';
+	if (windowDiv) {
+		windowDiv.textContent = ''; // Clear previous content
+		windowDiv.style.display = 'none'; // Start hidden
+	}
+
+	try {
+		const response = await fetch('/api/chat', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				message: msg,
+				username: settings.username || "web_user",
+				tier: settings.tier || "t0",
+				temperature: settings.temperature || 0.7,
+				top_p: settings.top_p || 0.9,
+				recursive_depth: settings.recursive_depth || 3,
+				category_override: settings.category_override || null,
+				debug: settings.debug || false,
+				force_recursive: settings.force_recursive || false
+			})
+		});
+
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder();
+
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			const chunk = decoder.decode(value, { stream: true });
+
+			if (chunk.startsWith('SPECIAL:')) {
+				if (windowDiv) windowDiv.textContent += chunk.substring(8).trim() + '\n';
+			} else {
+				assistantMsg.content += chunk;
+				renderMessages();
+
+				// After re-render, re-select windowDiv & toggleDiv to keep updating properly
+				const updatedAssistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
+				const updatedLastAssistantDiv = updatedAssistantDivs[updatedAssistantDivs.length - 1];
+				if (!updatedLastAssistantDiv) continue;
+
+				toggleDiv = updatedLastAssistantDiv.querySelector('.thinking-toggle');
+				windowDiv = updatedLastAssistantDiv.querySelector('.thinking-window');
+				if (windowDiv) {
+					windowDiv.style.display = windowDiv.style.display || 'none';
+				}
+				if (toggleDiv) {
+					toggleDiv.style.display = 'block';
+				}
+				chatDiv.scrollTop = chatDiv.scrollHeight;
+			}
+		}
+	} catch (err) {
+		console.error('Streaming error:', err);
+		if (windowDiv) {
+			windowDiv.textContent += '\n[Error receiving response]';
+			windowDiv.style.display = 'block';
+		}
+	}
+
+	if (toggleDiv) toggleDiv.style.display = 'none';
 }
 
 function renderMessages() {
@@ -431,12 +430,24 @@ function renderMessages() {
 			const toggleDiv = document.createElement('div');
 			toggleDiv.className = "thinking-toggle";
 			toggleDiv.style.display = "block";
-			toggleDiv.setAttribute("data-target", uniqueID);
+			toggleDiv.setAttribute("aria-expanded", "false");
+			toggleDiv.setAttribute("role", "button");
+			toggleDiv.setAttribute("tabindex", "0");
+			toggleDiv.setAttribute("aria-controls", uniqueID);
 			toggleDiv.innerHTML = `<span class="pulse">Thinking...</span> (click to expand)`;
 			toggleDiv.onclick = function () {
 				const target = document.getElementById(uniqueID);
 				if (target) {
-					target.style.display = target.style.display === 'none' ? 'block' : 'none';
+					const isHidden = target.style.display === 'none';
+					target.style.display = isHidden ? 'block' : 'none';
+					toggleDiv.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+				}
+			};
+			// Also support keyboard "Enter" and "Space" for accessibility
+			toggleDiv.onkeydown = function(e) {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					toggleDiv.click();
 				}
 			};
 
@@ -446,16 +457,16 @@ function renderMessages() {
 			windowDiv.style.display = 'none';
 
 			const markdownDiv = div.querySelector('.markdown');
-			markdownDiv.insertBefore(windowDiv, markdownDiv.firstChild);
-			markdownDiv.insertBefore(toggleDiv, windowDiv);
-
+			// Append toggle first, then thinking window
+			markdownDiv.appendChild(toggleDiv);
+			markdownDiv.appendChild(windowDiv);
 		}
 
 		chatDiv.appendChild(div);
 	}
+	// Scroll to bottom after render
+	chatDiv.scrollTop = chatDiv.scrollHeight;
 }
-
-
 
 sendBtn.onclick = async () => {
 	const msg = inputBox.value.trim();
@@ -466,50 +477,9 @@ sendBtn.onclick = async () => {
 
 inputBox.addEventListener('keydown', (e) => {
 	if (e.key === 'Enter' && !e.shiftKey) {
-	e.preventDefault();
-	sendBtn.click();
+		e.preventDefault();
+		sendBtn.click();
 	}
 });
-const toolsBtn = document.getElementById('toolsBtn');
-const toolsMenu = document.getElementById('toolsMenu');
 
-toolsBtn.addEventListener('click', (e) => {
-e.stopPropagation();
-const isVisible = toolsMenu.style.display === 'block';
-toolsMenu.style.display = isVisible ? 'none' : 'block';
-toolsBtn.setAttribute('aria-expanded', !isVisible);
-});
-
-// Close menu if clicking outside
-document.addEventListener('click', () => {
-toolsMenu.style.display = 'none';
-toolsBtn.setAttribute('aria-expanded', 'false');
-});
-
-// Optional: Add click handlers for each tool option here
-document.querySelectorAll('.toolOption').forEach(btn => {
-btn.addEventListener('click', () => {
-	alert(`You clicked "${btn.textContent}"`);
-	toolsMenu.style.display = 'none';
-	toolsBtn.setAttribute('aria-expanded', 'false');
-});
-});
-
-window.onload = () => {
-	const stored = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
-	if (stored.username) document.getElementById('username').value = stored.username;
-	if (stored.recursive_depth) document.getElementById('depth').value = stored.recursive_depth;
-	if (stored.category_override) document.getElementById('category').value = stored.category_override;
-	if (stored.tier) document.getElementById('tier').value = stored.tier;
-	if (stored.temperature !== undefined) {
-	document.getElementById('temperature').value = stored.temperature;
-	}
-	if (stored.top_p !== undefined) {
-	document.getElementById('topP').value = stored.top_p;
-	}
-	document.getElementById('debugToggle').checked = stored.debug || false;
-	document.getElementById('forceRecursiveToggle').checked = stored.force_recursive || false;
-};
-</script>
-</body>
-</html>
+const toolsBtn = document.getElementBy
