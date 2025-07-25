@@ -508,10 +508,10 @@ class ChatBot(discord.Client):
             for thinker in thinkers:
                 self.background_thinkers.append(int(thinker))
             
-        self.flask_app = Flask("ChatBotWeb")
-        self._setup_flask_routes()
-        self.flask_thread = threading.Thread(target=self._run_flask, daemon=True)
-        self.flask_thread.start()
+        #self.flask_app = Flask("ChatBotWeb")
+        #self._setup_flask_routes()
+        #self.flask_thread = threading.Thread(target=self._run_flask, daemon=True)
+        #self.flask_thread.start()
             
         print(f"{len(self.background_thinkers)} people have background enabled thinking (background thinking is ACTIVE)")
 
