@@ -73,7 +73,7 @@ class FlaskStreamer:
                         break
                     special_line = self.special_buffer.pop(0)
 
-                yield f"data: SPECIAL:{special_line}\n\n"
+                yield f"SPECIAL:{special_line}\n\n"
 
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
