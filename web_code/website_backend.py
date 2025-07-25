@@ -13,12 +13,9 @@ from src import static
 app = Sanic("AyokPT")
 Extend(app)
 
-# Global context and model instance
 context = static.ChatContext(static.DummyTokenizer(), 1024)
-chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)  # Only spawned once here
 generate_lock = asyncio.Lock()
-model_lock = threading.Lock()  # Prevent multiple threads using model at same time
-
+model_lock = threading.Lock()
 
 class SanicStreamer:
     def __init__(self, cooldown=0.3, max_chars=500):
@@ -93,6 +90,10 @@ class SanicStreamer:
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
 
+@app.before_server_start
+async def setup_chatbot(app, _):
+    # Initialize the chatbot once here
+    app.ctx.chatbot = bot.ChatBot(db_path=static.DB_PATH)
 
 async def generate_ai_response(
     user_input,
@@ -113,7 +114,7 @@ async def generate_ai_response(
     async with generate_lock:
         loop = asyncio.get_running_loop()
         partial_chat = functools.partial(
-            chatbot_ai.chat,
+            app.ctx.chatbot.chat,
             username=username,
             user_input=user_input,
             identifier=ip,
@@ -130,10 +131,11 @@ async def generate_ai_response(
             tiny_mode=tiny_mode,
             cnn_file_path=cnn_file_path,
         )
+        # Ensure only one thread calls the model at a time
         with model_lock:
             await loop.run_in_executor(None, partial_chat)
-        streamer.close()
 
+        streamer.close()
 
 @app.post("/api/chat")
 async def chat(request):
@@ -154,27 +156,30 @@ async def chat(request):
     streamer = SanicStreamer(cooldown=0.3, max_chars=100)
 
     async def stream_response(_):
-        def worker():
-            asyncio.run(
-                generate_ai_response(
-                    user_input=user_input,
-                    streamer=streamer,
-                    ip=ip,
-                    username=username,
-                    tier=tier,
-                    temperature=temperature,
-                    top_p=top_p,
-                    recursive_depth=recursive_depth,
-                    category_override=category_override,
-                    debug=debug,
-                    force_recursive=force_recursive,
-                )
+        # Use asyncio.to_thread to run blocking code safely
+        async def worker():
+            await asyncio.to_thread(
+                generate_ai_response,
+                user_input=user_input,
+                streamer=streamer,
+                ip=ip,
+                username=username,
+                tier=tier,
+                temperature=temperature,
+                top_p=top_p,
+                recursive_depth=recursive_depth,
+                category_override=category_override,
+                debug=debug,
+                force_recursive=force_recursive,
             )
 
-        threading.Thread(target=worker, daemon=False).start()
+        # Run the blocking call in background async task
+        task = asyncio.create_task(worker())
 
         async for chunk in streamer.generator():
             yield chunk
+
+        await task  # ensure task finishes
 
     return response.stream(
         stream_response,
@@ -185,12 +190,11 @@ async def chat(request):
         },
     )
 
-
 @app.get("/")
 async def index(_):
     with open("./index.html", "r", encoding="utf-8") as f:
         return response.html(f.read())
 
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=False)
+    # IMPORTANT: Run with 1 worker to ensure single model instance
+    app.run(host="0.0.0.0", port=8000, debug=False, workers=1)

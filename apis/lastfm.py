@@ -3,12 +3,11 @@ import pylast
 from flask import Flask, redirect, request, session, url_for, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'replace_with_your_secret_key'
 
 API_KEY = "your_lastfm_api_key"
 API_SECRET = "your_lastfm_api_secret"
 
-DB_PATH = "yourdatabase.db"
+DB_PATH = "lastfm.db"
 
 def create_lastfm_sessions_table():
     conn = sqlite3.connect(DB_PATH)
