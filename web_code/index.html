@@ -149,7 +149,40 @@
       const msg = inputBox.value.trim();
       if (!msg) return;
       inputBox.value = '';
+
+      // Add user message to stream
       streamDiv.textContent += `\n> ${msg}\n`;
+
+      // Create thinking line with toggle
+      const thinkingLine = document.createElement('div');
+      thinkingLine.textContent = 'thinking... (click to expand)';
+      thinkingLine.style.color = '#6a737d';
+      thinkingLine.style.cursor = 'pointer';
+      streamDiv.appendChild(thinkingLine);
+
+      // Create hidden special stream area below it
+      const specialStream = document.createElement('pre');
+      specialStream.style.display = 'none';
+      specialStream.style.maxHeight = '5em'; // ~5 lines tall
+      specialStream.style.overflowY = 'auto';
+      specialStream.style.background = '#161b22';
+      specialStream.style.border = '1px solid #30363d';
+      specialStream.style.padding = '0.5em';
+      specialStream.style.marginTop = '0.2em';
+      specialStream.style.fontFamily = 'Consolas, monospace';
+      streamDiv.appendChild(specialStream);
+
+      thinkingLine.onclick = () => {
+        if (specialStream.style.display === 'none') {
+          specialStream.style.display = 'block';
+          thinkingLine.textContent = 'thinking... (click to collapse)';
+          specialStream.scrollTop = specialStream.scrollHeight;
+        } else {
+          specialStream.style.display = 'none';
+          thinkingLine.textContent = 'thinking... (click to expand)';
+        }
+      };
+
       sendBtn.disabled = true;
 
       const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
@@ -157,7 +190,7 @@
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: msg,
           username: settings.username || "web_user",
           tier: settings.tier || "t0",
@@ -179,12 +212,23 @@
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            streamDiv.textContent += line.substring(6);
+            const text = line.substring(6);
+
+            if (text.startsWith('SPECIAL:')) {
+              // Append to special stream, removing prefix
+              specialStream.textContent += text.substring(8).trim() + '\n';
+              specialStream.scrollTop = specialStream.scrollHeight;
+            } else {
+              // Append normal stream to main area (above special)
+              streamDiv.textContent += text;
+              streamDiv.scrollTop = streamDiv.scrollHeight;
+            }
           }
         }
-        streamDiv.scrollTop = streamDiv.scrollHeight;
+
         buffer = '';
       }
 
