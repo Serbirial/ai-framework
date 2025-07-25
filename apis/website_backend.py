@@ -6,9 +6,9 @@ import asyncio
 import functools
 
 
-from ..src import bot
+from src import bot
 
-from ..src import static
+from src import static
 
 app = Flask(__name__)
 
