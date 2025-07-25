@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Stream Debug Console</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background-color: #161b22;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      border-bottom: 1px solid #30363d;
+    }
+    #stream {
+      flex-grow: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: Consolas, monospace;
+      border-bottom: 1px solid #30363d;
+    }
+    #controls {
+      background-color: #161b22;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 0.5rem;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #238636;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #2ea04355;
+      cursor: not-allowed;
+    }
+
+    #settingsModal {
+      display: none;
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -20%);
+      background: #161b22;
+      padding: 1.5rem;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      z-index: 100;
+      color: #c9d1d9;
+      width: 300px;
+    }
+    #settingsModal input,
+    #settingsModal select {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.4rem;
+      background: #0d1117;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+    }
+    #settingsModal label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <header>Chat with Ayok.</header>
+
+  <div id="stream">[output appears here]</div>
+
+  <div id="controls">
+    <button id="settingsBtn" style="position: absolute; top: 10px; right: 10px;">⚙️</button>
+
+    <input id="userInput" type="text" placeholder="Type a message to send to the AI...">
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <div id="settingsModal">
+    <h3>Settings</h3>
+
+    <label>Username</label>
+    <input type="text" id="username">
+
+    <label>Recursive Depth</label>
+    <input type="number" id="depth" min="1" max="10" value="3">
+
+    <label>Category Override</label>
+    <input type="text" id="category">
+
+    <label>Tier</label>
+    <select id="tierSelect">
+      <option value="t0">t0</option>
+      <option value="t1">t1</option>
+      <option value="t3">t3</option>
+    </select>
+
+    <label>Temperature: <span id="tempVal">0.7</span></label>
+    <input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7">
+
+    <label>Top P: <span id="topPVal">0.9</span></label>
+    <input type="range" id="topP" min="0" max="1" step="0.01" value="0.9">
+
+    <label><input type="checkbox" id="debugToggle"> Debug</label><br>
+    <label><input type="checkbox" id="forceRecursiveToggle"> Force Recursive</label><br><br>
+
+    <button onclick="saveSettings()">Save</button>
+    <button onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
+  </div>
+
+  <script>
+    const streamDiv = document.getElementById('stream');
+    const inputBox = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+
+    settingsBtn.onclick = () => {
+      settingsModal.style.display = 'block';
+    }
+
+    sendBtn.onclick = async () => {
+      const msg = inputBox.value.trim();
+      if (!msg) return;
+      inputBox.value = '';
+      streamDiv.textContent += `\n> ${msg}\n`;
+      sendBtn.disabled = true;
+
+      const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: msg,
+          username: settings.username || "web_user",
+          tier: settings.tier || "t0",
+          temperature: settings.temperature || 0.7,
+          top_p: settings.top_p || 0.9,
+          recursive_depth: settings.recursive_depth || 3,
+          category_override: settings.category_override || null,
+          debug: settings.debug || false,
+          force_recursive: settings.force_recursive || false
+        })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            streamDiv.textContent += line.substring(6);
+          }
+        }
+        streamDiv.scrollTop = streamDiv.scrollHeight;
+        buffer = '';
+      }
+
+      sendBtn.disabled = false;
+    }
+
+    function saveSettings() {
+      const settings = {
+        username: document.getElementById('username').value,
+        recursive_depth: parseInt(document.getElementById('depth').value),
+        category_override: document.getElementById('category').value,
+        tier: document.getElementById('tierSelect').value,
+        temperature: parseFloat(document.getElementById('temperature').value),
+        top_p: parseFloat(document.getElementById('topP').value),
+        debug: document.getElementById('debugToggle').checked,
+        force_recursive: document.getElementById('forceRecursiveToggle').checked
+      };
+
+      localStorage.setItem('thinker_settings', JSON.stringify(settings));
+      settingsModal.style.display = 'none';
+    }
+
+    window.onload = () => {
+      const stored = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+      if (stored.username) document.getElementById('username').value = stored.username;
+      if (stored.recursive_depth) document.getElementById('depth').value = stored.recursive_depth;
+      if (stored.category_override) document.getElementById('category').value = stored.category_override;
+      if (stored.tier) document.getElementById('tierSelect').value = stored.tier;
+      if (stored.temperature !== undefined) {
+        document.getElementById('temperature').value = stored.temperature;
+        document.getElementById('tempVal').textContent = stored.temperature;
+      }
+      if (stored.top_p !== undefined) {
+        document.getElementById('topP').value = stored.top_p;
+        document.getElementById('topPVal').textContent = stored.top_p;
+      }
+      document.getElementById('debugToggle').checked = stored.debug || false;
+      document.getElementById('forceRecursiveToggle').checked = stored.force_recursive || false;
+    };
+
+    document.getElementById('temperature').oninput = function () {
+      document.getElementById('tempVal').textContent = this.value;
+    };
+
+    document.getElementById('topP').oninput = function () {
+      document.getElementById('topPVal').textContent = this.value;
+    };
+  </script>
+</body>
+</html>
