@@ -482,4 +482,46 @@ inputBox.addEventListener('keydown', (e) => {
 	}
 });
 
-const toolsBtn = document.getElementBy
+const toolsBtn = document.getElementById('toolsBtn');
+const toolsMenu = document.getElementById('toolsMenu');
+
+toolsBtn.addEventListener('click', (e) => {
+	e.stopPropagation();
+	const isVisible = toolsMenu.style.display === 'block';
+	toolsMenu.style.display = isVisible ? 'none' : 'block';
+	toolsBtn.setAttribute('aria-expanded', !isVisible);
+});
+
+// Close menu if clicking outside
+document.addEventListener('click', () => {
+	toolsMenu.style.display = 'none';
+	toolsBtn.setAttribute('aria-expanded', 'false');
+});
+
+// Optional: Add click handlers for each tool option here
+document.querySelectorAll('.toolOption').forEach(btn => {
+	btn.addEventListener('click', () => {
+		alert(`You clicked "${btn.textContent}"`);
+		toolsMenu.style.display = 'none';
+		toolsBtn.setAttribute('aria-expanded', 'false');
+	});
+});
+
+window.onload = () => {
+	const stored = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+	if (stored.username) document.getElementById('username').value = stored.username;
+	if (stored.recursive_depth) document.getElementById('depth').value = stored.recursive_depth;
+	if (stored.category_override) document.getElementById('category').value = stored.category_override;
+	if (stored.tier) document.getElementById('tier').value = stored.tier;
+	if (stored.temperature !== undefined) {
+		document.getElementById('temperature').value = stored.temperature;
+	}
+	if (stored.top_p !== undefined) {
+		document.getElementById('topP').value = stored.top_p;
+	}
+	document.getElementById('debugToggle').checked = stored.debug || false;
+	document.getElementById('forceRecursiveToggle').checked = stored.force_recursive || false;
+};
+</script>
+</body>
+</html>
