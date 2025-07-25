@@ -229,29 +229,31 @@
 
 <div class="chat-footer">
 <div class="input-area">
-<textarea id="userInput" rows="1" placeholder="Message Ayok-PT..."></textarea>
-<button id="sendBtn">Send</button>
-<div style="position: relative;">
+	<textarea id="userInput" rows="1" placeholder="Message Ayok-PT..."></textarea>
+	<button id="sendBtn">Send</button>
+	<div style="position: relative; display: inline-block;">
 	<button id="toolsBtn" aria-haspopup="true" aria-expanded="false">🔧 Tools</button>
 	<div id="toolsMenu" style="
-	display: none;
-	position: absolute;
-	top: 110%;
-	right: 0;
-	background: #161b22;
-	border: 1px solid #30363d;
-	border-radius: 6px;
-	padding: 0.5rem;
-	min-width: 140px;
-	box-shadow: 0 0 10px rgba(0,0,0,0.5);
-	z-index: 1000;
+		display: none;
+		position: absolute;
+		top: 100%;  /* right below the button */
+		right: 0;    /* align right edges */
+		background: #161b22;
+		border: 1px solid #30363d;
+		border-radius: 6px;
+		padding: 0.5rem;
+		min-width: 140px;
+		box-shadow: 0 0 10px rgba(0,0,0,0.5);
+		z-index: 1000;
 	">
-	<button class="toolOption">Clear Chat</button><br/>
-	<button class="toolOption">Export Conversation</button><br/>
-	<button class="toolOption">Toggle Debug</button>
+    <!-- menu items here -->
+
+		<button class="toolOption">Clear Chat</button><br/>
+		<button class="toolOption">Export Conversation</button><br/>
+		<button class="toolOption">Toggle Debug</button>
+		</div>
 	</div>
-</div>
-</div>
+	</div>
 
 </div>
 
