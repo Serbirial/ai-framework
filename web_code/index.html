@@ -2,207 +2,335 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ayok-PT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ayok Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-@keyframes pulseHighlight {
-0% { background-color: #23863688; }
-50% { background-color: transparent; }
-100% { background-color: transparent; }
-}
+	:root {
+	--bg: #1e1e1e;
+	--fg: #e6e6e6;
+	--accent: #10a37f;
+	--divider: #2f2f2f;
+	--user-color: #58a6ff;
+	}
 
-.highlighted {
-animation: pulseHighlight 1.5s ease forwards;
-}
+	* {
+	box-sizing: border-box;
+	}
 
-body {
+	body {
 	margin: 0;
-	font-family: 'Segoe UI', sans-serif;
-	background-color: #0d1117;
-	color: #c9d1d9;
+	padding: 0;
+	background-color: var(--bg);
+	color: var(--fg);
+	font-family: system-ui, sans-serif;
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-}
-header {
+	}
+
+	nav {
+	padding: 0.5rem 1rem;
 	background-color: #161b22;
-	padding: 1rem;
-	text-align: center;
-	font-size: 1.5rem;
-	border-bottom: 1px solid #30363d;
-}
-#stream {
-	flex-grow: 1;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid var(--divider);
+	}
+
+	nav strong {
+	font-weight: bold;
+	}
+
+	main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	overflow: hidden;
+	}
+
+	#chat {
+	width: 100%;
+	max-width: 768px;
+	flex: 1;
 	padding: 1rem;
 	overflow-y: auto;
-	white-space: pre-wrap;
-	font-family: Consolas, monospace;
-	border-bottom: 1px solid #30363d;
-}
-#controls {
-	background-color: #161b22;
-	padding: 1rem;
-	display: flex;
-	align-items: center;
-	gap: 1rem;
-	position: relative;
-}
-input[type="text"] {
-	flex-grow: 1;
+	}
+
+	.message {
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--divider);
+	}
+
+	.message.user {
+	color: var(--user-color);
+	}
+
+	.message .markdown {
+	padding: 0.2rem 0;
+	}
+
+	pre {
+	background: #2d2d2d;
 	padding: 0.5rem;
-	background-color: #0d1117;
-	color: #c9d1d9;
-	border: 1px solid #30363d;
-	border-radius: 4px;
-}
-button {
-	padding: 0.5rem 1rem;
-	background-color: #238636;
-	border: none;
-	color: white;
-	font-weight: bold;
-	border-radius: 4px;
-	cursor: pointer;
-}
-button:disabled {
-	background-color: #2ea04355;
-	cursor: not-allowed;
-}
+	border-radius: 6px;
+	overflow-x: auto;
+	}
 
-#settingsModal {
-	display: none;
-	position: fixed;
-	top: 20%;
-	left: 50%;
-	transform: translate(-50%, -20%);
-	background: #161b22;
-	padding: 1.5rem;
-	border: 1px solid #30363d;
-	border-radius: 8px;
-	z-index: 100;
-	color: #c9d1d9;
-	width: 300px;
-}
-#settingsModal input,
-#settingsModal select {
+	code {
+	font-family: monospace;
+	}
+
+	.chat-footer {
+	display: flex;
+	justify-content: center;
+	padding: 0.75rem;
+	background-color: #161b22;
+	border-top: 1px solid var(--divider);
+	}
+
+	.input-area {
+	display: flex;
+	align-items: flex-end;
 	width: 100%;
-	margin-bottom: 1rem;
-	padding: 0.4rem;
-	background: #0d1117;
-	color: #c9d1d9;
-	border: 1px solid #30363d;
-	border-radius: 4px;
-}
-#settingsModal label {
+	max-width: 768px;
+	gap: 0.5rem;
+	}
+
+	textarea {
+	flex: 1;
+	resize: none;
+	padding: 0.75rem;
+	border-radius: 6px;
+	background-color: #0d1117;
+	border: 1px solid var(--divider);
+	color: var(--fg);
+	font-size: 1rem;
+	}
+
+	button {
+	padding: 0.6rem 1rem;
+	background: var(--accent);
+	color: white;
+	border: none;
+	border-radius: 5px;
 	font-weight: bold;
-	display: block;
-	margin-bottom: 0.25rem;
-}
+	cursor: pointer;
+	}
 
-.pulse {
-	animation: pulse 1.5s ease-in-out infinite;
+	.tools {
+	color: #888;
+	font-size: 0.8rem;
+	min-width: 120px;
+	text-align: right;
+	}
+
+	.thinking-toggle {
+	margin-top: 1rem;
+	cursor: pointer;
+	font-size: 0.9rem;
+	color: #aaa;
+	}
+
+	.pulse {
 	display: inline-block;
-}
+	animation: pulseAnim 1.4s infinite;
+	}
 
-@keyframes pulse {
-	0% { opacity: 0.3; }
+	@keyframes pulseAnim {
+	0%, 100% { opacity: 0.3; }
 	50% { opacity: 1; }
-	100% { opacity: 0.3; }
-}
+	}
+
+	#thinkingWindow {
+	display: none;
+	background-color: #161b22;
+	color: #aaa;
+	font-size: 0.9rem;
+	padding: 1rem;
+	border-radius: 5px;
+	max-height: 300px;
+	overflow-y: auto;
+	margin-top: 0.5rem;
+	width: 100%;
+	max-width: 768px;
+	white-space: pre-wrap;
+	}
+
+	aside#settingsPanel {
+	position: fixed;
+	top: 0;
+	right: -320px;
+	width: 300px;
+	height: 100%;
+	background: #161b22;
+	border-left: 1px solid #30363d;
+	padding: 1.5rem;
+	transition: right 0.3s ease;
+	z-index: 1000;
+	overflow-y: auto;
+	}
+
+	aside#settingsPanel.open {
+	right: 0;
+	}
+
+	#settingsOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	background: transparent;
+	display: none;
+	z-index: 999;
+	}
+
+	aside h3 {
+	color: #fff;
+	margin-top: 0;
+	}
+
+	aside label {
+	margin-top: 1rem;
+	display: block;
+	font-weight: bold;
+	}
+
+	aside input,
+	aside select {
+	width: 100%;
+	margin-top: 0.25rem;
+	background: #0d1117;
+	color: #fff;
+	border: 1px solid #444;
+	border-radius: 4px;
+	padding: 0.5rem;
+	}
 </style>
 </head>
 <body>
-<header>Chat with Ayok.</header>
 
-<div id="stream">[output appears here]</div>
+<nav>
+<strong>Ayok-PT</strong>
+<div>
+	<a href="#" id="settingsToggle">⚙️ Settings</a>
+</div>
+</nav>
 
-<div id="controls">
-<button id="settingsBtn" style="top: 10px; right: 10px;">⚙️</button>
-<input id="userInput" type="text" placeholder="Type a message to send to the AI...">
+<main>
+<div id="chat"></div>
+<div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
+	<span class="pulse">Thinking...</span> (click to expand)
+</div>
+<div id="thinkingWindow"></div>
+</main>
+
+<div class="chat-footer">
+<div class="input-area">
+<textarea id="userInput" rows="1" placeholder="Message Ayok-PT..."></textarea>
 <button id="sendBtn">Send</button>
+<div style="position: relative;">
+	<button id="toolsBtn" aria-haspopup="true" aria-expanded="false">🔧 Tools</button>
+	<div id="toolsMenu" style="
+	display: none;
+	position: absolute;
+	top: 110%;
+	right: 0;
+	background: #161b22;
+	border: 1px solid #30363d;
+	border-radius: 6px;
+	padding: 0.5rem;
+	min-width: 140px;
+	box-shadow: 0 0 10px rgba(0,0,0,0.5);
+	z-index: 1000;
+	">
+	<button class="toolOption">Clear Chat</button><br/>
+	<button class="toolOption">Export Conversation</button><br/>
+	<button class="toolOption">Toggle Debug</button>
+	</div>
+</div>
+</div>
 </div>
 
-<div id="settingsModal">
+<div id="settingsOverlay"></div>
+<aside id="settingsPanel">
 <h3>Settings</h3>
-
-<label>Username</label>
-<input type="text" id="username">
-
-<label>Recursive Depth</label>
-<input type="number" id="depth" min="1" max="10" value="3">
-
-<label>Category Override</label>
-<input type="text" id="category">
-
-<label>Tier</label>
-<select id="tierSelect">
+<label for="username">Username</label>
+<input id="username" type="text" />
+<label for="depth">Recursive Depth</label>
+<input type="number" id="depth" min="1" max="10" value="3" />
+<label for="category">Category Override</label>
+<input type="text" id="category" />
+<label for="tier">Tier</label>
+<select id="tier">
 	<option value="t0">t0</option>
 	<option value="t1">t1</option>
 	<option value="t3">t3</option>
 </select>
-
-<label>Temperature: <span id="tempVal">0.7</span></label>
-<input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7">
-
-<label>Top P: <span id="topPVal">0.9</span></label>
-<input type="range" id="topP" min="0" max="1" step="0.01" value="0.9">
-
-<label><input type="checkbox" id="debugToggle"> Debug</label><br>
-<label><input type="checkbox" id="forceRecursiveToggle"> Force Recursive</label><br><br>
-
+<label for="temperature">Temperature</label>
+<input type="range" id="temperature" min="0" max="2" step="0.01" value="0.7" />
+<label for="topP">Top P</label>
+<input type="range" id="topP" min="0" max="1" step="0.01" value="0.9" />
+<label><input type="checkbox" id="debugToggle" /> Debug Mode</label><br>
+<label><input type="checkbox" id="forceRecursiveToggle" /> Force Recursive</label><br><br>
 <button onclick="saveSettings()">Save</button>
-<button onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
-</div>
+</aside>
 
 <script>
-const streamDiv = document.getElementById('stream');
+const chatDiv = document.getElementById('chat');
 const inputBox = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsModal = document.getElementById('settingsModal');
+const thinkingToggle = document.getElementById('thinkingToggle');
+const thinkingWindow = document.getElementById('thinkingWindow');
+const settingsToggle = document.getElementById('settingsToggle');
+const settingsPanel = document.getElementById('settingsPanel');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const messages = [];
 
-settingsBtn.onclick = () => {
-	settingsModal.style.display = 'block';
+settingsToggle.onclick = () => {
+	settingsPanel.classList.add('open');
+	settingsOverlay.style.display = 'block';
+};
+
+settingsOverlay.onclick = () => {
+	settingsPanel.classList.remove('open');
+	settingsOverlay.style.display = 'none';
+};
+
+function toggleThinking() {
+	thinkingWindow.style.display = thinkingWindow.style.display === 'none' ? 'block' : 'none';
 }
 
-sendBtn.onclick = async () => {
-	const msg = inputBox.value.trim();
-	if (!msg) return;
-	inputBox.value = '';
-
-	streamDiv.textContent += `\n> ${msg}\n`;
-
-	const thinkingLine = document.createElement('div');
-	thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to expand)';
-	thinkingLine.style.color = '#6a737d';
-	thinkingLine.style.cursor = 'pointer';
-	streamDiv.appendChild(thinkingLine);
-
-	const specialStream = document.createElement('pre');
-	specialStream.style.display = 'none';
-	specialStream.style.maxHeight = '5em';
-	specialStream.style.overflowY = 'auto';
-	specialStream.style.background = '#161b22';
-	specialStream.style.border = '1px solid #30363d';
-	specialStream.style.padding = '0.5em';
-	specialStream.style.marginTop = '0.2em';
-	specialStream.style.fontFamily = 'Consolas, monospace';
-	streamDiv.appendChild(specialStream);
-
-	thinkingLine.onclick = () => {
-	if (specialStream.style.display === 'none') {
-		specialStream.style.display = 'block';
-		thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to collapse)';
-		specialStream.scrollTop = specialStream.scrollHeight;
-	} else {
-		specialStream.style.display = 'none';
-		thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to expand)';
-	}
+function saveSettings() {
+	const settings = {
+	username: document.getElementById('username').value,
+	recursive_depth: parseInt(document.getElementById('depth').value),
+	category_override: document.getElementById('category').value,
+	tier: document.getElementById('tier').value,
+	temperature: parseFloat(document.getElementById('temperature').value),
+	top_p: parseFloat(document.getElementById('topP').value),
+	debug: document.getElementById('debugToggle').checked,
+	force_recursive: document.getElementById('forceRecursiveToggle').checked
 	};
+	localStorage.setItem('thinker_settings', JSON.stringify(settings));
+	settingsPanel.classList.remove('open');
+	settingsOverlay.style.display = 'none';
+}
 
-	sendBtn.disabled = true;
-
+async function streamMessage(msg) {
 	const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+
+	messages.push({ role: 'user', content: msg });
+	renderMessages();
+
+	const assistantMsg = { role: 'assistant', content: '' };
+	messages.push(assistantMsg);
+	renderMessages();
+
+	thinkingToggle.style.display = 'block';
+	thinkingWindow.textContent = '';
 
 	const response = await fetch('/api/chat', {
 	method: 'POST',
@@ -222,7 +350,6 @@ sendBtn.onclick = async () => {
 
 	const reader = response.body.getReader();
 	const decoder = new TextDecoder();
-	let buffer = '';
 
 	while (true) {
 	const { done, value } = await reader.read();
@@ -230,68 +357,81 @@ sendBtn.onclick = async () => {
 	const chunk = decoder.decode(value, { stream: true });
 
 	if (chunk.startsWith('SPECIAL:')) {
-		specialStream.textContent += chunk.substring(8).trim() + '\n';
-		specialStream.scrollTop = specialStream.scrollHeight;
+		thinkingWindow.textContent += chunk.substring(8).trim() + '\n';
 	} else {
-		// Append with highlight effect:
-		const span = document.createElement('span');
-		span.textContent = chunk;
-		span.classList.add('highlighted');
-		streamDiv.appendChild(span);
-
-		// Remove highlight class after animation ends to keep normal style
-		span.addEventListener('animationend', () => {
-		span.classList.remove('highlighted');
-		});
-
-		streamDiv.scrollTop = streamDiv.scrollHeight;
+		assistantMsg.content += chunk;
+		renderMessages();
+		chatDiv.scrollTop = chatDiv.scrollHeight;
 	}
-	buffer = '';
 	}
 
-	sendBtn.disabled = false;
+	thinkingToggle.style.display = 'none';
 }
 
-function saveSettings() {
-	const settings = {
-	username: document.getElementById('username').value,
-	recursive_depth: parseInt(document.getElementById('depth').value),
-	category_override: document.getElementById('category').value,
-	tier: document.getElementById('tierSelect').value,
-	temperature: parseFloat(document.getElementById('temperature').value),
-	top_p: parseFloat(document.getElementById('topP').value),
-	debug: document.getElementById('debugToggle').checked,
-	force_recursive: document.getElementById('forceRecursiveToggle').checked
-	};
+function renderMessages() {
+	chatDiv.innerHTML = '';
+	for (const msg of messages) {
+	const div = document.createElement('div');
+	div.className = 'message ' + msg.role;
 
-	localStorage.setItem('thinker_settings', JSON.stringify(settings));
-	settingsModal.style.display = 'none';
+	const html = marked.parse(msg.content);
+	div.innerHTML = `<div class="markdown">${html}</div>`;
+	chatDiv.appendChild(div);
+	}
 }
+
+sendBtn.onclick = async () => {
+	const msg = inputBox.value.trim();
+	if (!msg) return;
+	inputBox.value = '';
+	await streamMessage(msg);
+};
+
+inputBox.addEventListener('keydown', (e) => {
+	if (e.key === 'Enter' && !e.shiftKey) {
+	e.preventDefault();
+	sendBtn.click();
+	}
+});
+const toolsBtn = document.getElementById('toolsBtn');
+const toolsMenu = document.getElementById('toolsMenu');
+
+toolsBtn.addEventListener('click', (e) => {
+e.stopPropagation();
+const isVisible = toolsMenu.style.display === 'block';
+toolsMenu.style.display = isVisible ? 'none' : 'block';
+toolsBtn.setAttribute('aria-expanded', !isVisible);
+});
+
+// Close menu if clicking outside
+document.addEventListener('click', () => {
+toolsMenu.style.display = 'none';
+toolsBtn.setAttribute('aria-expanded', 'false');
+});
+
+// Optional: Add click handlers for each tool option here
+document.querySelectorAll('.toolOption').forEach(btn => {
+btn.addEventListener('click', () => {
+	alert(`You clicked "${btn.textContent}"`);
+	toolsMenu.style.display = 'none';
+	toolsBtn.setAttribute('aria-expanded', 'false');
+});
+});
 
 window.onload = () => {
 	const stored = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
 	if (stored.username) document.getElementById('username').value = stored.username;
 	if (stored.recursive_depth) document.getElementById('depth').value = stored.recursive_depth;
 	if (stored.category_override) document.getElementById('category').value = stored.category_override;
-	if (stored.tier) document.getElementById('tierSelect').value = stored.tier;
+	if (stored.tier) document.getElementById('tier').value = stored.tier;
 	if (stored.temperature !== undefined) {
 	document.getElementById('temperature').value = stored.temperature;
-	document.getElementById('tempVal').textContent = stored.temperature;
 	}
 	if (stored.top_p !== undefined) {
 	document.getElementById('topP').value = stored.top_p;
-	document.getElementById('topPVal').textContent = stored.top_p;
 	}
 	document.getElementById('debugToggle').checked = stored.debug || false;
 	document.getElementById('forceRecursiveToggle').checked = stored.force_recursive || false;
-};
-
-document.getElementById('temperature').oninput = function () {
-	document.getElementById('tempVal').textContent = this.value;
-};
-
-document.getElementById('topP').oninput = function () {
-	document.getElementById('topPVal').textContent = this.value;
 };
 </script>
 </body>
