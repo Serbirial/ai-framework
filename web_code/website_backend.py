@@ -1,28 +1,31 @@
 import time
-import threading
-from queue import Queue, Empty
 import asyncio
 import functools
+from queue import Queue, Empty
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
+from threading import Lock
 
-from sanic import Sanic, response
-from sanic_ext import Extend
+from src import bot, static
 
-from src import bot
-from src import static
-
-app = Sanic("AyokPT")
-Extend(app)
+app = FastAPI()
 
 context = static.ChatContext(static.DummyTokenizer(), 1024)
-generate_lock = asyncio.Lock()
-model_lock = threading.Lock()
 
-class SanicStreamer:
+# Load the chatbot once here
+print("Loading chatbot AI once...")
+chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)
+
+generate_lock = asyncio.Lock()
+model_lock = Lock()
+
+
+class Streamer:
     def __init__(self, cooldown=0.3, max_chars=500):
         self.cooldown = cooldown
         self.max_chars = max_chars
         self.buffer = ""
-        self.lock = threading.Lock()
+        self.lock = Lock()
         self.queue = Queue()
         self.last_emit = 0
         self.closed = False
@@ -43,9 +46,7 @@ class SanicStreamer:
                 self.last_emit = now
             else:
                 delay = self.cooldown - elapsed
-                timer = threading.Timer(delay, self._emit_buffer)
-                timer.daemon = True
-                timer.start()
+                threading.Timer(delay, self._emit_buffer).start()
 
     def _emit_buffer(self):
         with self.lock:
@@ -62,7 +63,7 @@ class SanicStreamer:
         with self.lock:
             self.special_buffer.append(data)
 
-    async def generator(self):
+    def generator(self):
         last_heartbeat = time.monotonic()
         heartbeat_interval = 15  # seconds
 
@@ -71,12 +72,12 @@ class SanicStreamer:
                 chunk = self.queue.get(timeout=0.5)
                 if chunk is None:
                     break
-                yield f"{chunk}"
+                yield chunk.encode("utf-8")
                 last_heartbeat = time.monotonic()
             except Empty:
                 now = time.monotonic()
                 if now - last_heartbeat > heartbeat_interval:
-                    yield "<|heartbeat|>"
+                    yield b"<|heartbeat|>"
                     last_heartbeat = now
 
             while True:
@@ -85,15 +86,11 @@ class SanicStreamer:
                         break
                     special_line = self.special_buffer.pop(0)
 
-                yield f"SPECIAL:{special_line}\n"
+                yield f"SPECIAL:{special_line}\n".encode("utf-8")
 
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
 
-@app.before_server_start
-async def setup_chatbot(app, _):
-    # Initialize the chatbot once here
-    app.ctx.chatbot = bot.ChatBot(db_path=static.DB_PATH)
 
 async def generate_ai_response(
     user_input,
@@ -112,7 +109,10 @@ async def generate_ai_response(
     cnn_file_path=None,
 ):
     async with generate_lock:
-        return  app.ctx.chatbot.chat(username=username,
+        loop = asyncio.get_running_loop()
+        partial_chat = functools.partial(
+            chatbot_ai.chat,
+            username=username,
             user_input=user_input,
             identifier=ip,
             tier=tier,
@@ -126,11 +126,16 @@ async def generate_ai_response(
             recursive_depth=recursive_depth,
             category_override=category_override,
             tiny_mode=tiny_mode,
-            cnn_file_path=cnn_file_path)
+            cnn_file_path=cnn_file_path,
+        )
+        with model_lock:
+            await loop.run_in_executor(None, partial_chat)
+        streamer.close()
+
 
 @app.post("/api/chat")
-async def chat(request):
-    data = request.json or {}
+async def chat(request: Request):
+    data = await request.json()
 
     user_input = data.get("message", "")
     username = data.get("username", "web_user")
@@ -142,50 +147,39 @@ async def chat(request):
     debug = bool(data.get("debug", False))
     force_recursive = bool(data.get("force_recursive", False))
 
-    ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
+    ip = request.client.host
 
-    streamer = SanicStreamer(cooldown=0.3, max_chars=100)
+    streamer = Streamer(cooldown=0.3, max_chars=100)
 
-    async def stream_response(_):
-        # Use asyncio.to_thread to run blocking code safely
-        async def worker():
-            await asyncio.to_thread(
-                generate_ai_response,
-                user_input=user_input,
-                streamer=streamer,
-                ip=ip,
-                username=username,
-                tier=tier,
-                temperature=temperature,
-                top_p=top_p,
-                recursive_depth=recursive_depth,
-                category_override=category_override,
-                debug=debug,
-                force_recursive=force_recursive,
-            )
+    async def run_generation():
+        await generate_ai_response(
+            user_input=user_input,
+            streamer=streamer,
+            ip=ip,
+            username=username,
+            tier=tier,
+            temperature=temperature,
+            top_p=top_p,
+            recursive_depth=recursive_depth,
+            category_override=category_override,
+            debug=debug,
+            force_recursive=force_recursive,
+        )
 
-        # Run the blocking call in background async task
-        task = asyncio.create_task(worker())
+    # Schedule generation in background async task
+    generation_task = asyncio.create_task(run_generation())
 
-        async for chunk in streamer.generator():
-            yield chunk
-
-        await task  # ensure task finishes
-
-    return response.stream(
-        stream_response,
-        content_type="text/event-stream",
+    return StreamingResponse(
+        streamer.generator(),
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
         },
     )
 
-@app.get("/")
-async def index(_):
-    with open("./index.html", "r", encoding="utf-8") as f:
-        return response.html(f.read())
 
-if __name__ == "__main__":
-    # IMPORTANT: Run with 1 worker to ensure single model instance
-    app.run(host="0.0.0.0", port=8000, debug=False, workers=1)
+@app.get("/")
+async def index():
+    with open("./index.html", "r", encoding="utf-8") as f:
+        return f.read()
