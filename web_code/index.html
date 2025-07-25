@@ -208,6 +208,26 @@
 	border-radius: 4px;
 	padding: 0.5rem;
 	}
+	#toolsMenu button.toolOption {
+	display: block;       /* full width */
+	width: 100%;
+	margin: 0.3rem 0;     /* vertical spacing between buttons */
+	padding: 0.4rem 0.6rem;
+	background: var(--bg); /* or #161b22, match your menu bg */
+	border: 1px solid var(--divider);
+	border-radius: 4px;
+	color: var(--fg);
+	font-size: 1rem;
+	cursor: pointer;
+	text-align: left;    /* nice for buttons with text */
+	}
+
+	#toolsMenu button.toolOption:hover {
+	background: var(--accent);
+	color: white;
+	border-color: var(--accent);
+	}
+
 </style>
 </head>
 <body>
@@ -246,11 +266,11 @@
 		box-shadow: 0 0 10px rgba(0,0,0,0.5);
 		z-index: 1000;
 	">
-    <!-- menu items here -->
 
-		<button class="toolOption">Clear Chat</button><br/>
-		<button class="toolOption">Export Conversation</button><br/>
+		<button class="toolOption">Clear Chat</button>
+		<button class="toolOption">Export Conversation</button>
 		<button class="toolOption">Toggle Debug</button>
+
 		</div>
 	</div>
 	</div>
