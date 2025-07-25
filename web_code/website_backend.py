@@ -112,10 +112,7 @@ async def generate_ai_response(
     cnn_file_path=None,
 ):
     async with generate_lock:
-        loop = asyncio.get_running_loop()
-        partial_chat = functools.partial(
-            app.ctx.chatbot.chat,
-            username=username,
+        return  app.ctx.chatbot.chat(username=username,
             user_input=user_input,
             identifier=ip,
             tier=tier,
@@ -129,13 +126,7 @@ async def generate_ai_response(
             recursive_depth=recursive_depth,
             category_override=category_override,
             tiny_mode=tiny_mode,
-            cnn_file_path=cnn_file_path,
-        )
-        # Ensure only one thread calls the model at a time
-        with model_lock:
-            await loop.run_in_executor(None, partial_chat)
-
-        streamer.close()
+            cnn_file_path=cnn_file_path)
 
 @app.post("/api/chat")
 async def chat(request):
