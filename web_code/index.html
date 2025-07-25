@@ -143,7 +143,7 @@
 	50% { opacity: 1; }
 	}
 
-	#thinkingWindow {
+.thinking-window {
 	display: none;
 	background-color: #161b22;
 	color: #aaa;
@@ -239,14 +239,12 @@
 </div>
 </nav>
 
-<main>
-  <div id="chat">
-    <div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
-      <span class="pulse">Thinking...</span> (click to expand)
-    </div>
-    <div id="thinkingWindow"></div>
-  </div>
-</main>
+
+<div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
+  <span class="pulse">Thinking...</span> (click to expand)
+</div>
+<div id="thinkingWindow"></div>
+
 
 
 <div class="chat-footer">
@@ -345,53 +343,77 @@ function saveSettings() {
 }
 
 async function streamMessage(msg) {
-	const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
+const settings = JSON.parse(localStorage.getItem('thinker_settings') || '{}');
 
-	messages.push({ role: 'user', content: msg });
-	renderMessages();
+messages.push({ role: 'user', content: msg });
+renderMessages();
 
-	const assistantMsg = { role: 'assistant', content: '' };
-	messages.push(assistantMsg);
-	renderMessages();
+const assistantMsg = { role: 'assistant', content: '' };
+messages.push(assistantMsg);
+renderMessages();
 
-	thinkingToggle.style.display = 'block';
-	thinkingWindow.textContent = '';
+// Find last assistant message div
+const assistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
+const lastAssistantDiv = assistantDivs[assistantDivs.length - 1];
+if (!lastAssistantDiv) return;
 
-	const response = await fetch('/api/chat', {
+// Find toggle and thinking window inside last assistant message
+const toggleDiv = lastAssistantDiv.querySelector('.thinking-toggle');
+const windowDiv = lastAssistantDiv.querySelector('.thinking-window');
+if (toggleDiv) toggleDiv.style.display = 'block';
+if (windowDiv) windowDiv.textContent = ''; // Clear previous content
+if (windowDiv) windowDiv.style.display = 'none'; // Start hidden
+
+const response = await fetch('/api/chat', {
 	method: 'POST',
 	headers: { 'Content-Type': 'application/json' },
 	body: JSON.stringify({
-		message: msg,
-		username: settings.username || "web_user",
-		tier: settings.tier || "t0",
-		temperature: settings.temperature || 0.7,
-		top_p: settings.top_p || 0.9,
-		recursive_depth: settings.recursive_depth || 3,
-		category_override: settings.category_override || null,
-		debug: settings.debug || false,
-		force_recursive: settings.force_recursive || false
+	message: msg,
+	username: settings.username || "web_user",
+	tier: settings.tier || "t0",
+	temperature: settings.temperature || 0.7,
+	top_p: settings.top_p || 0.9,
+	recursive_depth: settings.recursive_depth || 3,
+	category_override: settings.category_override || null,
+	debug: settings.debug || false,
+	force_recursive: settings.force_recursive || false
 	})
-	});
+});
 
-	const reader = response.body.getReader();
-	const decoder = new TextDecoder();
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
 
-	while (true) {
+while (true) {
 	const { done, value } = await reader.read();
 	if (done) break;
 	const chunk = decoder.decode(value, { stream: true });
 
 	if (chunk.startsWith('SPECIAL:')) {
-		thinkingWindow.textContent += chunk.substring(8).trim() + '\n';
+	if (windowDiv) windowDiv.textContent += chunk.substring(8).trim() + '\n';
 	} else {
-		assistantMsg.content += chunk;
-		renderMessages();
-		chatDiv.scrollTop = chatDiv.scrollHeight;
-	}
-	}
+	assistantMsg.content += chunk;
+	renderMessages();
 
-	thinkingToggle.style.display = 'none';
+	// After re-render, re-select windowDiv & toggleDiv to keep updating properly
+	const updatedAssistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
+	const updatedLastAssistantDiv = updatedAssistantDivs[updatedAssistantDivs.length - 1];
+	if (!updatedLastAssistantDiv) continue;
+
+	const updatedWindowDiv = updatedLastAssistantDiv.querySelector('.thinking-window');
+	const updatedToggleDiv = updatedLastAssistantDiv.querySelector('.thinking-toggle');
+	if (updatedWindowDiv) {
+		updatedWindowDiv.style.display = updatedWindowDiv.style.display || 'none';
+	}
+	if (updatedToggleDiv) {
+		updatedToggleDiv.style.display = 'block';
+	}
+	chatDiv.scrollTop = chatDiv.scrollHeight;
+	}
 }
+
+if (toggleDiv) toggleDiv.style.display = 'none';
+}
+
 function renderMessages() {
 	chatDiv.innerHTML = '';
 	for (let i = 0; i < messages.length; i++) {
@@ -423,8 +445,10 @@ function renderMessages() {
 			windowDiv.id = uniqueID;
 			windowDiv.style.display = 'none';
 
-			div.querySelector('.markdown').appendChild(toggleDiv);
-			div.querySelector('.markdown').appendChild(windowDiv);
+			const markdownDiv = div.querySelector('.markdown');
+			markdownDiv.insertBefore(windowDiv, markdownDiv.firstChild);
+			markdownDiv.insertBefore(toggleDiv, windowDiv);
+
 		}
 
 		chatDiv.appendChild(div);
