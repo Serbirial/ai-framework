@@ -206,7 +206,7 @@ def build_core_memory_prompt(rows):
     return prompt
 
 def build_history_prompt(history: str | None) -> str:
-    base = history or "No chat history found! This must be your first interaction with the user! Make sure you intruduce yourself!"
+    base = history if history else "No chat history found! This must be your first interaction with the user! Make sure you intruduce yourself!"
     return base + "\n\n"
 
 

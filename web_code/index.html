@@ -88,6 +88,17 @@
       display: block;
       margin-bottom: 0.25rem;
     }
+
+    .pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
   </style>
 </head>
 <body>
@@ -97,7 +108,6 @@
 
   <div id="controls">
     <button id="settingsBtn" style="position: absolute; top: 10px; right: 10px;">⚙️</button>
-
     <input id="userInput" type="text" placeholder="Type a message to send to the AI...">
     <button id="sendBtn">Send</button>
   </div>
@@ -150,20 +160,17 @@
       if (!msg) return;
       inputBox.value = '';
 
-      // Add user message to stream
       streamDiv.textContent += `\n> ${msg}\n`;
 
-      // Create thinking line with toggle
       const thinkingLine = document.createElement('div');
-      thinkingLine.textContent = 'thinking... (click to expand)';
+      thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to expand)';
       thinkingLine.style.color = '#6a737d';
       thinkingLine.style.cursor = 'pointer';
       streamDiv.appendChild(thinkingLine);
 
-      // Create hidden special stream area below it
       const specialStream = document.createElement('pre');
       specialStream.style.display = 'none';
-      specialStream.style.maxHeight = '5em'; // ~5 lines tall
+      specialStream.style.maxHeight = '5em';
       specialStream.style.overflowY = 'auto';
       specialStream.style.background = '#161b22';
       specialStream.style.border = '1px solid #30363d';
@@ -175,11 +182,11 @@
       thinkingLine.onclick = () => {
         if (specialStream.style.display === 'none') {
           specialStream.style.display = 'block';
-          thinkingLine.textContent = 'thinking... (click to collapse)';
+          thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to collapse)';
           specialStream.scrollTop = specialStream.scrollHeight;
         } else {
           specialStream.style.display = 'none';
-          thinkingLine.textContent = 'thinking... (click to expand)';
+          thinkingLine.innerHTML = '<span class="pulse">thinking...</span> (click to expand)';
         }
       };
 
@@ -216,13 +223,12 @@
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const text = line.substring(6);
-
             if (text.startsWith('SPECIAL:')) {
-              // Append to special stream, removing prefix
               specialStream.textContent += text.substring(8).trim() + '\n';
               specialStream.scrollTop = specialStream.scrollHeight;
+              // Once we start getting real SPECIAL content, stop pulsing
+              thinkingLine.innerHTML = 'internal thoughts (click to collapse)';
             } else {
-              // Append normal stream to main area (above special)
               streamDiv.textContent += text;
               streamDiv.scrollTop = streamDiv.scrollHeight;
             }

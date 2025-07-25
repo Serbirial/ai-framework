@@ -114,7 +114,7 @@ async def generate_ai_response(
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            context=context,
+            context=context.get_context_text(),
             debug=debug,
             streamer=streamer,
             force_recursive=force_recursive,
