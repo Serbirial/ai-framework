@@ -239,6 +239,15 @@
 </div>
 </nav>
 
+<main>
+  <div id="chat">
+    <div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
+      <span class="pulse">Thinking...</span> (click to expand)
+    </div>
+    <div id="thinkingWindow"></div>
+  </div>
+</main>
+
 
 <div class="chat-footer">
 <div class="input-area">
@@ -383,7 +392,6 @@ async function streamMessage(msg) {
 
 	thinkingToggle.style.display = 'none';
 }
-
 function renderMessages() {
 	chatDiv.innerHTML = '';
 	for (let i = 0; i < messages.length; i++) {
@@ -394,25 +402,35 @@ function renderMessages() {
 		const html = marked.parse(msg.content);
 		div.innerHTML = `<div class="markdown">${html}</div>`;
 
-		// Only inject toggle into the last assistant message
-		if (msg.role === 'assistant' && i === messages.length - 1) {
-		const toggleDiv = document.createElement('div');
-		toggleDiv.id = "thinkingToggle";
-		toggleDiv.className = "thinking-toggle";
-		toggleDiv.style.display = "block";
-		toggleDiv.onclick = toggleThinking;
-		toggleDiv.innerHTML = `<span class="pulse">Thinking...</span> (click to expand)`;
+		// Inject toggle + window for all assistant messages
+		if (msg.role === 'assistant') {
+			const uniqueID = `thinking-${i}`;
 
-		const windowDiv = document.createElement('div');
-		windowDiv.id = "thinkingWindow";
+			const toggleDiv = document.createElement('div');
+			toggleDiv.className = "thinking-toggle";
+			toggleDiv.style.display = "block";
+			toggleDiv.setAttribute("data-target", uniqueID);
+			toggleDiv.innerHTML = `<span class="pulse">Thinking...</span> (click to expand)`;
+			toggleDiv.onclick = function () {
+				const target = document.getElementById(uniqueID);
+				if (target) {
+					target.style.display = target.style.display === 'none' ? 'block' : 'none';
+				}
+			};
 
-		div.querySelector('.markdown').appendChild(toggleDiv);
-		div.querySelector('.markdown').appendChild(windowDiv);
+			const windowDiv = document.createElement('div');
+			windowDiv.className = "thinking-window";
+			windowDiv.id = uniqueID;
+			windowDiv.style.display = 'none';
+
+			div.querySelector('.markdown').appendChild(toggleDiv);
+			div.querySelector('.markdown').appendChild(windowDiv);
 		}
 
 		chatDiv.appendChild(div);
 	}
 }
+
 
 
 sendBtn.onclick = async () => {
