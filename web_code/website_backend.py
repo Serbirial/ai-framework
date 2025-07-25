@@ -63,7 +63,7 @@ class FlaskStreamer:
                 chunk = self.queue.get(timeout=0.5)
                 if chunk is None:
                     break
-                yield f"data: {chunk}\n\n"
+                yield f"{chunk}"
             except Empty:
                 pass
 

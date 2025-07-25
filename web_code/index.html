@@ -239,15 +239,6 @@
 </div>
 </nav>
 
-<main>
-  <div id="chat">
-    <div id="thinkingToggle" class="thinking-toggle" style="display: none;" onclick="toggleThinking()">
-      <span class="pulse">Thinking...</span> (click to expand)
-    </div>
-    <div id="thinkingWindow"></div>
-  </div>
-</main>
-
 
 <div class="chat-footer">
 <div class="input-area">
@@ -395,15 +386,34 @@ async function streamMessage(msg) {
 
 function renderMessages() {
 	chatDiv.innerHTML = '';
-	for (const msg of messages) {
-	const div = document.createElement('div');
-	div.className = 'message ' + msg.role;
+	for (let i = 0; i < messages.length; i++) {
+		const msg = messages[i];
+		const div = document.createElement('div');
+		div.className = 'message ' + msg.role;
 
-	const html = marked.parse(msg.content);
-	div.innerHTML = `<div class="markdown">${html}</div>`;
-	chatDiv.appendChild(div);
+		const html = marked.parse(msg.content);
+		div.innerHTML = `<div class="markdown">${html}</div>`;
+
+		// Only inject toggle into the last assistant message
+		if (msg.role === 'assistant' && i === messages.length - 1) {
+		const toggleDiv = document.createElement('div');
+		toggleDiv.id = "thinkingToggle";
+		toggleDiv.className = "thinking-toggle";
+		toggleDiv.style.display = "block";
+		toggleDiv.onclick = toggleThinking;
+		toggleDiv.innerHTML = `<span class="pulse">Thinking...</span> (click to expand)`;
+
+		const windowDiv = document.createElement('div');
+		windowDiv.id = "thinkingWindow";
+
+		div.querySelector('.markdown').appendChild(toggleDiv);
+		div.querySelector('.markdown').appendChild(windowDiv);
+		}
+
+		chatDiv.appendChild(div);
 	}
 }
+
 
 sendBtn.onclick = async () => {
 	const msg = inputBox.value.trim();
