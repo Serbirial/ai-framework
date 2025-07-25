@@ -13,9 +13,12 @@ from src import static
 app = Sanic("AyokPT")
 Extend(app)
 
+# Global context and model instance
 context = static.ChatContext(static.DummyTokenizer(), 1024)
-chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)
+chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)  # Only spawned once here
 generate_lock = asyncio.Lock()
+model_lock = threading.Lock()  # Prevent multiple threads using model at same time
+
 
 class SanicStreamer:
     def __init__(self, cooldown=0.3, max_chars=500):
@@ -127,8 +130,10 @@ async def generate_ai_response(
             tiny_mode=tiny_mode,
             cnn_file_path=cnn_file_path,
         )
-        await loop.run_in_executor(None, partial_chat)
+        with model_lock:
+            await loop.run_in_executor(None, partial_chat)
         streamer.close()
+
 
 @app.post("/api/chat")
 async def chat(request):
@@ -146,7 +151,6 @@ async def chat(request):
 
     ip = request.headers.get("X-Forwarded-For", request.remote_addr).split(",")[0].strip()
 
-
     streamer = SanicStreamer(cooldown=0.3, max_chars=100)
 
     async def stream_response(_):
@@ -155,7 +159,7 @@ async def chat(request):
                 generate_ai_response(
                     user_input=user_input,
                     streamer=streamer,
-                    identifier=ip,
+                    ip=ip,
                     username=username,
                     tier=tier,
                     temperature=temperature,
@@ -167,7 +171,7 @@ async def chat(request):
                 )
             )
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(target=worker, daemon=False).start()
 
         async for chunk in streamer.generator():
             yield chunk
@@ -181,10 +185,12 @@ async def chat(request):
         },
     )
 
+
 @app.get("/")
 async def index(_):
     with open("./index.html", "r", encoding="utf-8") as f:
         return response.html(f.read())
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=False)
