@@ -382,8 +382,12 @@ async function streamMessage(msg) {
 			if (done) break;
 			const chunk = decoder.decode(value, { stream: true });
 
+				if (chunk === '<|heartbeat|>') {
+					continue; // Discard heartbeats
+				}
+
 			if (chunk.startsWith('SPECIAL:')) {
-				if (windowDiv) windowDiv.textContent += chunk.substring(8).trim() + '\n';
+				if (windowDiv) windowDiv.textContent += chunk.substring(8);
 			} else {
 				assistantMsg.content += chunk;
 				renderMessages();

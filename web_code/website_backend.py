@@ -70,7 +70,7 @@ class FlaskStreamer:
                 # send heartbeat if needed
                 now = time.monotonic()
                 if now - last_heartbeat > heartbeat_interval:
-                    yield ":\n\n" 
+                    yield "<|heartbeat|>" 
                     last_heartbeat = now
 
             while True:
