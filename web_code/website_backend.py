@@ -56,16 +56,22 @@ class FlaskStreamer:
         self.queue.put(None)
 
     def generator(self):
-        """
-        """
+        last_heartbeat = time.monotonic()
+        heartbeat_interval = 15  # seconds
+
         while True:
             try:
                 chunk = self.queue.get(timeout=0.5)
                 if chunk is None:
                     break
                 yield f"{chunk}"
+                last_heartbeat = time.monotonic()
             except Empty:
-                pass
+                # send heartbeat if needed
+                now = time.monotonic()
+                if now - last_heartbeat > heartbeat_interval:
+                    yield ":\n\n" 
+                    last_heartbeat = now
 
             while True:
                 with self.lock:
@@ -77,6 +83,7 @@ class FlaskStreamer:
 
             if self.closed and self.queue.empty() and not self.special_buffer:
                 break
+
 
     def add_special(self, data):
         with self.lock:
