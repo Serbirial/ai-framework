@@ -1,7 +1,7 @@
-from .bot import ChatBot, list_personality
+from .bot import AgentInstance, list_personality
 import asyncio
 import sqlite3
-import static_prompts
+import prompt_builder
 from .static import Config, StopOnSpeakerChange, DummyTokenizer
 from llama_cpp import Llama
 
@@ -30,7 +30,7 @@ class BatchedSimpleChat:
             low_vram=False,
             n_batch=64
         )
-        self.bot = ChatBot(name=botname, model_path=model_path, model=self.model)
+        self.bot = AgentInstance(name=botname, model_path=model_path, model=self.model)
 
 
         self.db_path = self.bot.db_path
@@ -105,13 +105,13 @@ class BatchedSimpleChat:
         rows = cursor.fetchall()
         conn.close()
 
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, temp_persona_prompt, personality, temp_mood, temp_mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
-        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        user_section = static_prompts.build_user_profile_prompt(username, temp_usertone)
-        task_section = static_prompts.build_base_chat_task_prompt(self.bot.name, username)
-        history_section = static_prompts.build_history_prompt(context or "")
+        persona_section = prompt_builder.build_base_personality_profile_prompt(self.bot.name, temp_persona_prompt, personality, temp_mood, temp_mood_sentence)
+        rules_section = prompt_builder.build_rules_prompt(self.bot.name, username, None)
+        memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        user_section = prompt_builder.build_user_profile_prompt(username, temp_usertone)
+        task_section = prompt_builder.build_base_chat_task_prompt(self.bot.name, username)
+        history_section = prompt_builder.build_history_prompt(context or "")
 
         system_prompt = (
             f"You are a personality-driven assistant named \"{self.bot.name}\", talking to a user named \"{username}\".\n\n"

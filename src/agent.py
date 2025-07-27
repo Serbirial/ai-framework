@@ -13,12 +13,12 @@ import time
 import os
 import asyncio, re
 import sqlite3
-from .recursive import RecursiveThinker
-from .stepped_work import RecursiveWork
+from .worker_emotional_reasoning import RecursiveThinker
+from .worker_task import RecursiveWork
 
-from . import classify
-from . import grouped_preprocessing
-from . import static_prompts
+from . import pre_processing
+from . import pre_processing_grouped
+from . import prompt_builder
 from utils import openai
 from utils.helpers import get_mem_tokens_n
 
@@ -92,7 +92,7 @@ def list_personality(userid):
     return result
 
 
-class ChatBot:
+class AgentInstance:
     def __init__(self, name="ayokdaeno", db_path=DB_PATH, model = None):
         self.name = name
         self.mood = "neutral"
@@ -184,7 +184,7 @@ class ChatBot:
         except Exception as e:
             print(f"[WARN] API Down, cant offload to sub models.")
             print("[WARN] Falling back to local model.")
-            moods = classify.determine_moods_from_social_classification(social_tone_classification, 3)
+            moods = pre_processing.determine_moods_from_social_classification(social_tone_classification, 3)
 
         return moods
 
@@ -204,14 +204,14 @@ class ChatBot:
 
         personality = list_personality(identifier)
 
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.name, persona_prompt, personality, self.mood, self.mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.name, username, None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        user_section = static_prompts.build_user_profile_prompt(username, usertone)
-        task_section = static_prompts.build_base_chat_task_prompt(self.name, username)
-        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        history_section = static_prompts.build_history_prompt(context)
-        self_capabilities = static_prompts.build_capability_explanation_to_itself()
+        persona_section = prompt_builder.build_base_personality_profile_prompt(self.name, persona_prompt, personality, self.mood, self.mood_sentence)
+        rules_section = prompt_builder.build_rules_prompt(self.name, username, None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        user_section = prompt_builder.build_user_profile_prompt(username, usertone)
+        task_section = prompt_builder.build_base_chat_task_prompt(self.name, username)
+        memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
+        history_section = prompt_builder.build_history_prompt(context)
+        self_capabilities = prompt_builder.build_capability_explanation_to_itself()
 
         system_prompt = (
             f"You are a personality-driven assistant named \"{self.name}\", talking to a user named \"{username}\".\n\n"
@@ -359,7 +359,7 @@ class ChatBot:
         rows = cursor.fetchall()
         conn.close()
         core_memory_entries = [row[0] for row in rows]
-        return classify.generate_persona_prompt(self.model,self.name, personality, core_memory_entries)
+        return pre_processing.generate_persona_prompt(self.model,self.name, personality, core_memory_entries)
         
     def get_recent_history(self, identifier, limit=10):
         """
@@ -392,7 +392,7 @@ class ChatBot:
         
         personality = list_personality(identifier)
 
-        usertone, category, like_or_dislike, mood_sentence = grouped_preprocessing.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
+        usertone, category, like_or_dislike, mood_sentence = pre_processing_grouped.basic_preprocessing(self.model, user_input, personality["likes"], personality["dislikes"], history)
         persona_prompt = self.get_persona_prompt(identifier)
         if category_override:
             category = category_override
@@ -454,7 +454,7 @@ class ChatBot:
                 
         if cnn_output != None:            
             category_override = "other" # temp
-            cnn_output_formatted = static_prompts.build_cnn_input_prompt(cnn_output)
+            cnn_output_formatted = prompt_builder.build_cnn_input_prompt(cnn_output)
             if streamer:
                 streamer.add_special(f"Image processed.")
         if streamer:
@@ -508,7 +508,7 @@ class ChatBot:
 
             if get_mem_tokens_n(identifier, max_memory_tokens) > max_memory_tokens:
                 return "I cant store anything in my memory right now. (AT LIMIT)"
-            memory_data = classify.interpret_memory_instruction(user_input, self.model)
+            memory_data = pre_processing.interpret_memory_instruction(user_input, self.model)
             if memory_data:
                 raw_text = memory_data  # make sure this is a string
                 
@@ -516,7 +516,7 @@ class ChatBot:
                 if streamer:
                     streamer.add_special(f"Saved to memory.")
                 
-                prompt = classify.build_memory_confirmation_prompt(raw_text)
+                prompt = pre_processing.build_memory_confirmation_prompt(raw_text)
 
                 # add data from helper function into prompt before responding
                 response = self._straightforward_generate(prompt, max_new_tokens, temperature, top_p, streamer, stop_criteria, prompt)

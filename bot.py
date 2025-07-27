@@ -20,7 +20,7 @@ import asyncio
 import time
 
 
-from src import concurrent_generation
+from . import scaling_concurrent_llama_instances
 
 from utils.concurrency import BackgroundThinkerProcess
 
@@ -467,7 +467,7 @@ def load_recent_history_from_db(user_id, botname, max_tokens, tokenizer):
 
 
 
-AiChatBot = bot.ChatBot
+AiChatBot = bot.AgentInstance
 
 #intents = discord.Intents.all()
 import threading
@@ -496,7 +496,7 @@ class ChatBot(discord.Client):
         self.main_llm_generating = False
         self.current_user = None
         
-        self.sub_model: concurrent_generation.Concurrent_Llama_Gen = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name, self.sub_llm_concurrency_limit)
+        self.sub_model: scaling_concurrent_llama_instances.Concurrent_Llama_Gen = scaling_concurrent_llama_instances.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name, self.sub_llm_concurrency_limit)
 
         thinkers = get_all_background_thinkers()
 
@@ -615,6 +615,7 @@ class ChatBot(discord.Client):
 
                     #FIXME make specific key for background thinking tools?
                     default_tools = self.config.per_category_tools["default"]
+                    # FIXME use context for chat history and refactor to match recursive thinkers
                     worker_config = static.WorkerConfig(default_tools, thinker_identifier, "", tier_config, tier_config["MAX_STEPS"], prompt_reservation, "Stubbed-Unneeded", {"stubbed-usertone-dict"}, include_reflection=False, context=None, streamer=None)
 
                     thinker = BackgroundThinkerProcess(

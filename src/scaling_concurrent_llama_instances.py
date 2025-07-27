@@ -6,7 +6,7 @@ import psutil
 import os
 
 
-from src.bot import ChatBot
+from src.bot import AgentInstance
 
 config = Config()
 def _model_worker(conn, model_path, botname, core_ids, n_threads):
@@ -14,7 +14,7 @@ def _model_worker(conn, model_path, botname, core_ids, n_threads):
 	from multiprocessing.connection import Connection
 	psutil.Process(os.getpid()).cpu_affinity(core_ids)
 
-	model = ChatBot(name=botname, model=Llama(
+	model = AgentInstance(name=botname, model=Llama(
 		model_path=model_path,
 		n_ctx=8096,
 		n_threads=n_threads,

@@ -1,5 +1,5 @@
 from utils.tokens import get_token_availability
-from .bot import ChatBot
+from .bot import AgentInstance
 from utils import openai
 
 def check_if_overflowing(total_tokens: int, token_window: int, buffer: int):
@@ -45,7 +45,7 @@ def check_if_would_overflow(total_tokens: int, step_generation_tokens: int, toke
 class StateManager:
     """Can be used to manage state in recursive workers, mostly to be used when the token limit is hit before fully done. 
     """
-    def __init__(self, model, bot: ChatBot, category: str):
+    def __init__(self, model, bot: AgentInstance, category: str):
         """
         bot: the high-level ChatBot interface.
         category: a valid category. (not checked if valid)

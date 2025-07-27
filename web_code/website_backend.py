@@ -15,7 +15,7 @@ context = static.ChatContext(static.DummyTokenizer(), 1024)
 
 # Load the chatbot once here
 print("Loading chatbot AI once...")
-chatbot_ai = bot.ChatBot(db_path=static.DB_PATH)
+chatbot_ai = bot.AgentInstance(db_path=static.DB_PATH)
 
 generate_lock = asyncio.Lock()
 model_lock = Lock()

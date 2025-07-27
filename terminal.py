@@ -9,7 +9,7 @@ def print_memory_usage():
     print(f"[Memory Usage] {mem_mb:.2f} MB")
 
 if __name__ == "__main__":
-    chatbot = bot.ChatBot("console-AI", "console.json")
+    chatbot = bot.AgentInstance("console-AI", "console.json")
     username = "serbirial" # temp name 
     history = []
 

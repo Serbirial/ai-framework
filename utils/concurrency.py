@@ -1,8 +1,8 @@
 from llama_cpp import Llama
 from src.static import Config
 from multiprocessing import Process, Pipe
-from src.bot import ChatBot
-from src.background_thinking import AutonomousPassiveThinker
+from src.bot import AgentInstance
+from worker_background_autonomy import AutonomousPassiveThinker
 
 config = Config()
 
@@ -10,7 +10,7 @@ def _model_worker(conn, worker_config, model_path, username, botname, core_ids, 
     import psutil, os
     psutil.Process(os.getpid()).cpu_affinity(core_ids)
 
-    model = ChatBot(name=botname, model=Llama(
+    model = AgentInstance(name=botname, model=Llama(
         model_path=model_path,
         n_ctx=token_window,
         n_threads=n_threads,
@@ -24,7 +24,7 @@ def _model_worker(conn, worker_config, model_path, username, botname, core_ids, 
     ))
 
     try:
-        persona_prompt = ChatBot.get_persona_prompt(ChatBot, identifier)
+        persona_prompt = AgentInstance.get_persona_prompt(AgentInstance, identifier)
         thinker = AutonomousPassiveThinker(worker_config, config, persona_prompt)
         result, send_message, message = thinker.think(username, identifier, tier)
         conn.send({"done": True, "final": result, "send_message": send_message, "message": message})
