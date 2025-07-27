@@ -3,8 +3,8 @@ from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer
 import sqlite3
 import re
-from . import static_prompts
-from . import bot
+from . import prompt_builder
+from . import agent
 
 import datetime
 
@@ -60,7 +60,7 @@ class AutonomousPassiveThinker:
         self.tiny_mode = tiny_mode
 
     def build_autonomous_prompt(self, username, identifier):
-        personality = bot.list_personality(identifier)
+        personality = agent.list_personality(identifier)
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -75,11 +75,11 @@ class AutonomousPassiveThinker:
                 f"### **{username}'s Profile and Info*:*\n"
                 f"**Name:** {username.replace('<', '').replace('>', '')}\n"
         )
-        persona_section = static_prompts.build_base_personality_profile_prompt(
+        persona_section = prompt_builder.build_base_personality_profile_prompt(
             self.bot.name, self.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        memory_section = static_prompts.build_core_memory_prompt(rows if rows else None)
+        rules_section = prompt_builder.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        memory_section = prompt_builder.build_core_memory_prompt(rows if rows else None)
 
         base = (
             "<|start_header_id|>system<|end_header_id|>\n"
@@ -172,7 +172,7 @@ class AutonomousPassiveThinker:
                 else:
                     to_add += f"\n{action_result}"
 
-        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
+        discord_formatting_prompt = prompt_builder.build_discord_formatting_prompt()
 
         final_prompt = (
             full
@@ -228,6 +228,6 @@ class AutonomousPassiveThinker:
         send_to_user, user_message = process_thinking_output(
             final_summary=final_summary,
             identifier=identifier,
-            botname=bot.get_user_botname(identifier),
+            botname=agent.get_user_botname(identifier),
         )
         return final_summary, send_to_user, user_message

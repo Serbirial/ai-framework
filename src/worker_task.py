@@ -3,7 +3,7 @@ from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
-from . import bot
+from . import agent
 
 from . import prompt_builder
 from .ai_actions import check_for_actions_and_run
@@ -15,7 +15,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         self.worker_config: WorkerConfig = worker_config
 
     def build_prompt(self, question, username, extra_context=None):
-        personality = bot.list_personality(self.worker_config.identifier)
+        personality = agent.list_personality(self.worker_config.identifier)
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -72,7 +72,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         return base
     
     def build_final_prompt(self, username, question, steps_and_tools):
-        personality = bot.list_personality(self.worker_config.identifier)
+        personality = agent.list_personality(self.worker_config.identifier)
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()

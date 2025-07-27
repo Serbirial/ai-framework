@@ -5,7 +5,7 @@ import json
 import sqlite3
 import tiny_prompts, custom_gpt2_prompts
 from . import prompt_builder
-from . import bot
+from . import agent
 import re
 
 from ai_tools import VALID_ACTIONS
@@ -21,7 +21,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         self.worker_config: WorkerConfig = worker_config
 
     def build_prompt(self, question, username, extra_context = None):
-        personality = bot.list_personality(self.worker_config.identifier)
+        personality = agent.list_personality(self.worker_config.identifier)
         
         # Get Core Memory for user
         conn = sqlite3.connect(DB_PATH)

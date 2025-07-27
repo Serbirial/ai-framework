@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.responses import HTMLResponse
 from threading import Lock
 
-from src import bot, static
+from src import agent, static
 
 app = FastAPI()
 
@@ -15,7 +15,7 @@ context = static.ChatContext(static.DummyTokenizer(), 1024)
 
 # Load the chatbot once here
 print("Loading chatbot AI once...")
-chatbot_ai = bot.AgentInstance(db_path=static.DB_PATH)
+chatbot_ai = agent.AgentInstance(db_path=static.DB_PATH)
 
 generate_lock = asyncio.Lock()
 model_lock = Lock()

@@ -1,8 +1,8 @@
 from llama_cpp import Llama
 from src.static import Config
 from multiprocessing import Process, Pipe
-from src.bot import AgentInstance
-from worker_background_autonomy import AutonomousPassiveThinker
+from src.agent import AgentInstance
+from worker_passive_autonomy import AutonomousPassiveThinker
 
 config = Config()
 

@@ -6,7 +6,7 @@ import psutil
 import os
 
 
-from src.bot import AgentInstance
+from src.agent import AgentInstance
 
 config = Config()
 def _model_worker(conn, model_path, botname, core_ids, n_threads):

@@ -1,5 +1,5 @@
 from utils.tokens import get_token_availability
-from .bot import AgentInstance
+from .agent import AgentInstance
 from utils import openai
 
 def check_if_overflowing(total_tokens: int, token_window: int, buffer: int):
