@@ -1342,9 +1342,8 @@ class ChatBot(discord.Client):
             
             return await message.reply(f"ERR! `'{flags['category']}'` is not a valid category. Valid options are: `{valid_list}`")
         if int(flags["depth"]) > self.config.token_config[tier]["MAX_STEPS"]:
-            
-            
             return await message.reply(f"Maximum recursion limit is for {tier} (your tier) is **{self.config.token_config[tier]['MAX_STEPS']}**.")
+
         depth = 3
         
         if flags["depth"] != None and type(flags["depth"]) == int:
