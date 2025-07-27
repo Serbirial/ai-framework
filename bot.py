@@ -370,6 +370,17 @@ def clear_user_memory_and_history(owner_id, db_path=static.DB_PATH):
     finally:
         conn.close()
         
+def clear_user_memory(owner_id, db_path=static.DB_PATH):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    try:
+        # Clear MEMORY for this user
+        cursor.execute("DELETE FROM MEMORY WHERE userid = ?", (owner_id,))
+        
+        conn.commit()
+    finally:
+        conn.close()
+        
 def clear_user_history(owner_id, db_path=static.DB_PATH):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -818,7 +829,8 @@ class ChatBot(discord.Client):
                 "`!add <section> <text>` - Adds a line of text to a personality section.\n"
                 "`!personality`   - Lists all personality sections and their contents.\n"
                 "`!change_personality [name]` - Changes your personality to [name] named personality.\n"
-                
+                "`!list_personalities` - Lists all of your created personalites.\n"
+
                 "`!view_tier`     - Shows your current tier (ai model limitations).\n"
                 "`!help`          - Shows this help message.\n"
                 "`![explain|whatareyou]` - What am i? Who am i? Are you confused? Run this!\n"
@@ -1087,7 +1099,7 @@ class ChatBot(discord.Client):
             conn.close()
             data = "All of your personalities:\n"
             for row in rows:
-                data += f"  - {row}"
+                data += f"  - `{row}`"
             return await message.reply(data)
         
         if flags["newpersonality"]:
@@ -1186,8 +1198,8 @@ class ChatBot(discord.Client):
             return
 
         elif flags["clearmem"]:
-            clear_user_memory_and_history(message.author.id)
-            await message.reply(f"The AI's chat history and memory with {message.author.display_name} has been reset.")
+            clear_user_memory(message.author.id)
+            await message.reply(f"The AI's core memory with {message.author.display_name} has been reset.")
             
             
             return
