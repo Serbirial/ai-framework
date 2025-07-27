@@ -20,7 +20,7 @@ import asyncio
 import time
 
 
-from . import scaling_concurrent_llama_instances
+from src import scaling_concurrent_llama_instances
 
 from utils.concurrency import BackgroundThinkerProcess
 
