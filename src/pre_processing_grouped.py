@@ -20,8 +20,11 @@ def basic_preprocessing(
         - likes: "LIKE", "DISLIKE", or "NEUTRAL"
     """
     categories = [
-        "greeting", "goodbye", "preference_query", "statement",
-        "instruction_memory", "task", "other"
+        "greeting", "goodbye", "statement",
+        
+        "self_explain", # only used internally
+
+        "preference_query", "instruction_memory", "task", "other" # most implemented
     ]
     
     likes_str = ", ".join(likes) or "None"

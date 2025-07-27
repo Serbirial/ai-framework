@@ -1,6 +1,8 @@
 {
     "main_llm_path": "/content/ai-framework/Llama-3.2-8B-Instruct-Q6_K.gguf",
+    "main_llm_name": "Llama 3.2 8B Instruct Q6_K",
     "sub_concurrent_llm_path": "/content/ai-framework/Llama-3.2-3B-Instruct-Q4_0.gguf",
+    "sub_concurrent_llm_name": "Llama 3.2 3B Instruct Q4_0",
     
     "web_access": true,
     

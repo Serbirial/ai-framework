@@ -15,6 +15,7 @@ import asyncio, re
 import sqlite3
 from .worker_emotional_reasoning import RecursiveThinker
 from .worker_task import RecursiveWork
+from .worker_explainer import AIExplainerWorker
 
 from . import pre_processing
 from . import pre_processing_grouped
@@ -211,7 +212,7 @@ class AgentInstance:
         task_section = prompt_builder.build_base_chat_task_prompt(self.name, username)
         memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
         history_section = prompt_builder.build_history_prompt(context)
-        self_capabilities = prompt_builder.build_capability_explanation_to_itself()
+        self_capabilities = prompt_builder.build_tool_capability_prompt()
 
         system_prompt = (
             f"You are a personality-driven assistant named \"{self.name}\", talking to a user named \"{username}\".\n\n"
@@ -526,6 +527,13 @@ class AgentInstance:
                 if streamer:
                     streamer.add_special(f"Major error")
                 return "Something went terribly wrong while doing memory work...Nothing was done or saved assumingly. (NON AI OUTPUT! THIS IS AN ERROR!)"
+
+        elif category == "self_explain":
+            thinker = AIExplainerWorker(self, worker_config)
+
+            final = thinker.explain(user_input, username, tier)
+            log("DEBUG: GENERATED SELF EXPLAIN STEPS",final)
+            response = final
 
         elif category == "task": # The user wants the AI to do something task based- and it will be done step by step.
             if streamer:

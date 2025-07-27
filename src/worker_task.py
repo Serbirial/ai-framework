@@ -5,7 +5,7 @@ import json
 import sqlite3
 from . import bot
 
-from . import static_prompts
+from . import prompt_builder
 from .ai_actions import check_for_actions_and_run
 
 
@@ -25,14 +25,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         )
         rows = cursor.fetchall()
         conn.close()  
-        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        actions_section = static_prompts.build_base_actions_prompt()
-        actions_rule_section = static_prompts.build_base_actions_rule_prompt()
-        actions_explanation_section =  static_prompts.build_base_actions_explanation_prompt()
+        user_info_section = prompt_builder.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = prompt_builder.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        rules_section = prompt_builder.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
+        actions_section = prompt_builder.build_base_actions_prompt()
+        actions_rule_section = prompt_builder.build_base_actions_rule_prompt()
+        actions_explanation_section =  prompt_builder.build_base_actions_explanation_prompt()
         
         base = (
             #"<|begin_of_text|>"
@@ -82,13 +82,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         )
         rows = cursor.fetchall()
         conn.close()  
-        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
-        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
-        history_section = static_prompts.build_history_prompt(self.worker_config.context)
+        user_info_section = prompt_builder.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = prompt_builder.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        rules_section = prompt_builder.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
+        discord_formatting_prompt = prompt_builder.build_discord_formatting_prompt()
+        history_section = prompt_builder.build_history_prompt(self.worker_config.context)
         
         
         base = (
@@ -179,7 +179,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|eot_id|>"
             
             # Add chat history every step so the AI can see its possible previous steps and build off anything previous
-            step_prompt += static_prompts.build_history_prompt(self.worker_config.context)
+            step_prompt += prompt_builder.build_history_prompt(self.worker_config.context)
 
             # add previous steps and tool results
             step_prompt += to_add

@@ -4,7 +4,7 @@ from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
 import tiny_prompts, custom_gpt2_prompts
-from . import static_prompts
+from . import prompt_builder
 from . import bot
 import re
 
@@ -33,11 +33,11 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         rows = cursor.fetchall()
         conn.close()        
         
-        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
-        rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
-        memory_instructions_section = static_prompts.build_memory_instructions_prompt()
-        memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
+        user_info_section = prompt_builder.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = prompt_builder.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        rules_section = prompt_builder.build_rules_prompt(self.bot.name, username, None)
+        memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
+        memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
         
 
         mood = self.bot.mood
@@ -248,7 +248,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 )
                 full += f"{response.strip()}\n"
 
-        discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
+        discord_formatting_prompt = prompt_builder.build_discord_formatting_prompt()
 
         #if self.tiny_mode:
         #    final_prompt = (

@@ -32,7 +32,7 @@ def build_token_info_prompt(tier, config=None) -> str:
 
 
 
-def build_capability_explanation_to_itself():
+def build_tool_capability_prompt(add_rules: bool = True):
     
     prompt = (
         "### Your Available Tools:\n"
@@ -42,12 +42,12 @@ def build_capability_explanation_to_itself():
     for name in sorted(VALID_ACTIONS.keys()):
         info = VALID_ACTIONS[name]
         prompt += f"- **{name}**: {info['help'].strip()}\n"
-        
-    prompt += (
-        "\nWhen the user asks you about your capabilities or what you can do, you MUST list every one of these tools.\n"
-        "Do NOT omit, summarize, or shorten the list in any way.\n"
-        "Briefly explain what each tool does clearly and concisely.\n\n"
-    )
+    if add_rules:
+        prompt += (
+            "\nWhen the user asks you about your capabilities or what you can do, you MUST list every one of these tools.\n"
+            "Do NOT omit, summarize, or shorten the list in any way.\n"
+            "Briefly explain what each tool does clearly and concisely.\n\n"
+        )
     return prompt
 
 def build_cnn_input_prompt(cnn_output):
