@@ -3,6 +3,7 @@ from .static import StopOnSpeakerChange
 from utils.helpers import DummyTokenizer
 from utils import openai
 from .ai_processing import compress_summary
+from utils.tokens import get_token_availability, find_compression_ratio
 
 
 def chunk_data(max_output_tokens, data):
@@ -32,51 +33,6 @@ def format_chunks(chunks: list):
         combined += f"{chunk}\n\n"
     return combined
 
-def get_token_availability(
-    current_prompt_tokens: int,
-    other_tokens: int,
-    total_token_window: int,
-    reserved_buffer: int = 512,
-):
-    """
-    Calculates available space in the token window and overflow amount.
-
-    Args:
-        current_prompt_tokens: Tokens used by the current prompt (system, user message, prior context).
-        other_tokens: Any non-prompt tokens.
-        total_token_window: Model's full context window.
-        reserved_buffer: Headroom buffer to leave unused (default 512).
-
-    Returns:
-        available_tokens: How many tokens are still available for data.
-        overflow: How many tokens over budget (0 if not over).
-    """
-    allowed_tokens = total_token_window - reserved_buffer
-    total_needed = current_prompt_tokens + other_tokens
-
-    overflow = max(0, total_needed - allowed_tokens)
-    available_tokens = max(0, allowed_tokens - current_prompt_tokens)
-
-    return available_tokens, overflow
-
-def find_compression_ratio(available_tokens, raw_data_tokens, min_ratio=0.5, max_ratio=0.80):
-    """
-    Dynamically calculates a compression ratio to fit data within available token space.
-
-    Args:
-        available_tokens (int): Remaining space in the token window.
-        raw_data_tokens (int): Actual token count of the data you're compressing.
-        min_ratio (float): Lower bound to prevent excessive compression.
-        max_ratio (float): Upper bound to prevent undercompression.
-
-    Returns:
-        float: Clamped compression ratio.
-    """
-    if raw_data_tokens == 0:
-        return max_ratio
-
-    ratio = available_tokens / raw_data_tokens
-    return max(min_ratio, min(max_ratio, ratio))
 
 
 class SteppedSummarizing:
@@ -131,14 +87,16 @@ class SteppedSummarizing:
     def think(self, username):
         tokenizer = DummyTokenizer()
         if self.streamer:
-            self.streamer.add_special(f"Summarizing data")
+            self.streamer.add_special(f"Summarizing something")
         prompt = self.build_prompt()
         
 
         i = 0
         for chunk in self.chunks:
             i += 1
-
+            if self.streamer:
+                self.streamer.add_special(f"Section {i} out of {self.depth} on summary")
+                
             current_prompt_tokens = tokenizer.count_tokens(prompt)
             raw_chunk_tokens = tokenizer.count_tokens(chunk)
 
@@ -197,6 +155,8 @@ class SteppedSummarizing:
         overflow = summary_tokens - available_summary_tokens
 
         if overflow > 0:
+            if self.streamer:
+                self.streamer.add_special(f"WARNING: Summary past alloted token window, trying compression...")
             # compress summaries to fit
             compressed_summary = compress_summary(
                 self.model,
@@ -204,8 +164,14 @@ class SteppedSummarizing:
                 category="summary",
                 max_tokens=available_summary_tokens
             )
+            compressed_summary_tokens = tokenizer.count_tokens(compressed_summary)
+            overflow = compressed_summary_tokens - available_summary_tokens
+            if overflow > 0:
+                
+                if self.streamer:
+                    self.streamer.add_special(f"WARNING: Summary compression failed to fit summary in alloted token window- model may soft crash and not respond, a fix is in progress to prevent this.")
             formatted_summaries = compressed_summary
-            summary_tokens = tokenizer.count_tokens(formatted_summaries)
+            summary_tokens = compressed_summary_tokens
 
         final_prompt = base_prompt + "\n" + formatted_summaries + suffix
 

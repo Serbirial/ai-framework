@@ -117,8 +117,8 @@ class ChatBot:
             self.model = Llama(
                 model_path=CONFIG_VAR.general["main_llm_path"],
                 n_ctx=16000,              # TODO use CTX setter 
-                n_threads=7,             # tune to setup
-                use_mlock=True,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
+                n_threads=6,             # tune to setup
+                use_mlock=False,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
                 logits_all=False,
                 verbose=False,
                 use_mmap=True,

@@ -78,7 +78,7 @@ def simple_file_scraper(params: dict) -> dict:
 
 EXPORT = {
     "raw_file_scraper": {
-        "help": "Scrapes any URL with a supported file ending and get either the raw data (if under token limit) or a summary of the file contents.",  # this gets intercepted and summarized in the action executor.
+        "help": "Downloads any URL with a supported file ending and get either the raw data (if under token limit) or a summary of the file contents (if over token limit).",  # this gets intercepted and summarized in the action executor.
         "callable": simple_file_scraper,
         "params": {
             "url": "string, required"

@@ -1,5 +1,5 @@
 from log import log
-from .static import StopOnSpeakerChange, DB_PATH
+from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
@@ -8,28 +8,25 @@ from . import bot
 from . import static_prompts
 from .ai_actions import check_for_actions_and_run
 
+
 class RecursiveWork: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
-    def __init__(self, bot, config, persona_prompt: str, depth=3, streamer=None):
+    def __init__(self, bot, worker_config: WorkerConfig):
         self.bot = bot  # Reference to ChatBot
-        self.persona_prompt = persona_prompt
-        self.config = config
-        self.depth = depth
-        self.streamer = streamer
+        self.worker_config: WorkerConfig = worker_config
 
-    def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=None):
-        personality = bot.list_personality(identifier)
+    def build_prompt(self, question, username, extra_context=None):
+        personality = bot.list_personality(self.worker_config.identifier)
 
-        persona_prompt = self.persona_prompt
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-            (identifier,)
+            (self.worker_config.identifier,)
         )
         rows = cursor.fetchall()
         conn.close()  
-        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
@@ -74,25 +71,24 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log("TASK PROMPT", base)
         return base
     
-    def build_final_prompt(self, identifier, username, usertone, question, steps_and_tools, context):
-        personality = bot.list_personality(identifier)
+    def build_final_prompt(self, username, question, steps_and_tools):
+        personality = bot.list_personality(self.worker_config.identifier)
 
-        persona_prompt = self.persona_prompt
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-            (identifier,)
+            (self.worker_config.identifier,)
         )
         rows = cursor.fetchall()
         conn.close()  
-        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
-        history_section = static_prompts.build_history_prompt(context)
+        history_section = static_prompts.build_history_prompt(self.worker_config.context)
         
         
         base = (
@@ -135,18 +131,18 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log("FINAL TASK PROMPT", base)
         return base
 
-    def think(self, question, username, query_type, usertone, tier, context=None, include_reflection=False, identifier=None):
+    def think(self, question, username):
         tokenizer = DummyTokenizer()
 
 
-        prompt = self.build_prompt(question, username, query_type, usertone, context=context, include_reflection=include_reflection, identifier=identifier)
+        prompt = self.build_prompt(question, username)
 
         full = f"{prompt}"
         extra_context_lines = []  # Accumulates all action results
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
         to_add = ""
-        for step in range(self.depth):
+        for step in range(self.worker_config.max_depth):
             # start with the system prompt or base context
             step_prompt = f"{full}"
 
@@ -172,8 +168,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- Do not assume or simulate the result of an Action: Always wait for the next step before proceeding.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
-                f"- You have {self.depth} steps to work through this task, you are on step {step+1}.\n"
-                f"- You should actively progress every step and try to complete the task on or before step {self.depth} (step cutuff limit).\n"
+                f"- You have {self.worker_config.max_depth} steps to work through this task, you are on step {step+1}.\n"
+                f"- You should actively progress every step and try to complete the task on or before step {self.worker_config.max_depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n"
                 #"- Do NOT output any '###' or '### Step...' headings.\n\n"
             )
@@ -183,7 +179,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|eot_id|>"
             
             # Add chat history every step so the AI can see its possible previous steps and build off anything previous
-            step_prompt += static_prompts.build_history_prompt(context)
+            step_prompt += static_prompts.build_history_prompt(self.worker_config.context)
 
             # add previous steps and tool results
             step_prompt += to_add
@@ -194,16 +190,16 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             step_prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
             # response begins here
             log(f"STEP {step+1} PROMPT\n", step_prompt)
-            if self.streamer:
+            if self.worker_config.streamer:
 
-                self.streamer.add_special(f"Moving on to step {step+1} of the task!")
+                self.worker_config.streamer.add_special(f"Moving on to step {step+1} of the task!")
             
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_PER_STEP"],
+                max_new_tokens=self.worker_config.tier_config["WORK_MAX_TOKENS_PER_STEP"],
                 temperature=0.7,
                 top_p=0.9,
-                streamer=self.streamer,
+                streamer=self.worker_config.streamer,
                 stop_criteria=stop_criteria,
                 _prompt_for_cut=step_prompt,
             )
@@ -216,13 +212,13 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             to_add += "<|start_header_id|>assistant<|end_header_id|>\n"
 
             # append the full step (header + content) to the full conversation log
-            to_add += f"### Step {step+1} of {self.depth}:\n{clean_step_content}\n"
+            to_add += f"### Step {step+1} of {self.worker_config.max_depth}:\n{clean_step_content}\n"
             to_add == "<|eot_id|>\n"
             
             # Check for and run any actions
-            token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-            chat_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-            prompt_window = self.config.token_config["PROMPT_RESERVATION"]
+            token_window = self.worker_config.tier_config["BASE_TOKEN_WINDOW"]
+            chat_window = self.worker_config.tier_config["BASE_TOKEN_WINDOW"]
+            prompt_window = self.worker_config.prompt_reservation
             
             
             action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
@@ -238,24 +234,26 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     to_add += f"{action_result}\n" # add result to full prompt
                 to_add += "\n"
 
-            if step != 0 and step % 5 == 0 and step != self.depth - 1:
+            if self.worker_config.streamer:
+                self.worker_config.streamer.add_special(f"Making sure im still aligned with the task!")
+            
+            if step != 0 and step % 5 == 0 and step != self.worker_config.max_depth - 1:
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
                     "**Task Alignment Checkpoint:**\n"
                     "- Reflect on your progress so far.\n"
                     "- Ask: Are your steps clearly building toward completing the task?\n"
                     "- Briefly summarize what you've accomplished and what remains.\n"
-                    "- Then continue with the next step, staying focused.\n"
-                    f"- Reminder: The user asked: {question}\n"
+                    f"- Reminder: The user's input: {question}\n"
                 )
                 step_prompt += checkpoint_prompt
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops)
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_PER_STEP"],
-                    temperature=0.8,
+                    max_new_tokens=self.worker_config.tier_config["WORK_MAX_TOKENS_PER_STEP"],
+                    temperature=0.7,
                     top_p=0.9,
-                    streamer=self.streamer,
+                    #streamer=self.worker_config.streamer,
                     stop_criteria=stop_criteria,
                     _prompt_for_cut=step_prompt,
                 )
@@ -264,7 +262,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 to_add += f"**Task Alignment Checkpoint Results:**\n{response.strip()}\n"
                 to_add == "<|eot_id|>"
 
-        final_prompt = self.build_final_prompt(identifier, username, usertone, question, steps_and_tools=to_add)
+        final_prompt = self.build_final_prompt(username, question, steps_and_tools=to_add)
         final_prompt += "<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
 
 
@@ -276,14 +274,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-        if self.streamer:
-            self.streamer.add_special(f"Finalizing the task response!")
+        if self.worker_config.streamer:
+            self.worker_config.streamer.add_special(f"Finalizing my response!")
         
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=self.config.token_config[tier]["WORK_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
+            max_new_tokens=self.worker_config.tier_config["WORK_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
-            streamer=self.streamer,
+            streamer=self.worker_config.streamer,
             stop_criteria=stop_criteria,
             prompt=final_prompt,
             _prompt_for_cut=final_prompt

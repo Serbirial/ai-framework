@@ -444,13 +444,11 @@ def load_recent_history_from_db(user_id, botname, max_tokens, tokenizer):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT userid, message FROM HISTORY WHERE owner = ? ORDER BY timestamp DESC",
+        "SELECT userid, message FROM HISTORY WHERE owner = ? ORDER BY timestamp",
         (user_id,)
     )
     rows = cursor.fetchall()
     conn.close()
-
-    rows.reverse()  # Oldest → Newest
 
     total_tokens = 0
     result = []
@@ -498,7 +496,7 @@ class ChatBot(discord.Client):
         self.main_llm_generating = False
         self.current_user = None
         
-        self.sub_model = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name, self.sub_llm_concurrency_limit)
+        self.sub_model: concurrent_generation.Concurrent_Llama_Gen = concurrent_generation.Concurrent_Llama_Gen(self.config.general["sub_concurrent_llm_path"], self.ai.name, self.sub_llm_concurrency_limit)
 
         thinkers = get_all_background_thinkers()
 
@@ -1352,6 +1350,7 @@ class ChatBot(discord.Client):
                     async with message.channel.typing():
                         response = await asyncio.to_thread(
                             self.sub_model.chat,
+                            slot=slot,
                             max_new_tokens=self.config.token_config[tier]["BASE_MAX_TOKENS"],
                             username=message.author.display_name,
                             user_input=processed_input,

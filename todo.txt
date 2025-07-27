@@ -1,39 +1,36 @@
-since im now running the framework on my Pi cluster (512m/512m/2gb)
-ill need to do:
-device 1 (social tone and intents) https://huggingface.co/j-hartmann/emotion-english-distilroberta-base classify_social_tone determine_moods_from_social_classification
-device 2 (actions, etc, anything not social) NO MODEL YET ?? 
-
-i need to actuall do all the actions ActionResult
-
-USE THIS MODEL FOR SUMMARIZING WEB CONTENT: TinyT5 (e.g. t5-small, quantized)	
 
 
-
-Offload code gen to something like: https://huggingface.co/Salesforce/codegen-350M-multi
-
-
-### TODO: Implement In-Memory Caching for Persona Prompt Generation
-
-- Cache the result of `get_persona_prompt(userid)` to avoid regenerating the persona prompt on every call.
-- Store cached prompts in a dictionary keyed by `userid`.
-- Invalidate (clear) the cached prompt for a user whenever their personality data or core memory changes, including:
-  - After `add_to_remember()` modifies the user's memory.
-  - After updates to personality traits, goals, likes, or dislikes (need to detect or trigger cache clearing).
-- Provide a method to manually clear the cache for a specific user or all users.
+Offload code gen to specific model / thinker
 
 
+dont use chat_completetion when doing recursive work so the models state doesnt reset every step (faster if not reset)
 
-### TODO: Implement Chunk Summarization and Step Compression in RecursiveThinker
 
-- Enable `RecursiveThinker` to handle inputs larger than the model’s context window by summarizing in chunks.
-- When analyzing large documents (e.g., research papers or codebases), recursively:
-  - Split the input into chunks small enough to fit the context window. (if too big)
-  - Summarize each chunk separately using existing prompt structure.
-  - Load summaries and use them as the context.
-- Track total token usage during recursive steps:
-  - If the combined token size of all prior steps approaches the model limit (e.g., 85% of context window), summarize all prior steps into a condensed block.
-- Inject the summary seamlessly and continue generating new thought steps based on it.
+implement a web worker that does web based deep research or web based tasks (and add specific tools) 
 
 Optional:
-- Add recursive summarization
-- Tag summarized blocks clearly so the final answer prompt can interpret them appropriately.
+- Add recursive summarization (added summarizer worker which can do this if i implement it right)
+
+IMPORTANT:
+  Make API backend for interacting with the AI so the bot/models are seperated (better performance)
+  Has to include token streaming
+  API wont load the models itself- it only routes a user to an open model and relays everything:
+      Each Model instance will have its own API for the main routing API to use and runs its own instance of the `bot.ChatBot`
+
+
+SUPER SUPER IMPORTANT:
+  Make every thinker/worker use low level .generate to keep internal model state (speeds up on recursive generation because it doesnt need to read the full prompt every step)
+  ^ Cant feed the full prompt with low level- as the prompt is stored in the cache / remembered with .eval and etc
+  DONT EVER feed old prompting.
+
+  In EVERY recursive thinker/worker- if the token window is detected as fully exceeded:
+    The worker needs to stop- and summarize everything its done and needs to do to complete the task:
+        Use that summary as a response so the user can reply after with 'please finish that' or etc
+        NOTE: could add specific category that detects if the user is asking the agent to finish a previous task and add guidance in workers when category is detected (see recursive.py for examples)
+
+  Deep research thinker:
+    Long web tasks ("research this topic/ search this up and explain it/ explain topic") -> recursive thinker hooked into selenium / etc
+
+  Add WorkerConfig class that contains all the needed info and limitations per-worker:
+    self.tools = [list of tools] (global tools = too much prompt space and can confuse the worker- a worker meant for deep researching the web shouldnt be given access to tools it doesnt need sys or lastfm tols )
+    self.tier_data = tier json data (a dict)

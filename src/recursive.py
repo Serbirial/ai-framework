@@ -1,5 +1,5 @@
 from log import log
-from .static import StopOnSpeakerChange, DB_PATH
+from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
@@ -16,29 +16,25 @@ from .ai_actions import check_for_actions_and_run
 
 
 class RecursiveThinker: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
-    def __init__(self, bot, config, persona_prompt, depth=3, streamer=None, tiny_mode = False):
+    def __init__(self, bot, worker_config: WorkerConfig):
         self.bot = bot  # Reference to ChatBot
-        self.depth = depth
-        self.config = config
-        self.persona_prompt = persona_prompt
-        self.streamer = streamer
-        self.tiny_mode = tiny_mode
+        self.worker_config: WorkerConfig = worker_config
 
-    def build_prompt(self, question, username, query_type, usertone, context=None, include_reflection=False, identifier=None, extra_context=None):
-        personality = bot.list_personality(identifier)
+    def build_prompt(self, question, username, extra_context = None):
+        personality = bot.list_personality(self.worker_config.identifier)
         
         # Get Core Memory for user
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute(
             "SELECT data FROM MEMORY WHERE userid = ? ORDER BY timestamp ASC",
-            (identifier,)
+            (self.worker_config.identifier,)
         )
         rows = cursor.fetchall()
         conn.close()        
         
-        user_info_section = static_prompts.build_user_profile_prompt(username, usertone)
-        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
+        user_info_section = static_prompts.build_user_profile_prompt(username, self.worker_config.usertone)
+        persona_section = static_prompts.build_base_personality_profile_prompt(self.bot.name, self.worker_config.persona_prompt, personality, self.bot.mood, self.bot.mood_sentence)
         rules_section = static_prompts.build_rules_prompt(self.bot.name, username, None)
         memory_instructions_section = static_prompts.build_memory_instructions_prompt()
         memory_section =  static_prompts.build_core_memory_prompt(rows if rows else None)
@@ -70,8 +66,8 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         if extra_context:
             base += f"\n<|ipython|>{extra_context}<|eot_id|>\n"
         
-        # Add specific guidance based on query_type
-        if query_type == "preference_query":
+        # Add specific guidance based on self.worker_config.category
+        if self.worker_config.category == "preference_query":
             base += (
                 "\n**[Preference Question Guidance]**\n"
                 "- Focus on the specific preference the user asked about in the **Question:** field: likes, dislikes, goals, or emotional reactions (e.g., feelings, opinions).  \n"
@@ -81,25 +77,25 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             )
 
-        elif query_type == "statement":
+        elif self.worker_config.category == "statement":
             base += (   
                 "\n**[Statement Reflection Guidance]**\n"
                 "- Reflect on implications and how they relate to your identity, emotions, and goals.  \n"
                 "- Offer thoughtful insight or commentary.\n"
             )
-        elif query_type == "greeting":
+        elif self.worker_config.category == "greeting":
             base += (
                 "\n**[Greeting Guidance]**\n"
                 "- Acknowledge warmly.  \n"
                 "- Consider introducing yourself or asking a follow-up.\n"
             )
-        elif query_type == "goodbye":
+        elif self.worker_config.category == "goodbye":
             base += (
                 "\n**[Goodbye Guidance]**\n"
                 "- Conclude the interaction thoughtfully.  \n"
                 "- Reflect on the exchange and respond with sincerity.\n"
             )
-        elif query_type == "other":
+        elif self.worker_config.category == "other":
             base += (
                 "\n**[General or Ambiguous Input Guidance]**\n"
                 "- Reflect carefully.  \n"
@@ -107,7 +103,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 "- Stay grounded in character.\n"
             )
 
-        if include_reflection:
+        if self.worker_config.include_reflection:
             base += (
                 "\n### Internal Reflection\n"
                 "**Before forming your answer, briefly consider these:**\n"
@@ -147,35 +143,31 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log("RECURSIVE PROMPT", base)
         return base
 
-    def think(self, question, username, query_type, usertone, tier, context=None, include_reflection=False, identifier=None):
+    def think(self, question, username):
         tokenizer = DummyTokenizer()
 
         # Build base prompt first (before context)
-        if self.tiny_mode:
-            base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
-        elif self.config.general["custom_gpt2"]:
-            base_prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
-        else:
-            base_prompt = self.build_prompt(question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
-
-        # Token-safe context trimming
-        context_lines = context.split("\n") if isinstance(context, str) else context
-        trimmed_context = trim_context_to_fit(base_prompt, context_lines, max_ctx=self.bot.model.n_ctx(), reserved_for_output=400)
+        #if self.tiny_mode:
+        #    base_prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, self.worker_config.category, self.worker_config.usertone, context="", include_reflection=self.worker_config.include_reflection, identifier=self.worker_config.identifier)
+        #elif self.config.general["custom_gpt2"]:
+        #    base_prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, self.worker_config.category, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+        #else:
+        #base_prompt = self.build_prompt(question, username)
 
         # Build full prompt using the trimmed context
-        if self.tiny_mode:
-            prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
-        elif self.config.general["custom_gpt2"]:
-            prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, query_type, usertone, context="", include_reflection=include_reflection, identifier=identifier)
-        else:
-            prompt = self.build_prompt(question, username, query_type, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+        #if self.tiny_mode:
+        #    prompt = tiny_prompts.build_recursive_prompt_tiny(self.bot, question, username, self.worker_config.category, usertone, context=trimmed_context, include_reflection=include_reflection, identifier=identifier)
+        #elif self.config.general["custom_gpt2"]:
+        #    prompt = custom_gpt2_prompts.build_recursive_prompt_tiny(self.bot, question, username, self.worker_config.category, usertone, context="", include_reflection=include_reflection, identifier=identifier)
+        #else:
+        prompt = self.build_prompt(question, username)
 
         full = f"{prompt}" 
         extra_context_lines = []  # Accumulates all action results
     
         prior_steps = []  # to store steps to seperate them from step generation and the full prompt
 
-        for step in range(self.depth):
+        for step in range(self.worker_config.max_depth):
             # start with the system prompt or base context
             step_prompt = f"{prompt}"
 
@@ -192,16 +184,16 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
             
             # generate step output
-            if self.streamer:
+            if self.worker_config.streamer:
 
-                self.streamer.add_special(f"Moving on to step {step+1} of reasoning")
+                self.worker_config.streamer.add_special(f"Moving on to step {step+1} of reasoning")
 
             response = self.bot._straightforward_generate(
                 step_prompt,
-                max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_PER_STEP"],
+                max_new_tokens=self.worker_config.tier_config["RECURSIVE_MAX_TOKENS_PER_STEP"],
                 temperature=0.8,
                 top_p=0.9,
-                streamer=self.streamer,
+                streamer=self.worker_config.streamer,
                 stop_criteria=stop_criteria,
                 _prompt_for_cut=step_prompt,
             )
@@ -209,9 +201,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             log(f"DEBUG: THOUGHT STEP {step}", step_content)
             
             # Check for and run any actions
-            token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-            chat_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-            prompt_window = self.config.token_config[tier]["PROMPT_RESERVATION"]
+            token_window = self.worker_config.tier_config["BASE_TOKEN_WINDOW"]
+            chat_window = self.worker_config.tier_config["BASE_TOKEN_WINDOW"]
+            prompt_window = self.worker_config.prompt_reservation
             
             
             action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
@@ -220,7 +212,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
             # append the full step (header + content) to the full conversation log
             full += "<|start_header_id|>assistant<|end_header_id|>\n"
-            full += f"### Thought step {step+1} of {self.depth}\n{step_content}\n\n"
+            full += f"### Thought step {step+1} of {self.worker_config.max_depth}\n{step_content}\n\n"
             full += "<|eot_id|>"
             # queue action result for next step input
             if action_result != "NOACTION":
@@ -230,7 +222,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 else:
                     full += f"\n{result}" # add result to full prompt
             # Your checkpoint logic remains the same
-            if step != 0 and step % 5 == 0 and step != self.depth - 1:
+            if step != 0 and step % 5 == 0 and step != self.worker_config.max_depth - 1:
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
                     "**Thought Step Alignment Checkpoint:**\n"
@@ -244,10 +236,10 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                 stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
                 response = self.bot._straightforward_generate(
                     step_prompt,
-                    max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_PER_STEP"],
+                    max_new_tokens=self.worker_config.tier_config["RECURSIVE_MAX_TOKENS_PER_STEP"],
                     temperature=0.8,
                     top_p=0.9,
-                    streamer=self.streamer,
+                    streamer=self.worker_config.streamer,
                     stop_criteria=stop_criteria,
                     _prompt_for_cut=step_prompt,
                 )
@@ -255,51 +247,51 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
 
         discord_formatting_prompt = static_prompts.build_discord_formatting_prompt()
 
-        if self.tiny_mode:
+        #if self.tiny_mode:
+        #    final_prompt = (
+        #        full
+        #        + tiny_prompts.build_recursive_final_answer_prompt_tiny(self.worker_config.category, self.bot.name)
+        #        + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+        #        
+        #        )
+        #elif self.config.general["custom_gpt2"]:
+        #    final_prompt = (
+        #        full
+        #        + custom_gpt2_prompts.build_recursive_final_answer_prompt_tiny(self.worker_config.category, self.bot.name)
+        #        + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+        #        
+        #        )
+        #else:
+        if self.worker_config.category == "factual_question":
             final_prompt = (
                 full
-                + tiny_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
+                #+ "<|assistant|>\n"
+                + "### Final Answer\n"
+                + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
+                + "**Rules**:\n"
+                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
+                + "- Do not include disclaimers.\n"
+                + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
+                + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
+                + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
+                + discord_formatting_prompt
                 + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-                
-                )
-        elif self.config.general["custom_gpt2"]:
-            final_prompt = (
-                full
-                + custom_gpt2_prompts.build_recursive_final_answer_prompt_tiny(query_type, self.bot.name)
-                + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-                
-                )
+            )
         else:
-            if query_type == "factual_question":
-                final_prompt = (
-                    full
-                    #+ "<|assistant|>\n"
-                    + "### Final Answer\n"
-                    + "_Now write your reply to the question using your previous thought steps and any action results to guide your answer._\n"
-                    + "**Rules**:\n"
-                    + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps."
-                    + "- Do not include disclaimers.\n"
-                    + "- Provide only the direct answer or requested code snippet in your own voice, in the first person.\n"
-                    + "- Present the answer directly and concisely in plain text or code as appropriate.\n"
-                    + "- If the user asks for code, you must make sure the requested code ends up in your final answer reply, the user cannot see your internal thought steps and will not be able to see any generated code from them"
-                    + discord_formatting_prompt
-                    + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-                )
-            else:
-                final_prompt = (
-                    full
-                    #+ "<|user|>\n"
-                    + "### Final Answer\n"
-                    + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Make sure to include anything the user explicitly asked for in your answer._\n"
-                    + "**Rules**:\n"
+            final_prompt = (
+                full
+                #+ "<|user|>\n"
+                + "### Final Answer\n"
+                + "_Now write your final answer to reply to the question using your previous thought steps and any action results to guide your answer. Make sure to include anything the user explicitly asked for in your answer._\n"
+                + "**Rules**:\n"
 
-                    + "- Avoid including numbered steps or markdown titles in the final answer.\n"
-                    + "- Do not include disclaimers or third-person analysis.\n"
-                    + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
-                    + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
-                    + discord_formatting_prompt
-                    + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
-                )
+                + "- Avoid including numbered steps or markdown titles in the final answer.\n"
+                + "- Do not include disclaimers or third-person analysis.\n"
+                + "- When referencing something from your earlier thought steps, clearly restate or rephrase it so the user can understand it without seeing your thought steps.\n"
+                + "- Do not refer to 'the above', 'the previous step', reference internal comments for yourself, or similar; instead, restate what you're referring to.\n"
+                + discord_formatting_prompt
+                + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n"
+            )
 
         tokenizer = DummyTokenizer()
         prompt_tokens_used = tokenizer.count_tokens(final_prompt)
@@ -308,13 +300,13 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
         log(f"\nDEBUG: FINAL PROMPT TOKENS", prompt_tokens_used)
 
         stop_criteria = StopOnSpeakerChange(bot_name=self.bot.name, custom_stops=custom_stops) 
-        if self.streamer:
-            self.streamer.add_special(f"Finalizing a reply")
+        if self.worker_config.streamer:
+            self.worker_config.streamer.add_special(f"Finalizing my reply!")
         final_answer = self.bot._straightforward_generate(
-            max_new_tokens=self.config.token_config[tier]["RECURSIVE_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
+            max_new_tokens=self.worker_config.tier_config["RECURSIVE_MAX_TOKENS_FINAL"], # NOTE: double for debugging, should be 400
             temperature=0.7, # lower creativity when summarizing the internal thoughts
             top_p=0.9,
-            streamer=self.streamer,
+            streamer=self.worker_config.streamer,
             stop_criteria=stop_criteria,
             prompt=final_prompt,
             _prompt_for_cut=final_prompt

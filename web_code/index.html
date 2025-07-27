@@ -386,27 +386,13 @@ async function streamMessage(msg) {
 					continue; // Discard heartbeats
 				}
 
-			if (chunk.startsWith('SPECIAL:')) {
-				if (windowDiv) windowDiv.textContent += chunk.substring(8);
-			} else {
-				assistantMsg.content += chunk;
-				renderMessages();
-
-				// After re-render, re-select windowDiv & toggleDiv to keep updating properly
-				const updatedAssistantDivs = Array.from(chatDiv.querySelectorAll('.message.assistant'));
-				const updatedLastAssistantDiv = updatedAssistantDivs[updatedAssistantDivs.length - 1];
-				if (!updatedLastAssistantDiv) continue;
-
-				toggleDiv = updatedLastAssistantDiv.querySelector('.thinking-toggle');
-				windowDiv = updatedLastAssistantDiv.querySelector('.thinking-window');
-				if (windowDiv) {
-					windowDiv.style.display = windowDiv.style.display || 'none';
-				}
-				if (toggleDiv) {
-					toggleDiv.style.display = 'block';
+				if (chunk.startsWith('SPECIAL:')) {
+					if (windowDiv) windowDiv.textContent += chunk.substring(8);
+				} else {
+					if (windowDiv) windowDiv.textContent += chunk;
 				}
 				chatDiv.scrollTop = chatDiv.scrollHeight;
-			}
+
 		}
 	} catch (err) {
 		console.error('Streaming error:', err);

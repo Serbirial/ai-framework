@@ -3,7 +3,6 @@ import json
 
 from . import discord_debug
 
-
 MODEL_NAME = ""
 #actual good model vvv
 #mainLLM = "/home/koya/models/llama-2-7b-chat.Q4_K_S.gguf" # TEMP while running on dedi VM
@@ -41,6 +40,23 @@ class Config(object):
 def default_debug(**data):
     print()
 DEBUG_FUNC = discord_debug.custom_debug
+
+class WorkerConfig:
+    def __init__(self, identifier: str, persona_prompt: str, tier_config: dict, max_depth: int, prompt_reservation: int, category: str, usertone: dict, include_reflection: bool = False, context: str = None, streamer: object = None):
+        self.identifier = identifier
+        
+        self.persona_prompt = persona_prompt
+        self.tier_config = tier_config
+        self.max_depth = max_depth
+        self.streamer =  streamer
+        self.prompt_reservation = prompt_reservation
+        self.context = context
+        
+        self.category = category
+        self.usertone = usertone
+
+        
+        self.include_reflection = include_reflection
 
 class StopOnSpeakerChange:
     def __init__(self, bot_name="ayokdaeno", min_lines=1, max_lines=9999999999, custom_stops=None): # maybe change lines if you run into issues, this is for testing
