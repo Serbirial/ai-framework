@@ -1,0 +1,27 @@
+{
+    "default": ["duckduckgo_search", "execute_math", "get_cat_fact",
+            "get_current_time", "get_device_info", "get_local_time",
+            "lastfm_get_login_url", "lastfm_loved", "lastfm_recent",
+            "lastfm_top_artists", "ping_url_checker", "raw_file_view",
+            "raw_url_view", "run_calculus_wolfram_alpha", "run_python_sandboxed",
+            "youtube_url_info"
+        ],
+
+    "task": ["duckduckgo_search", "execute_math", "get_cat_fact",
+            "get_current_time", "get_device_info", "get_local_time",
+            "lastfm_get_login_url", "lastfm_loved", "lastfm_recent",
+            "lastfm_top_artists", "ping_url_checker", "raw_file_view",
+            "raw_url_view", "run_calculus_wolfram_alpha", "run_python_sandboxed",
+            "youtube_url_info"
+        ],
+    
+    "deep_research": [
+
+    ],
+    
+    "dev_request": ["execute_math", "raw_file_view", "raw_url_view",
+                    "ping_url_checker", "run_calculus_wolfram_alpha"
+
+    ]
+    
+}
