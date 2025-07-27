@@ -1,5 +1,5 @@
 from log import log
-from .static import StopOnSpeakerChange, DB_PATH
+from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer
 import sqlite3
 import re
@@ -50,7 +50,9 @@ def process_thinking_output(final_summary, identifier, botname, db_path=DB_PATH)
     return send_to_user, user_message
 
 class AutonomousPassiveThinker:
-    def __init__(self, config, persona_prompt, depth=3, streamer=None, tiny_mode=False):
+    def __init__(self, worker_config: WorkerConfig, config, persona_prompt, depth=3, streamer=None, tiny_mode=False):
+        self.worker_config: WorkerConfig = worker_config
+        
         self.depth = depth
         self.config = config
         self.persona_prompt = persona_prompt
@@ -151,7 +153,7 @@ class AutonomousPassiveThinker:
             log(f"DEBUG: AUTONOMOUS PASSIVE THOUGHT STEP {step}", step_content)
 
             action_result = check_for_actions_and_run(
-                self.bot.model, response,
+                self.worker_config.tools, self.bot.model, response,
                 max_token_window=self.config.token_config[tier]["BASE_TOKEN_WINDOW"],
                 max_chat_window=self.config.token_config[tier]["BASE_TOKEN_WINDOW"],
                 prompt_size=self.config.token_config["PROMPT_RESERVATION"]

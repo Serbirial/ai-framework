@@ -206,7 +206,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prompt_window = self.worker_config.prompt_reservation
             
             
-            action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
+            action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)
 
@@ -223,6 +223,9 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                     full += f"\n{result}" # add result to full prompt
 
             if step != 0 and step % 5 == 0 and step != self.worker_config.max_depth - 1:
+                if self.worker_config.streamer:
+                    self.worker_config.streamer.add_special(f"Making sure im still aligned with the task!")
+                
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
                     "**Thought Step Alignment Checkpoint:**\n"

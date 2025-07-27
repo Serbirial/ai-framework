@@ -1,7 +1,7 @@
 from log import log
 
 from . import classify
-from ai_tools import VALID_ACTIONS
+#from ai_tools import VALID_ACTIONS
 from .static import DummyTokenizer, Config
 from .ai_processing import summarize_chunks, summarize_raw_scraped_data, compress_summary
 
@@ -177,7 +177,7 @@ def process_raw_file_output(result, model, max_output_tokens, summary_compressio
     return result
 
 
-def check_for_actions_and_run(model, text, max_token_window, max_chat_window, prompt_size, summary_compression: float = config.token_config["SUMMARY_COMPRESSION_PERCENT"], summary_nested_compression: float = config.token_config["SUMMARY_NESTED_COMPRESSION_PERCENT"], streamer=None):
+def check_for_actions_and_run(tools, model, text, max_token_window, max_chat_window, prompt_size, summary_compression: float = config.token_config["SUMMARY_COMPRESSION_PERCENT"], summary_nested_compression: float = config.token_config["SUMMARY_NESTED_COMPRESSION_PERCENT"], streamer=None):
     results = []
     max_output_tokens = (max_token_window - max_chat_window) - prompt_size
     print(f"ACTION DEBUG: output token window: {max_output_tokens}")
@@ -219,12 +219,12 @@ def check_for_actions_and_run(model, text, max_token_window, max_chat_window, pr
                 if not action_label:
                     action_label = f"action_{len(results) + 1}"
 
-                if action_name in VALID_ACTIONS:
+                if action_name in tools:
                     allowed, wait = check_rate_limit(action_name)
                     if not allowed:
                         time.sleep(wait)
                         print(f"DEBUG: Executing action: {action_name} with {action_params}")
-                        result = VALID_ACTIONS[action_name]["callable"](action_params)
+                        result = tools[action_name]["callable"](action_params)
 
                         # FIXME: make this use the stepped summarizer
                         if action_name == "raw_url_scraper":

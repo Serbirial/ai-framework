@@ -610,6 +610,11 @@ class ChatBot(discord.Client):
 
                     username = (await self.fetch_user(int(thinker_identifier))).display_name
                     token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
+                    found_tools = {}
+                    
+                    #FIXME make specific key for background thinking tools?
+                    default_tools = self.config.per_category_tools["default"]
+                    worker_config = WorkerConfig(found_tools, identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
 
                     thinker = BackgroundThinkerProcess(
                         self.config.general["sub_concurrent_llm_path"],

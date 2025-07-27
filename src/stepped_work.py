@@ -221,7 +221,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             prompt_window = self.worker_config.prompt_reservation
             
             
-            action_result = check_for_actions_and_run(self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
+            action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             
             # queue action result for next step input
             if action_result != "NOACTION":
