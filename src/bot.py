@@ -526,7 +526,7 @@ class ChatBot:
             else:
                 short_context = context
             thinker = RecursiveWork(self, worker_config)
-            thoughts, final = thinker.think(tier=tier, question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, username=username)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
                 DEBUG_FUNC(thoughts=thoughts, final=final)
@@ -551,7 +551,7 @@ class ChatBot:
                 short_context = context
             thinker = RecursiveThinker(self, worker_config)
 
-            thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+            thoughts, final = thinker.think(question=user_input, username=username)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
             if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
@@ -575,7 +575,7 @@ class ChatBot:
                     streamer.add_special(f"Forcing recursive (will take longer).")
                 
                 thinker = RecursiveThinker(self, worker_config)
-                thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+                thoughts, final = thinker.think(question=user_input, username=username)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
@@ -603,7 +603,7 @@ class ChatBot:
                     short_context = context
                 thinker = RecursiveThinker(self, worker_config)
 
-                thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
+                thoughts, final = thinker.think(question=user_input, username=username)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
                     DEBUG_FUNC(thoughts=thoughts, final=final)
