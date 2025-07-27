@@ -234,10 +234,11 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                     to_add += f"{action_result}\n" # add result to full prompt
                 to_add += "\n"
 
-            if self.worker_config.streamer:
-                self.worker_config.streamer.add_special(f"Making sure im still aligned with the task!")
-            
+
             if step != 0 and step % 5 == 0 and step != self.worker_config.max_depth - 1:
+                if self.worker_config.streamer:
+                    self.worker_config.streamer.add_special(f"Making sure im still aligned with the task!")
+            
                 # add checkpoint step_prompt
                 checkpoint_prompt = (
                     "**Task Alignment Checkpoint:**\n"

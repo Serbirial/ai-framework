@@ -221,7 +221,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
                         full += f"\n{result}" # add result to full prompt
                 else:
                     full += f"\n{result}" # add result to full prompt
-            # Your checkpoint logic remains the same
+
             if step != 0 and step % 5 == 0 and step != self.worker_config.max_depth - 1:
                 # add checkpoint step_prompt
                 checkpoint_prompt = (

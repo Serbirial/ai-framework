@@ -23,7 +23,7 @@ from utils import openai
 from utils.helpers import get_mem_tokens_n
 
 from log import log
-from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer, DEBUG_FUNC, Config
+from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer, DEBUG_FUNC, Config, WorkerConfig
 
 CONFIG_VAR = Config()
 
@@ -487,6 +487,11 @@ class ChatBot:
         thoughts = None
         final = "blank final string"
         response = "This is the default blank response, you should never see this."
+        tier_config = CONFIG_VAR.token_config[tier]
+        prompt_reservation = CONFIG_VAR.token_config["PROMPT_RESERVATION"]
+        max_steps = tier_config["MAX_STEPS"]
+        worker_config = WorkerConfig(identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
+        
         if category == "instruction_memory":
             if streamer:
                 streamer.add_special(f"Trying to save to memory...")
@@ -520,7 +525,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveWork(self, config=CONFIG_VAR, persona_prompt=persona_prompt, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveWork(self, worker_config)
             thoughts, final = thinker.think(tier=tier, question=user_input, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED TASK STEPS",thoughts)
             if debug:
@@ -544,7 +549,7 @@ class ChatBot:
                 short_context = self.get_recent_history(identifier, limit=10)
             else:
                 short_context = context
-            thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+            thinker = RecursiveThinker(self, worker_config)
 
             thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
             log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -569,7 +574,7 @@ class ChatBot:
                 if streamer:
                     streamer.add_special(f"Forcing recursive (will take longer).")
                 
-                thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, worker_config)
                 thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
                 if debug:
@@ -596,7 +601,7 @@ class ChatBot:
                     short_context = self.get_recent_history(identifier, limit=10)
                 else:
                     short_context = context
-                thinker = RecursiveThinker(self, CONFIG_VAR, persona_prompt, tiny_mode=tiny_mode, depth=recursive_depth, streamer=streamer)
+                thinker = RecursiveThinker(self, worker_config)
 
                 thoughts, final = thinker.think(question=user_input, tier=tier, username=username, query_type=category, usertone=usertone, context=short_context, identifier=identifier)
                 log("DEBUG: GENERATED THOUGHTS",thoughts)
@@ -607,6 +612,8 @@ class ChatBot:
                 thoughts = thoughts
 
         self.log_interaction_to_history(owner=identifier, username=username, user_input=user_input, botname=self.name, response=response)
+        
+        # Reset state
         self.mood = "neutral" # FIXME change to per user mood, and have a mood history
         self.mood_sentence = "I feel neutral and composed at the moment."
         
