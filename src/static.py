@@ -24,6 +24,7 @@ class Config(object):
         self.token_config = {}
         self.prompts = {}
         self.general = {}
+        self.per_category_tools = {}
         self.load_configs()
 
     def load_configs(self):
@@ -35,6 +36,9 @@ class Config(object):
 
         with open("config/config.json", "r", encoding="utf-8") as f:
             self.general = json.load(f)
+            
+        with open("config/per_category_tools.json", "r", encoding="utf-8") as f:
+            self.per_category_tools = json.load(f)
 
 
 def default_debug(**data):
@@ -42,7 +46,9 @@ def default_debug(**data):
 DEBUG_FUNC = discord_debug.custom_debug
 
 class WorkerConfig:
-    def __init__(self, identifier: str, persona_prompt: str, tier_config: dict, max_depth: int, prompt_reservation: int, category: str, usertone: dict, include_reflection: bool = False, context: str = None, streamer: object = None):
+    def __init__(self, tools: dict, identifier: str, persona_prompt: str, tier_config: dict, max_depth: int, prompt_reservation: int, category: str, usertone: dict, include_reflection: bool = False, context: str = None, streamer: object = None):
+        self.tools = tools
+        
         self.identifier = identifier
         
         self.persona_prompt = persona_prompt
