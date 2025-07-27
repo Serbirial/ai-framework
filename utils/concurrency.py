@@ -6,7 +6,7 @@ from src.background_thinking import AutonomousPassiveThinker
 
 config = Config()
 
-def _model_worker(conn, model_path, username, botname, core_ids, n_threads, token_window, identifier, tier):
+def _model_worker(conn, worker_config, model_path, username, botname, core_ids, n_threads, token_window, identifier, tier):
     import psutil, os
     psutil.Process(os.getpid()).cpu_affinity(core_ids)
 
@@ -25,7 +25,7 @@ def _model_worker(conn, model_path, username, botname, core_ids, n_threads, toke
 
     try:
         persona_prompt = ChatBot.get_persona_prompt(ChatBot, identifier)
-        thinker = AutonomousPassiveThinker(config, persona_prompt, tier)
+        thinker = AutonomousPassiveThinker(worker_config, config, persona_prompt)
         result, send_message, message = thinker.think(username, identifier, tier)
         conn.send({"done": True, "final": result, "send_message": send_message, "message": message})
 
@@ -35,7 +35,7 @@ def _model_worker(conn, model_path, username, botname, core_ids, n_threads, toke
         conn.close()
 
 class BackgroundThinkerProcess:
-    def __init__(self, model_path: str, tier: str, identifier: int, username: str, bot: ..., token_window: int, n_threads=2, core_ids=[0, 1]):
+    def __init__(self, worker_config, model_path: str, tier: str, identifier: int, username: str, bot: ..., token_window: int, n_threads=2, core_ids=[0, 1]):
         self.model_path = model_path
         self.bot = bot
         self.username = username
@@ -49,7 +49,7 @@ class BackgroundThinkerProcess:
         self.conn = parent_conn
         self.proc = Process(
             target=_model_worker,
-            args=(child_conn, model_path, username, self.bot.name, core_ids, n_threads, token_window, identifier, tier)
+            args=(child_conn, worker_config, model_path, username, self.bot.name, core_ids, n_threads, token_window, identifier, tier)
         )
         self.proc.start()
 

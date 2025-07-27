@@ -609,15 +609,16 @@ class ChatBot(discord.Client):
                     tier = row[0] if row else "t0"
 
                     username = (await self.fetch_user(int(thinker_identifier))).display_name
-                    token_window = self.config.token_config[tier]["BASE_TOKEN_WINDOW"]
-                    found_tools = {}
-                    
+                    tier_config = self.config.token_config[tier]
+                    token_window = tier_config["BASE_TOKEN_WINDOW"]
+                    prompt_reservation = self.config.token_config["PROMPT_RESERVATION"]
+
                     #FIXME make specific key for background thinking tools?
                     default_tools = self.config.per_category_tools["default"]
-                    worker_config = WorkerConfig(found_tools, identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
+                    worker_config = static.WorkerConfig(default_tools, thinker_identifier, "", tier_config, tier_config["MAX_STEPS"], prompt_reservation, "Stubbed-Unneeded", {"stubbed-usertone-dict"}, include_reflection=False, context=None, streamer=None)
 
                     thinker = BackgroundThinkerProcess(
-                        self.config.general["sub_concurrent_llm_path"],
+                        worker_config, self.config.general["sub_concurrent_llm_path"],
                         tier, thinker_identifier, username, self, token_window
                     )
                     output = thinker.run()
