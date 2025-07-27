@@ -3,8 +3,8 @@ from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer
 import sqlite3
 import re
-from . import prompt_builder
-from . import agent
+from src import prompt_builder
+from src import agent
 
 import datetime
 

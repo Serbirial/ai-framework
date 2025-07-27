@@ -1,5 +1,5 @@
 from .static import WorkerConfig, StopOnSpeakerChange, Config
-import prompt_builder
+from src import prompt_builder
 
 class AIExplainerWorker:
     """

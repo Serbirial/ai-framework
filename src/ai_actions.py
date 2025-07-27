@@ -1,6 +1,6 @@
 from log import log
 
-from . import pre_processing
+from src import pre_processing
 #from ai_tools import VALID_ACTIONS
 from .static import DummyTokenizer, Config
 from .ai_data_processing import summarize_chunks, summarize_raw_scraped_data, compress_summary

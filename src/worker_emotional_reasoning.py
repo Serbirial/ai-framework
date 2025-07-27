@@ -4,8 +4,8 @@ from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
 import tiny_prompts, custom_gpt2_prompts
-from . import prompt_builder
-from . import agent
+from src import prompt_builder
+from src import agent
 import re
 
 from ai_tools import VALID_ACTIONS

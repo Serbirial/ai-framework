@@ -1,7 +1,7 @@
 
 import json
 
-from . import discord_debug
+from src import discord_debug
 
 MODEL_NAME = ""
 #actual good model vvv

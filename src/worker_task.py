@@ -3,9 +3,9 @@ from .static import StopOnSpeakerChange, DB_PATH, WorkerConfig
 from utils.helpers import DummyTokenizer, trim_context_to_fit
 import json
 import sqlite3
-from . import agent
+from src import agent
 
-from . import prompt_builder
+from src import prompt_builder
 from .ai_actions import check_for_actions_and_run
 
 
