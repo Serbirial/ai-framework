@@ -25,6 +25,8 @@ from utils.helpers import get_mem_tokens_n
 from log import log
 from .static import StopOnSpeakerChange, DB_PATH, WORKER_IP_PORT, DummyTokenizer, DEBUG_FUNC, Config, WorkerConfig
 
+from ai_tools import VALID_ACTIONS
+
 CONFIG_VAR = Config()
 
 tokenizer = DummyTokenizer() # FiXME
@@ -490,7 +492,15 @@ class ChatBot:
         tier_config = CONFIG_VAR.token_config[tier]
         prompt_reservation = CONFIG_VAR.token_config["PROMPT_RESERVATION"]
         max_steps = tier_config["MAX_STEPS"]
-        worker_config = WorkerConfig(identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
+        found_tools = {}
+        
+        if category in CONFIG_VAR.per_category_tools.keys():
+            allowed_tool_names = CONFIG_VAR.per_category_tools[category]
+            for name in allowed_tool_names:
+                if name in VALID_ACTIONS.keys():
+                    found_tools[name] = VALID_ACTIONS[name]
+        log("ALLOWED TOOLS CHECK", f"found {len(found_tools)} allowed tools for category {category}")
+        worker_config = WorkerConfig(found_tools, identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
         
         if category == "instruction_memory":
             if streamer:
