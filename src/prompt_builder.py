@@ -1,5 +1,7 @@
 from ai_tools import VALID_ACTIONS
 import json
+
+from ai_tools.interactive.interactive_tool_class import InteractiveTool
 from .static import Config
 cnf = Config()
 
@@ -29,6 +31,29 @@ def build_token_info_prompt(tier, config=None) -> str:
     )
     return prompt
 
+def build_interactive_tool_prompt(tools: dict[str, InteractiveTool]) -> str:
+    prompt = ""
+
+    for name, tool in tools.items():
+        desc = tool.describe()
+        description = desc.get("description", "")
+        commands = desc.get("commands", [])
+
+        prompt += f"### Interactive Tool: {name}\n"
+        prompt += f"{description}\n\n"
+        if commands:
+            prompt += "Commands:\n"
+            for cmd in commands:
+                prompt += f"- {cmd}\n"
+    prompt += (
+        "\nUsage:\n"
+        "- Commands can be issued individually or in batches using the SCRIPT command.\n"
+        "- State is preserved between calls unless EXIT is sent.\n"
+        "- Only issue the EXIT command when you intend to close the session entirely.\n"
+        "- Screenshots (if tool has screenshot command) are kept in memory and can be sent to the user with the any of supported sending tools.\n\n"
+    )
+
+    return prompt
 
 
 
@@ -67,7 +92,7 @@ def build_base_actions_prompt():
     prompt = (
         f"### **Actions:**\n"
         f"Environment: ipython\n"
-        f"You must output actions in this exact format:\n"
+        f"You must output basic actions in this exact format:\n"
         '<Action>{ "action": "<action_name>", "parameters": { ... }, "label": "<unique_label>" }</Action>\n'
         f"Where:\n"
         f"- <action_name> must be one of the following:\n"

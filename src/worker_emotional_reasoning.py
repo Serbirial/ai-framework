@@ -206,7 +206,7 @@ class RecursiveThinker: # TODO: check during steps if total tokens are reaching 
             prompt_window = self.worker_config.prompt_reservation
             
             
-            action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
+            action_result = check_for_actions_and_run(self.bot, self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             # append only the step content (not header) to prior_steps to feed next step_prompt
             prior_steps.append(step_content)
 

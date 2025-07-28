@@ -6,7 +6,12 @@ import sqlite3
 from src import agent
 
 from src import prompt_builder
-from .ai_actions import check_for_actions_and_run
+from .ai_actions import check_for_actions_and_run, check_for_live_actions_and_run
+
+# fixme better way of doing this
+from ai_tools.interactive import all_tools
+
+AVAIL_TOOLS = all_tools.load_interactive_tools()
 
 
 class RecursiveWork: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
@@ -31,6 +36,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         memory_instructions_section = prompt_builder.build_memory_instructions_prompt()
         memory_section =  prompt_builder.build_core_memory_prompt(rows if rows else None)
         actions_section = prompt_builder.build_base_actions_prompt()
+        
         actions_rule_section = prompt_builder.build_base_actions_rule_prompt()
         actions_explanation_section =  prompt_builder.build_base_actions_explanation_prompt()
         
@@ -53,6 +59,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             f"{actions_section}"
             f"{actions_explanation_section}"
             f"{actions_rule_section}"
+
         )
 
         base += (
@@ -159,15 +166,14 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 #"- For *any* latex output use the `generate_latex` action to produce LaTeX from structured JSON data describing document elements.\n"
                 #"- Provide parameters like type (document, section, text, equation, table, list) and related fields (content, title, text, latex, columns, rows, items, ordered).\n"
 
-                "- You must ONLY use an <Action> if the user explicitly requested a task that requires it, or if the current step logically requires real data you cannot guess.\n"
+                "- You must ONLY use an <Action> if the current step logically requires real data you cannot guess.\n"
                 "- Dont use actions that wont explicitly progress to solving the user given task.\n"
 
                 "- If no action is needed, reason forward logically toward completing the user given task.\n"
-                "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
+                "- You should avoid REPEATING an action with the SAME parameters once its result is known.\n"
                 "- Use previously returned ipython tokens when available to build your reasoning.\n"
                 "- Do not assume or simulate the result of an Action.\n"
-                "- Only emit new actions when necessary.\n"
-                "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
+                "- Output the actions first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.worker_config.max_depth} steps to work through this task, you are on step {step+1}.\n"
                 f"- You should actively progress every step and try to complete the task on or before step {self.worker_config.max_depth} (step cutuff limit).\n"
                 "- If the task is complete before the last step, clearly indicate so and use the remaining steps to explain, refine, and prepare for the last step.\n"
@@ -221,6 +227,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             prompt_window = self.worker_config.prompt_reservation
             
             
+            live_action_result = check_for_live_actions_and_run(AVAIL_TOOLS, response, self.worker_config, self.worker_config.streamer)
+            
             action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             
             # queue action result for next step input
@@ -232,6 +240,15 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 else:
                     extra_context_lines.append(action_result)
                     to_add += f"{action_result}\n" # add result to full prompt
+                to_add += "\n"
+            if live_action_result != "NOACTION":
+                if type(live_action_result) == list: # multiple actions = multiple results
+                    for result in live_action_result:
+                        extra_context_lines.append(result)
+                        to_add += f"{result}\n" # add result to full prompt
+                else:
+                    extra_context_lines.append(live_action_result)
+                    to_add += f"{live_action_result}\n" # add result to full prompt
                 to_add += "\n"
 
 

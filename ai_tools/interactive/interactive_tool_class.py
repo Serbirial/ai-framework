@@ -20,6 +20,9 @@ class InteractiveTool(ABC):
         self.step_count = 0
         self.history = []  # list of (input, output) tuples or dicts
         self.done = False
+        
+        self.hook_start()
+
 
     def log(self, msg):
         if self.verbose:
@@ -125,3 +128,13 @@ class InteractiveTool(ABC):
         Override in subclass if needed.
         """
         return None
+
+    def hook_start(self):
+        """
+        Hook that runs once on tool start/init.
+        Override in subclasses for custom startup logic.
+        """
+        for method_name in getattr(self, "_hook_start_methods", []):
+            method = getattr(self, method_name, None)
+            if callable(method):
+                method()

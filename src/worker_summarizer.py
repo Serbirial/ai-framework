@@ -2,7 +2,7 @@ from log import log
 from .static import StopOnSpeakerChange
 from utils.helpers import DummyTokenizer
 from utils import openai
-from .ai_processing import compress_summary
+from .ai_data_processing import compress_summary
 from utils.tokens import get_token_availability, find_compression_ratio
 
 

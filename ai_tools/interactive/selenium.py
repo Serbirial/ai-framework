@@ -82,185 +82,193 @@ class SeleniumInteractiveTool(InteractiveTool):
                 document.head.appendChild(script);
             """
             self.driver.execute_script(inject_script)
-            time.sleep(2)
+            time.sleep(3)
         self._readability_loaded = True
 
-    def receive_output(self):
-        if not self._input_queue:
-            return "No command queued."
+    def receive_output(self, input_data: str):
+        """
+        Accepts one or multiple commands as a single string.
+        If starts with SCRIPT, treats following lines as commands.
+        Executes all commands immediately in order, returns list of results.
+        """
+        commands = []
+        input_data = input_data.strip()
+        if input_data.upper().startswith("SCRIPT"):
+            # split all lines after SCRIPT keyword
+            lines = input_data.splitlines()
+            commands = [line.strip() for line in lines[1:] if line.strip()]
+        else:
+            # single command
+            commands = [input_data]
 
-        cmd = self._input_queue.pop(0)
-        parts = cmd.split(maxsplit=2)
-        action = parts[0].upper()
-        arg = parts[1] if len(parts) > 1 else None
-        extra = parts[2] if len(parts) > 2 else None
+        results = []
+        for cmd in commands:
+            parts = cmd.split(maxsplit=2)
+            action = parts[0].upper()
+            arg = parts[1] if len(parts) > 1 else None
+            extra = parts[2] if len(parts) > 2 else None
 
-        # Batch scripting: handle multi-line SCRIPT
-        if action == "SCRIPT":
-            lines = cmd[len("SCRIPT"):].strip().splitlines()
-            for line in reversed(lines):  # insert reversed to preserve order
-                self._input_queue.insert(0, line.strip())
-            result = f"Batched {len(lines)} commands."
-            self.log_step(cmd, result)
-            return result
+            try:
+                if action == "NAVIGATE":
+                    self.driver.get(arg)
+                    self._readability_loaded = False
+                    result = f"Navigated to {arg}."
 
-        try:
-            if action == "NAVIGATE":
-                self.driver.get(arg)
-                self._readability_loaded = False
-                result = f"Navigated to {arg}."
+                elif action == "CLICK":
+                    elem = self.driver.find_element(By.CSS_SELECTOR, arg)
+                    elem.click()
+                    result = f"Clicked element {arg}."
 
-            elif action == "CLICK":
-                elem = self.driver.find_element(By.CSS_SELECTOR, arg)
-                elem.click()
-                result = f"Clicked element {arg}."
-
-            elif action == "CLICK_LINK":
-                if not self._last_selector:
-                    result = "No previous selector stored from EXTRACT_LINKS."
-                else:
-                    idx = int(arg)
-                    elems = self.driver.find_elements(By.CSS_SELECTOR, self._last_selector)
-                    if idx >= len(elems):
-                        result = f"Index {idx} out of range."
+                elif action == "CLICK_LINK":
+                    if not self._last_selector:
+                        result = "No previous selector stored from EXTRACT_LINKS."
                     else:
-                        elems[idx].click()
-                        result = f"Clicked link at index {idx}."
+                        idx = int(arg)
+                        elems = self.driver.find_elements(By.CSS_SELECTOR, self._last_selector)
+                        if idx >= len(elems):
+                            result = f"Index {idx} out of range."
+                        else:
+                            elems[idx].click()
+                            result = f"Clicked link at index {idx}."
 
-            elif action == "EXTRACT_TEXT":
-                elems = self.driver.find_elements(By.CSS_SELECTOR, arg)
-                texts = [e.text for e in elems]
-                result = texts
+                elif action == "EXTRACT_TEXT":
+                    elems = self.driver.find_elements(By.CSS_SELECTOR, arg)
+                    texts = [e.text for e in elems]
+                    result = texts
 
-            elif action == "EXTRACT_LINKS":
-                elems = self.driver.find_elements(By.CSS_SELECTOR, arg)
-                links = [e.get_attribute('href') for e in elems if e.get_attribute('href')]
-                self._last_links = links
-                self._last_selector = arg
-                result = links
+                elif action == "EXTRACT_LINKS":
+                    elems = self.driver.find_elements(By.CSS_SELECTOR, arg)
+                    links = [e.get_attribute('href') for e in elems if e.get_attribute('href')]
+                    self._last_links = links
+                    self._last_selector = arg
+                    result = links
 
-            elif action == "EXTRACT_ATTRIBUTES":
-                selector, attr = arg, extra
-                elems = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                attrs = [e.get_attribute(attr) for e in elems]
-                result = attrs
+                elif action == "EXTRACT_ATTRIBUTES":
+                    selector, attr = arg, extra
+                    elems = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    attrs = [e.get_attribute(attr) for e in elems]
+                    result = attrs
 
-            elif action == "GET_PAGE_SOURCE":
-                result = self.driver.page_source
+                elif action == "GET_PAGE_SOURCE":
+                    result = self.driver.page_source
 
-            elif action == "WAIT":
-                seconds = float(arg)
-                time.sleep(seconds)
-                result = f"Waited {seconds} seconds."
+                elif action == "WAIT":
+                    seconds = float(arg)
+                    time.sleep(seconds)
+                    result = f"Waited {seconds} seconds."
 
-            elif action == "LIST_SELECTORS":
-                elems = self.driver.find_elements(By.XPATH, "//*")
-                selectors = set()
-                for e in elems:
-                    cls = e.get_attribute("class")
-                    if cls:
-                        selectors.update(cls.split())
-                    id_ = e.get_attribute("id")
-                    if id_:
-                        selectors.add(id_)
-                self._last_selectors = list(selectors)
-                result = self._last_selectors
+                elif action == "LIST_SELECTORS":
+                    elems = self.driver.find_elements(By.XPATH, "//*")
+                    selectors = set()
+                    for e in elems:
+                        cls = e.get_attribute("class")
+                        if cls:
+                            selectors.update(cls.split())
+                        id_ = e.get_attribute("id")
+                        if id_:
+                            selectors.add(id_)
+                    self._last_selectors = list(selectors)
+                    result = self._last_selectors
 
-            elif action == "LIST_TAGS":
-                elems = self.driver.find_elements(By.XPATH, "//*")
-                tags = list({e.tag_name for e in elems})
-                result = tags
+                elif action == "LIST_TAGS":
+                    elems = self.driver.find_elements(By.XPATH, "//*")
+                    tags = list({e.tag_name for e in elems})
+                    result = tags
 
-            elif action == "FIND_SELECTOR_CONTAINING":
-                text = arg
-                elems = self.driver.find_elements(By.XPATH, f"//*[contains(text(), '{text}')]")
-                selectors = []
-                for e in elems:
-                    tag = e.tag_name
-                    cid = e.get_attribute("id")
-                    classes = e.get_attribute("class").split() if e.get_attribute("class") else []
-                    if cid:
-                        selectors.append(f"#{cid}")
-                    elif classes:
-                        selectors.append(f"{tag}." + ".".join(classes))
-                    else:
-                        selectors.append(tag)
-                result = selectors
+                elif action == "FIND_SELECTOR_CONTAINING":
+                    text = arg
+                    elems = self.driver.find_elements(By.XPATH, f"//*[contains(text(), '{text}')]")
+                    selectors = []
+                    for e in elems:
+                        tag = e.tag_name
+                        cid = e.get_attribute("id")
+                        classes = e.get_attribute("class").split() if e.get_attribute("class") else []
+                        if cid:
+                            selectors.append(f"#{cid}")
+                        elif classes:
+                            selectors.append(f"{tag}." + ".".join(classes))
+                        else:
+                            selectors.append(tag)
+                    result = selectors
 
-            elif action == "SCROLL":
-                pixels = int(arg)
-                self.driver.execute_script(f"window.scrollBy(0, {pixels});")
-                result = f"Scrolled by {pixels} pixels."
+                elif action == "SCROLL":
+                    pixels = int(arg)
+                    self.driver.execute_script(f"window.scrollBy(0, {pixels});")
+                    result = f"Scrolled by {pixels} pixels."
 
-            elif action == "SCROLL_TO_BOTTOM":
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                result = "Scrolled to bottom."
+                elif action == "SCROLL_TO_BOTTOM":
+                    self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    result = "Scrolled to bottom."
 
-            elif action == "SCROLL_TO_ELEMENT":
-                elem = self.driver.find_element(By.CSS_SELECTOR, arg)
-                self.driver.execute_script("arguments[0].scrollIntoView();", elem)
-                result = f"Scrolled to element {arg}."
+                elif action == "SCROLL_TO_ELEMENT":
+                    elem = self.driver.find_element(By.CSS_SELECTOR, arg)
+                    self.driver.execute_script("arguments[0].scrollIntoView();", elem)
+                    result = f"Scrolled to element {arg}."
 
-            elif action == "TAKE_SCREENSHOT":
-                filename = arg
-                png_bytes = self.driver.get_screenshot_as_png()
-                self.screenshots.append((filename, png_bytes))
-                result = f"Screenshot captured and saved in memory as {filename}."
+                elif action == "TAKE_SCREENSHOT":
+                    filename = arg
+                    png_bytes = self.driver.get_screenshot_as_png()
+                    self.screenshots.append((filename, png_bytes))
+                    result = f"Screenshot captured and saved in memory as {filename}."
 
-            elif action == "ALERT_GET_TEXT":
-                alert = self.driver.switch_to.alert
-                result = alert.text
-
-            elif action == "ALERT_ACCEPT":
-                alert = self.driver.switch_to.alert
-                alert.accept()
-                result = "Alert accepted."
-
-            elif action == "ALERT_DISMISS":
-                alert = self.driver.switch_to.alert
-                alert.dismiss()
-                result = "Alert dismissed."
-
-            elif action == "ALERT_SEND_KEYS":
-                if arg is None:
-                    result = "No text provided for ALERT_SEND_KEYS."
-                else:
+                elif action == "ALERT_GET_TEXT":
                     alert = self.driver.switch_to.alert
-                    alert.send_keys(arg)
+                    result = alert.text
+
+                elif action == "ALERT_ACCEPT":
+                    alert = self.driver.switch_to.alert
                     alert.accept()
-                    result = f"Sent keys to alert and accepted."
+                    result = "Alert accepted."
 
-            elif action == "EXTRACT_ALL_TEXT":
-                self._inject_readability()
-                article_text = self.driver.execute_script("""
-                    let documentClone = document.cloneNode(true);
-                    let reader = new Readability(documentClone);
-                    let article = reader.parse();
-                    return article ? article.textContent : '';
-                """)
-                result = article_text
+                elif action == "ALERT_DISMISS":
+                    alert = self.driver.switch_to.alert
+                    alert.dismiss()
+                    result = "Alert dismissed."
 
-            elif action == "EXIT":
-                self.done = True
-                result = "Session terminated by EXIT."
+                elif action == "ALERT_SEND_KEYS":
+                    if arg is None:
+                        result = "No text provided for ALERT_SEND_KEYS."
+                    else:
+                        alert = self.driver.switch_to.alert
+                        alert.send_keys(arg)
+                        alert.accept()
+                        result = f"Sent keys to alert and accepted."
 
-            else:
-                result = f"Unknown command '{action}'."
+                elif action == "EXTRACT_ALL_TEXT":
+                    self._inject_readability()
+                    article_text = self.driver.execute_script("""
+                        let documentClone = document.cloneNode(true);
+                        let reader = new Readability(documentClone);
+                        let article = reader.parse();
+                        return article ? article.textContent : '';
+                    """)
+                    result = article_text
+
+                elif action == "EXIT":
+                    self.done = True
+                    result = "Session terminated by EXIT."
+
+                else:
+                    result = f"Unknown command '{action}'."
+
+            except NoSuchElementException:
+                result = f"Element not found for selector '{arg}'."
+            except NoAlertPresentException:
+                result = "No alert present."
+            except JavascriptException as e:
+                result = f"JavaScript error during execution: {e}."
+            except WebDriverException as e:
+                result = f"WebDriver error: {e}."
 
             self.log_step(cmd, result)
-            return result
+            results.append(result)
 
-        except NoSuchElementException:
-            result = f"Element not found for selector '{arg}'."
-        except NoAlertPresentException:
-            result = "No alert present."
-        except JavascriptException as e:
-            result = f"JavaScript error during execution: {e}."
-        except WebDriverException as e:
-            result = f"WebDriver error: {e}."
+            if getattr(self, "done", False):
+                break
 
-        self.log_step(cmd, result)
-        return result
+        if len(results) == 1:
+            return results[0]
+        return results
 
     def process_response(self, response):
         self.history.append({
@@ -312,9 +320,6 @@ class SeleniumInteractiveTool(InteractiveTool):
                 "SCRIPT <commands>",
                 "EXIT"
             ],
-            "config": {
-                "max_steps": self.max_steps
-            },
             "state_summary": {
                 "current_url": self.driver.current_url,
                 "last_extracted_links_preview": self._last_links[:5],

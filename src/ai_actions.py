@@ -2,7 +2,7 @@ from log import log
 
 from src import pre_processing
 #from ai_tools import VALID_ACTIONS
-from .static import DummyTokenizer, Config
+from .static import DummyTokenizer, Config, WorkerConfig
 from .ai_data_processing import summarize_chunks, summarize_raw_scraped_data, compress_summary
 
 config = Config()
@@ -11,12 +11,13 @@ tokenizer = DummyTokenizer()
 
 import json
 import re
+import asyncio
 import time
 
 
 def log_action_execution(action_name, action_params, action_label, result):
     try:
-        with open("executed_actions.txt", "a", encoding="utf-8") as f:
+        with open("executed_actions.txt", "a+", encoding="utf-8") as f:
             f.write(f"Action: {action_name}\n")
             f.write(f"Parameters: {json.dumps(action_params)}\n")
             f.write(f"Label: {action_label}\n")
@@ -262,3 +263,51 @@ def check_for_actions_and_run(tools, model, text, max_token_window, max_chat_win
             return results
     return "NOACTION"
 
+
+
+def check_for_live_actions_and_run(tools, text, worker_config: WorkerConfig, streamer=None):
+    results = []
+
+    # Regex pattern to capture blocks:
+    #   [LiveAction]
+    #   [Name]
+    #   tool_name
+    #   [EndName]
+    #   [Input]
+    #   command args (multiline possible)
+    #   [Input]
+    #   [LiveActionEnd]
+
+    pattern = re.compile(
+        r"\[LiveAction\]\s*"
+        r"\[Name\]\s*(.+?)\s*\[EndName\]\s*"
+        r"\[Input\]\s*(.+?)\s*\[Input\]\s*"
+        r"\[LiveActionEnd\]",
+        re.DOTALL | re.IGNORECASE
+    )
+
+    for match in pattern.finditer(text):
+        tool_name = match.group(1).strip()
+        tool_args = match.group(2).strip()
+
+        if streamer:
+            streamer.add_special(f"Running Live Tool `{tool_name}`")
+
+        if tool_name in tools:
+            try:
+                instance = tools[tool_name]["instance"]
+                instance.worker_config = worker_config
+                coro = instance.receive_output(tool_args)
+                result = asyncio.run(coro)
+            except Exception as e:
+                result = f"[error] {str(e)}"
+        else:
+            result = f"[error] Tool `{tool_name}` not found."
+
+        results.append(result)
+
+    if not results:
+        return "NOACTION"
+    if len(results) == 1:
+        return results[0]
+    return results
