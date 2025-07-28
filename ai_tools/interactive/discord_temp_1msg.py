@@ -93,16 +93,32 @@ class DiscordInteractiveTool(InteractiveTool):
 
         if command == "SET_FILE":
             if len(parts) < 3:
-                return "Usage: SET_FILE <filename> <base64 file content>"
-            import base64
+                return "Usage: SET_FILE <filename> <filepath>"
             filename = parts[1]
             try:
-                file_path = base64.b64decode(parts[2])
+                file_path = parts[2]
             except Exception as e:
-                return f"Failed to decode base64 file content: {e}"
+                return f"Failed to get file path: {e}"
 
             self.set_file(filename, file_path)
             return f"File '{filename}' set successfully."
+        elif command == "SEND_IMAGE":
+            if len(parts) < 3:
+                return "Usage: SEND_IMAGE <filename> <filepath>"
+            filename = parts[1]
+            filepath = parts[2]
+
+            channel = self.client.get_channel(self.channel_id)
+            if channel is None:
+                return f"Channel ID {self.channel_id} not found."
+
+            try:
+                file = discord.File(io.BytesIO(filepath), filename=filename)
+                msg = await channel.send(content=filename, file=file)
+                self.log_step("SEND_IMAGE", f"Sent image as message ID {msg.id}")
+                return f"Image sent successfully with message ID {msg.id}."
+            except Exception as e:
+                return f"Error sending image: {e}"
 
         elif command == "SEND_MESSAGE":
             if len(parts) < 2:
