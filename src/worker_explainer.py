@@ -45,40 +45,30 @@ class AIExplainerWorker:
         core_name = self.bot.ai.name
         string = f"""
 ### Model Information
-Main LLM model: {config.general["main_llm_name"]}
-Sub LLM model: {config.general["sub_concurrent_llm_name"]}
+Main model: {config.general["main_llm_name"]}
+Sub models: {config.general["sub_concurrent_llm_name"]}
 Model Architecture: "LLaMA-based architecture",
-
 
 ### Assistant Informtion
 Base / Original Name: {core_name}
 Creator: Serbirial (Aliases: `Athazaa`, `Koya`, `Summer~`)
-
 
 ### Current Tier Information
 Token Window: {tier_info.get('BASE_TOKEN_WINDOW', '?')} tokens
 
 Memory Token Limit: {tier_info.get('MAX_MEMORY_TOKENS', '?')} tokens
 Chat History Token Limit (Rolling Window of Chat History): {tier_info.get('MAX_MEMORY_TOKENS', '?')} tokens
-
 Base Response Max Tokens (non recursive): {tier_info.get('BASE_MAX_TOKENS', '?')} tokens
-
 Recursive Reasoning Per-Step Tokens: {tier_info.get('RECURSIVE_MAX_TOKENS_PER_STEP', '?')} tokens
 Recursive Task Completion Per-Step Tokens: {tier_info.get('WORK_MAX_TOKENS_PER_STEP', '?')} tokens
-
 Recursive Reasoning Final Response Max Tokens: {tier_info.get('RECURSIVE_MAX_TOKENS_FINAL', '?')} tokens
 Recursive Task Completion Final Response Max Tokens: {tier_info.get('WORK_MAX_TOKENS_FINAL', '?')} tokens
-
 Global Recursion Depth Limit: {tier_info.get('MAX_STEPS', '?')}
-
 User's Tier: {self.tier},
-
 
 {token_info_prompt}
 
-
 {tools_capabilities}
-
 
 ### Best Practices when Using 
 To use the assistant most effectively:
@@ -117,11 +107,11 @@ When you ask it to do something task based- it will internally reason step by st
 
 Examples of Recursive Use:
 
-- **Emotional Reasoning**:
-    "What are your thoughts on the risks of AGI?" -> The assistant will generate internal thought steps using its defined `traits`, `likes`, `dislikes`, and `goals` to shape a nuanced answer.
+**Emotional Reasoning**:
+    - "What are your thoughts on the risks of AGI?" -> The assistant will generate internal thought steps using its defined `traits`, `likes`, `dislikes`, and `goals` to shape a nuanced answer.
 
-- **Task Completion**:
-    "Summarize this article and extract key arguments." -> The assistant will process in internal steps (e.g., outline → extract → compress → answer).
+**Task Completion**:
+    - "Summarize this article and extract key arguments." -> The assistant will process in internal steps (e.g., outline → extract → compress → answer).
 
 Recursive Step Behavior:
 - Each step is hidden from the user unless you're a developer or using special debug flags.
@@ -163,11 +153,8 @@ You can personalize the assistant by embedding instructions like:
 
 If long-term memory is not full, the assistant can store these for future sessions. Otherwise, repeat them if you want consistency.
 
-
 Tip:
 - You can ask directly: "What tools do you have?" or "What can you remember?"
-
-
 
 {discord_formatting}
 """
@@ -190,7 +177,7 @@ Tip:
         response = self.bot._straightforward_generate(
             prompt=prompt,
             max_new_tokens=self.worker_config.tier_config["BASE_MAX_TOKENS"],
-            temperature=0.4,
+            temperature=0.5,
             top_p=0.8,
             streamer=self.worker_config.streamer,
             stop_criteria=stop_criteria,

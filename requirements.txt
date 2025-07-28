@@ -1,6 +1,9 @@
-onnxruntime
+#onnxruntime
 torch
 flask 
 bs4
-optimum[onnxruntime]
+#optimum[onnxruntime]
 transformers
+psutil
+requests-unixsocket
+discord.py-self

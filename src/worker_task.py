@@ -165,7 +165,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 "- If no action is needed, reason forward logically toward completing the user given task.\n"
                 "- Actions are expensive operations; you should avoid REPEATING an action with the SAME parameters once its result is known.\n"
                 "- Use previously returned ipython tokens when available to build your reasoning.\n"
-                "- Do not assume or simulate the result of an Action: Always wait for the next step before proceeding.\n"
+                "- Do not assume or simulate the result of an Action.\n"
                 "- Only emit new actions when necessary.\n"
                 "- Output the action first, then explain your reasoning why you called the action and how you planned to use it.\n"
                 f"- You have {self.worker_config.max_depth} steps to work through this task, you are on step {step+1}.\n"

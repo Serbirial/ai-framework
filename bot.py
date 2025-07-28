@@ -1105,7 +1105,7 @@ class ChatBot(discord.Client):
         if flags["newpersonality"]:
             username = message.author.name.lower().replace(" ", "_")
 
-            # Determine personality data string, or None if no data given
+            # Determine personality data string, or None if no data given # FIXME make empty personality with name arg
             if flags["newpersonality"] is True:
                 personality_data = None
             else:

@@ -27,7 +27,7 @@
 
     },
     "t3": {
-        "RECURSIVE_MAX_TOKENS_PER_STEP": 300,
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 375,
         "WORK_MAX_TOKENS_PER_STEP": 575,
 
         "RECURSIVE_MAX_TOKENS_FINAL": 460,
@@ -42,11 +42,11 @@
         "MAX_STEPS": 8,
 
         "MAX_CHAT_WINDOW": 6000,
-        "MAX_MEMORY_TOKENS": 512
+        "MAX_MEMORY_TOKENS": 625
 
     },
     "t2": {
-        "RECURSIVE_MAX_TOKENS_PER_STEP": 256,
+        "RECURSIVE_MAX_TOKENS_PER_STEP": 325,
         "WORK_MAX_TOKENS_PER_STEP": 475,
 
         "RECURSIVE_MAX_TOKENS_FINAL": 460,
@@ -61,7 +61,7 @@
         "MAX_STEPS": 7,
 
         "MAX_CHAT_WINDOW": 5096,
-        "MAX_MEMORY_TOKENS": 456
+        "MAX_MEMORY_TOKENS": 512
 
 
     },
