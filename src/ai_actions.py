@@ -297,6 +297,7 @@ def check_for_live_actions_and_run(tools, text, worker_config: WorkerConfig, str
             try:
                 instance = tools[tool_name]["instance"]
                 instance.worker_config = worker_config
+                instance.member_id = worker_config.identifier
                 coro = instance.receive_output(tool_args)
                 result = asyncio.run(coro)
             except Exception as e:

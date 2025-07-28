@@ -1381,7 +1381,8 @@ class ChatBot(discord.Client):
                             tiny_mode=flags["tinymode"],
                             debug=flags["debug"],
                             tier=tier,
-                            cnn_file_path=cnn_file_path
+                            cnn_file_path=cnn_file_path,
+                            add_config_extras={"guild_id": message.guild.id, "channel_id": message.channel.id, "message_id": message.id},
                         )
                         await msg_to_edit.delete()
                         await message.reply(response)

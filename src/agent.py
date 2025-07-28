@@ -422,7 +422,7 @@ class AgentInstance:
 
         return usertone, moods, mood, mood_sentence, persona_prompt, category
 
-    def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
+    def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None, add_config_extras: dict[str, str] = None):
         cnn_output = None
         cnn_output_formatted = None
 
@@ -503,6 +503,10 @@ class AgentInstance:
         log("ALLOWED TOOLS CHECK", f"found {len(found_tools)} allowed tools for category {category}")
         worker_config = WorkerConfig(found_tools, identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
         
+        if add_config_extras:
+            for k, v in add_config_extras.items():
+                setattr(worker_config, k, v)
+
         if category == "instruction_memory":
             if streamer:
                 streamer.add_special(f"Trying to save to memory...")

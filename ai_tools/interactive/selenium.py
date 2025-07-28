@@ -6,11 +6,69 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (
     WebDriverException, NoSuchElementException, NoAlertPresentException, JavascriptException
 )
+from selenium.webdriver.chrome.options import Options
+
+
+import threading
+import random
+import subprocess
+
+
 import time
+import uuid
+
 import io
+import np
+import cv2
+import os
 from datetime import datetime
 
+from utils import url_parsing
+import requests
+import os
+from urllib.parse import urlparse
+
+def download_file(url: str, max_size_mb=25) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return "Blocked: invalid URL scheme."
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+    }
+
+    try:
+        with requests.get(url, headers=headers, stream=True, timeout=10) as r:
+            r.raise_for_status()
+            total_size = int(r.headers.get('Content-Length', 0))
+            max_bytes = max_size_mb * 1024 * 1024
+
+            if total_size and total_size > max_bytes:
+                return f"Blocked: file too large ({total_size/1024/1024:.2f} MB > {max_size_mb} MB)."
+
+            os.makedirs('./temp', exist_ok=True)
+            fname = os.path.basename(parsed.path) or "downloaded_file"
+            save_path = os.path.join('./temp', fname)
+
+            size_downloaded = 0
+            with open(save_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    size_downloaded += len(chunk)
+                    if size_downloaded > max_bytes:
+                        f.close()
+                        os.remove(save_path)
+                        return "Blocked: download exceeded 25MB during stream."
+                    f.write(chunk)
+
+            return f"Downloaded to `{save_path}`"
+
+    except requests.RequestException as e:
+        return f"Download failed: {str(e)}"
+
+
 READABILITY_CDN = "https://cdnjs.cloudflare.com/ajax/libs/readability/0.6.0/Readability.js"
+download_dir = os.path.abspath('./temp')
+
 
 class SeleniumInteractiveTool(InteractiveTool):
     """
@@ -44,8 +102,30 @@ class SeleniumInteractiveTool(InteractiveTool):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         chrome_opts = Options()
+        prefs = {
+            "download.default_directory": download_dir,
+            "download.prompt_for_download": False, 
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True,
+            "profile.default_content_setting_values.automatic_downloads": 2,  # BLOCK ALL
+
+        }
+        
+        self.session_id = str(uuid.uuid4())
+
+        self.debug_dir = os.path.abspath(f'./debug_frames_{self.session_id}')
+        os.makedirs(self.debug_dir, exist_ok=True)
+
         chrome_opts.add_argument('--headless')
         chrome_opts.add_argument('--disable-gpu')
+        chrome_opts.add_argument('--window-size=800,600')  # Keep it small
+        chrome_opts.add_argument('--disable-extensions')
+        chrome_opts.add_argument('--disable-dev-shm-usage')  # Avoid issues with /dev/shm
+
+        chrome_opts.add_arguments('--disable-blink-features=AutomationControlled')
+        chrome_opts.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                     "AppleWebKit/537.36 (KHTML, like Gecko) "
+                     "Chrome/114.0.0.0 Safari/537.36")
         self.driver = webdriver.Chrome(options=chrome_opts)
         self._input_queue = []
         self._last_links = []
@@ -53,8 +133,32 @@ class SeleniumInteractiveTool(InteractiveTool):
         self._last_selector = None
         self._readability_loaded = False
 
-        self.screenshots = []       # List of tuples: (filename, bytes)
+        self.screenshots = []       # List of tuples: (filename, paths)
         self.detailed_logs = []     # List of dicts with step, command, result, timestamp
+
+        self.debug_thread = threading.Thread(target=self._debug_capture_loop, daemon=True)
+        self._debug_running = True
+        self.debug_thread.start()
+
+    def _debug_capture_loop(self):
+        i = 0
+        while self._debug_running:
+            try:
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')[:-3]
+                # Include session_id and counter in filename
+                filename = os.path.join(self.debug_dir, f"frame_{self.session_id}_{timestamp}_{i:05d}.jpg")
+                png = self.driver.get_screenshot_as_png()
+
+                img_np = np.frombuffer(png, dtype=np.uint8)
+                img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+                cv2.imwrite(filename, img)
+                i += 1
+                
+            except Exception as e:
+                self.log(f"[debug_capture] Error: {e}")
+
+            time.sleep(random.uniform(0.09, 0.11))  # 9–11 FPS
+
 
     def log_step(self, command, result):
         self.detailed_logs.append({
@@ -110,26 +214,53 @@ class SeleniumInteractiveTool(InteractiveTool):
 
             try:
                 if action == "NAVIGATE":
-                    self.driver.get(arg)
-                    self._readability_loaded = False
-                    result = f"Navigated to {arg}."
+                    if not url_parsing.is_safe_url(arg):
+                        result = f"Blocked navigation to unsafe or internal address: {arg}"
+                    else:
+                        self.driver.get(arg)
+                        self._readability_loaded = False
+                        result = f"Navigated to {arg}."
 
                 elif action == "CLICK":
-                    elem = self.driver.find_element(By.CSS_SELECTOR, arg)
-                    elem.click()
-                    result = f"Clicked element {arg}."
+                    try:
+                        elem = self.driver.find_element(By.CSS_SELECTOR, arg)
+                        href = elem.get_attribute("href")
+
+                        if href:
+                            if not url_parsing.is_safe_url(href):
+                                return f"[blocked] Unsafe link target: {href}"
+
+                        elem.click()
+                        self._readability_loaded = False
+                        result = f"Clicked element {arg}."
+                    except Exception as e:
+                        result = f"[error] Failed to click element: {str(e)}"
+
 
                 elif action == "CLICK_LINK":
-                    if not self._last_selector:
-                        result = "No previous selector stored from EXTRACT_LINKS."
+                    try:
+                        links = self.driver.find_elements(By.TAG_NAME, "a")
+                        index = int(arg.strip())
+
+                        if index < 0 or index >= len(links):
+                            return f"[error] Link index {index} is out of range."
+
+                        href = links[index].get_attribute("href")
+                        if href and not url_parsing.is_safe_url(href):
+                            return f"[blocked] Unsafe link target: {href}"
+
+                        links[index].click()
+                        self._readability_loaded = False
+                        result = f"Clicked link #{index}."
+                    except Exception as e:
+                        result = f"[error] Failed to click link: {str(e)}"
+                        
+                elif action == "DOWNLOAD":
+                    if not url_parsing.is_safe_url(arg):
+                        result = "Blocked: Unsafe download URL."
                     else:
-                        idx = int(arg)
-                        elems = self.driver.find_elements(By.CSS_SELECTOR, self._last_selector)
-                        if idx >= len(elems):
-                            result = f"Index {idx} out of range."
-                        else:
-                            elems[idx].click()
-                            result = f"Clicked link at index {idx}."
+                        result = download_file(arg)
+
 
                 elif action == "EXTRACT_TEXT":
                     elems = self.driver.find_elements(By.CSS_SELECTOR, arg)
@@ -330,10 +461,36 @@ class SeleniumInteractiveTool(InteractiveTool):
         }
 
     def cleanup(self):
+        self._debug_running = False
         try:
             self.driver.quit()
         except Exception:
             pass
+
+        try:
+            output_path = f"./debug_video_{self.session_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')[:-3]}.mp4"
+            ffmpeg_cmd = [
+                "ffmpeg",
+                "-y",
+                "-framerate", "10",
+                "-pattern_type", "glob",
+                "-i", os.path.join(self.debug_dir, "*.jpg"),
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                output_path
+            ]
+            subprocess.run(ffmpeg_cmd, check=True)
+            self.log(f"[debug_capture] Video saved to {output_path}")
+        except Exception as e:
+            self.log(f"[debug_capture] Failed to compile video: {e}")
+
+        # Cleanup frames folder for this session only
+        try:
+            import shutil
+            shutil.rmtree(self.debug_dir, ignore_errors=True)
+        except Exception as e:
+            self.log(f"[debug_capture] Failed to delete frames: {e}")
+
 
 if __name__ == "__main__":
     import sys

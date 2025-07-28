@@ -1,7 +1,8 @@
 from .interactive_tool_class import InteractiveTool
 import discord
 import io
-import asyncio
+import discord
+from src.static import WorkerConfig
 from datetime import datetime
 
 class DiscordInteractiveTool(InteractiveTool):
@@ -12,10 +13,16 @@ class DiscordInteractiveTool(InteractiveTool):
     - EDIT_MESSAGE <new_content> (edit sent message content)
     """
 
-    def __init__(self, discord_client: discord.Client, channel_id: int, **kwargs):
+    def __init__(self, discord_client: discord.Client, WorkerConfig: WorkerConfig = None, **kwargs):
         super().__init__(**kwargs)
         self.client = discord_client
-        self.channel_id = channel_id
+        self.config = WorkerConfig
+        if self.config:
+            self.op_member_id = self.config.identifier # OPs id
+            self.guild_id = self.config.guild_id # guild
+            self.channel_id = self.config.channel_id # Channel
+            self.op_message_id = self.config.message_id # OPs MID
+        
         self._file_name = None
         self._file_path = None
         self._sent_message = None  # discord.Message object once sent
@@ -78,12 +85,82 @@ class DiscordInteractiveTool(InteractiveTool):
         self.log_step("EDIT_MESSAGE", result)
         return result
 
+
+    async def reply_to_message(bot, data):
+        channel = await bot.fetch_channel(int(data["channel_id"]))
+        message = await channel.fetch_message(int(data["message_id"]))
+        await message.reply(data["content"])
+        return "Replied to the message."
+
+    async def react_to_message(bot, data):
+        channel = await bot.fetch_channel(int(data["channel_id"]))
+        message = await channel.fetch_message(int(data["message_id"]))
+        await message.add_reaction(data["emoji"])
+        return "Replied to the message."
+
+    async def voice_speak(bot, data): # BROKEN
+        return "This is currently stubbed"
+    
+        guild = bot.get_guild(int(data["guild_id"]))
+        vc_channel = guild.get_channel(int(data["channel_id"]))
+        vc = await vc_channel.connect()
+
+        tts_path = "/tmp/tts.mp3"
+        subprocess.run(["edge-tts", "--text", data["text"], "--write-media", tts_path])
+
+        vc.play(discord.FFmpegPCMAudio(tts_path))
+        while vc.is_playing():
+            await asyncio.sleep(1)
+
+        await vc.disconnect()
+        return {"status": "ok", "action": "VoiceSpeak"}
+
+    async def tag_users(bot, data):
+        max_mentions = 3
+        channel = await bot.fetch_channel(int(data["channel_id"]))
+        
+        # Limit number of users to tag
+        limited_users = data["user_ids"][:max_mentions]
+        mentions = " ".join([f"<@{uid}>" for uid in limited_users])
+        
+        await channel.send(f"{mentions} {data['message']}")
+        return f"Tagged {len(limited_users)} user(s)."
+
+
+    async def create_poll(bot, data):
+        channel = await bot.fetch_channel(int(data["channel_id"]))
+        message = await channel.send(f"**{data['question']}**\n" + "\n".join(data["options"]))
+        for option in data["options"]:
+            emoji = option.strip().split(" ")[0]
+            await message.add_reaction(emoji)
+        return f"Created Poll At Message ID {message}"
+
+    async def fetch_chat_history(bot, data):
+        channel = await bot.fetch_channel(int(data["channel_id"]))
+        messages = [msg async for msg in channel.history(limit=int(data.get("limit", 10)))]
+        result = [{"author": str(m.author), "content": m.content} for m in messages[::-1]]
+        return {
+            "status": "ok",
+            "action": "FetchChatHistory",
+            "messages": result
+        }
+
     async def receive_output(self, input_data: str):
         """
-        Commands:
-        SET_FILE <filename> <filepath>
-        SEND_MESSAGE <content>
-        EDIT_MESSAGE <new content>
+        Accepts a command string and executes the corresponding Discord interaction.
+
+        Supported commands:
+        - SET_FILE <filename> <filepath>
+        - SEND_MESSAGE <content>
+        - EDIT_MESSAGE <new content>
+        - SEND_IMAGE <filename> <filepath>
+        - REPLY_TO <channel_id> <message_id> <content>
+        - REACT_TO <channel_id> <message_id> <emoji>
+        - TAG_USERS <channel_id> <user_ids> <message>
+        - CREATE_POLL <channel_id> <question> <options>
+        - FETCH_CHAT_HISTORY <channel_id> <limit>
+
+        All actions operate strictly within the self-identified context (pre-injected by config).
         """
         parts = input_data.split(maxsplit=2)
         if not parts:
@@ -139,14 +216,18 @@ class DiscordInteractiveTool(InteractiveTool):
         return {
             "name": "DiscordInteractiveTool",
             "description": (
-                "Allows sending a single Discord message with an in-memory file attachment, "
-                "and editing its content later.\n"
-                "Only one message can be sent per session."
+                "Interactive Discord tool to communicate with a user in a specific channel using pre-injected configuration. "
+                "Supports a single message with optional file, edits, replies, tagging users, reactions, polls, and fetching history."
             ),
             "commands": [
-                "SET_FILE <filename> <filepath>",
-                "SEND_MESSAGE <content>",
-                "EDIT_MESSAGE <new_content>",
-                "SEND_IMAGE <filename> <filepath>"
+                "SET_FILE <filename> <filepath> — Load a file into memory to attach to a message",
+                "SEND_MESSAGE <content> — Sends a message with the previously set file (only once per session)",
+                "EDIT_MESSAGE <new_content> — Edit the previously sent message",
+                "SEND_IMAGE <filename> <filepath> — Sends an image to the channel immediately",
+                "REPLY_TO <channel_id> <message_id> <content> — Replies to a specific message",
+                "REACT_TO <channel_id> <message_id> <emoji> — Adds a reaction emoji to a message",
+                "TAG_USERS <channel_id> <user_ids> <message> — Tags up to 3 users with a message",
+                "CREATE_POLL <channel_id> <question> <options> — Creates a poll with reactions as options",
+                "FETCH_CHAT_HISTORY <channel_id> <limit> — Fetches the latest N messages"
             ]
         }
