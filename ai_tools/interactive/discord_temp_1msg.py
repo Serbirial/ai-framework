@@ -146,6 +146,7 @@ class DiscordInteractiveTool(InteractiveTool):
             "commands": [
                 "SET_FILE <filename> <filepath>",
                 "SEND_MESSAGE <content>",
-                "EDIT_MESSAGE <new_content>"
+                "EDIT_MESSAGE <new_content>",
+                "SEND_IMAGE <filename> <filepath>"
             ]
         }
