@@ -2,7 +2,7 @@ from llama_cpp import Llama
 from src.static import Config
 from multiprocessing import Process, Pipe
 from src.agent import AgentInstance
-from worker_passive_autonomy import AutonomousPassiveThinker
+from src.worker_passive_autonomy import AutonomousPassiveThinker
 
 config = Config()
 
