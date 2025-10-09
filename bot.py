@@ -5,7 +5,7 @@ import aiohttp
 import json
 import psutil
 import sqlite3
-from src import bot
+from src import agent as bot
 from src import static
 from utils.helpers import get_mem_tokens_n
 DB_PATH = static.DB_PATH
