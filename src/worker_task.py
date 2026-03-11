@@ -207,7 +207,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
                 max_new_tokens=self.worker_config.tier_config["WORK_MAX_TOKENS_PER_STEP"],
                 temperature=0.7,
                 top_p=0.9,
-                streamer=self.worker_config.streamer,
+                #streamer=self.worker_config.streamer,
                 stop_criteria=stop_criteria,
                 _prompt_for_cut=step_prompt,
             )
