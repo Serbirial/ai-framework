@@ -120,15 +120,15 @@ class AgentInstance:
             self.model = Llama(
                 model_path=CONFIG_VAR.general["main_llm_path"],
                 n_ctx=16000,              # TODO use CTX setter 
-                n_threads=2,             # tune to setup
+                n_threads=os.cpu_count(),             # tune to setup
                 use_mlock=False,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
                 logits_all=False,
                 verbose=False,
                 use_mmap=True,
-                n_gpu_layers=32,
-                low_vram=True,
-                n_batch=64
-                #numa=False
+                n_gpu_layers=-1,
+                low_vram=False,
+                n_batch=512,
+                numa=False
             )
 
 
