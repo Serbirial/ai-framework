@@ -10,7 +10,7 @@ from .ai_actions import check_for_actions_and_run, check_for_live_actions_and_ru
 
 # fixme better way of doing this
 from ai_tools.interactive.discord_temp_1msg import DiscordInteractiveTool
-from ai_tools.interactive.selenium import SeleniumInteractiveTool
+#from ai_tools.interactive.selenium import SeleniumInteractiveTool
 
 
 class RecursiveWork: # TODO: check during steps if total tokens are reaching token limit- if they are: summarize all steps into a numbered summary then re-build the prompt using it and start (re-using the depth limit but not step numbers)
@@ -18,7 +18,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         self.bot = bot  # Reference to ChatBot
         self.worker_config: WorkerConfig = worker_config
         
-        self.selenium_tool = SeleniumInteractiveTool()
+#        self.selenium_tool = SeleniumInteractiveTool()
         self.discord_tool = DiscordInteractiveTool(self.bot, worker_config)
 
     def build_prompt(self, question, username, extra_context=None):
@@ -228,8 +228,8 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             chat_window = self.worker_config.tier_config["BASE_TOKEN_WINDOW"]
             prompt_window = self.worker_config.prompt_reservation
             
-            
-            live_action_result = check_for_live_actions_and_run([self.discord_tool,self.selenium_tool], response, self.worker_config, self.worker_config.streamer)
+            # TODO: add selenium back when not in colab
+            live_action_result = check_for_live_actions_and_run([self.discord_tool], response, self.worker_config, self.worker_config.streamer)
             
             action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             
