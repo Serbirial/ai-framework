@@ -9,7 +9,7 @@ from src import prompt_builder
 from .ai_actions import check_for_actions_and_run, check_for_live_actions_and_run
 
 # fixme better way of doing this
-from ai_tools.interactive.discord_temp_1msg import DiscordInteractiveTool
+#from ai_tools.interactive.discord_temp_1msg import DiscordInteractiveTool
 #from ai_tools.interactive.selenium import SeleniumInteractiveTool
 
 
@@ -19,7 +19,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
         self.worker_config: WorkerConfig = worker_config
         
 #        self.selenium_tool = SeleniumInteractiveTool()
-        self.discord_tool = DiscordInteractiveTool(self.bot, worker_config)
+        #self.discord_tool = DiscordInteractiveTool(self.bot, worker_config)
 
     def build_prompt(self, question, username, extra_context=None):
         personality = agent.list_personality(self.worker_config.identifier)
