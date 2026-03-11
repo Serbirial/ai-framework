@@ -864,7 +864,7 @@ class ChatBot(discord.Client):
                 active += 1
             active += self.sub_model.count_active()
             return await message.reply(f"There are currently {active} out of {total} models being used ({self.sub_llm_concurrency_limit}/{total - self.sub_llm_concurrency_limit} being mini models).")
-        elif message.author.id == 1270040138948411442:
+        elif message.author.id == 1404775570948100136:
             if message.content.startswith("!set_tier"):
                 parts = message.content.strip().split()
                 if len(parts) != 3:
@@ -988,7 +988,7 @@ class ChatBot(discord.Client):
 
             # If the caller is the admin and supplied a mention or ID
             parts = message.content.strip().split()
-            if len(parts) == 3 and message.author.id == 1270040138948411442:
+            if len(parts) == 3 and message.author.id == 1404775570948100136:
                 user_id_raw = parts[1].strip("<@!>")
                 try:
                     target_user = await self.fetch_user(int(user_id_raw))
