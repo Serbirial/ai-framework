@@ -29,7 +29,26 @@ from flask import Flask, jsonify, request
 
 import sys
 #sys.stdout.reconfigure(encoding="utf-8")
+MAX_CHARS = 1950
 
+def chunk_message(text: str, max_chars: int = MAX_CHARS):
+    """Split a long string into chunks of max_chars, trying to break at line breaks or spaces."""
+    chunks = []
+    while text:
+        if len(text) <= max_chars:
+            chunks.append(text)
+            break
+        # Try to split at last newline
+        split_at = text.rfind("\n", 0, max_chars)
+        if split_at == -1:
+            # No newline, split at last space
+            split_at = text.rfind(" ", 0, max_chars)
+            if split_at == -1:
+                # No space either, hard cut
+                split_at = max_chars
+        chunks.append(text[:split_at].strip())
+        text = text[split_at:].strip()
+    return chunks
 
 class DiscordBufferedUpdater:
     def __init__(self, discord_message, cooldown=2.4, max_chars=1900):
@@ -1339,8 +1358,8 @@ class ChatBot(discord.Client):
                             cnn_file_path=cnn_file_path
                         )
                         await msg_to_edit.delete()
-                        await message.reply(response)
-                        
+                        for chunk in chunk_message(response):
+                            await message.reply(chunk)                        
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         await send_file(message)
@@ -1350,7 +1369,6 @@ class ChatBot(discord.Client):
                             special += f"- {line}\n"
                         if special != "":
                             await message.reply(special)
-                        return await message.reply(response)
 
         async with self.generate_lock:
             self.main_llm_generating = True 
@@ -1378,7 +1396,8 @@ class ChatBot(discord.Client):
                         self.main_llm_generating = False
                         self.current_user = None
                         await msg_to_edit.delete()
-                        await message.reply(response)
+                        for chunk in chunk_message(response):
+                            await message.reply(chunk)  
                         
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
@@ -1409,7 +1428,9 @@ class ChatBot(discord.Client):
                         self.current_user = None
                         
                         await msg_to_edit.delete()
-                        await message.reply(response)
+                        for chunk in chunk_message(response):
+                            await message.reply(chunk)  
+                        
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         special = ""
@@ -1440,7 +1461,8 @@ class ChatBot(discord.Client):
                         self.current_user = None
                         
                         await msg_to_edit.delete()
-                        await message.reply(response)
+                        for chunk in chunk_message(response):
+                            await message.reply(chunk)  
                         context.add_line(processed_input, "user")
                         context.add_line(response, "assistant")
                         special = ""
