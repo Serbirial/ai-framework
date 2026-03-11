@@ -4,7 +4,7 @@ from .discord_temp_1msg import DiscordInteractiveTool
 
 def load_interactive_tools():
     tool_classes = [
-        SeleniumInteractiveTool,
+        #SeleniumInteractiveTool,
         DiscordInteractiveTool
     ]
 

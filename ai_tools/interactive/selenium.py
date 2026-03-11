@@ -116,11 +116,10 @@ class SeleniumInteractiveTool(InteractiveTool):
         self.debug_dir = os.path.abspath(f'./debug_frames_{self.session_id}')
         os.makedirs(self.debug_dir, exist_ok=True)
 
-        #chrome_opts.add_argument('--headless')
-        chrome_opts.add_argument("--headless=new")  # use --headless=new for newer Chromium
-
+        chrome_opts.add_argument('--headless')
+        
         chrome_opts.add_argument('--disable-gpu')
-        #chrome_opts.add_argument('--window-size=800,600')  # Keep it small
+        chrome_opts.add_argument('--window-size=800,600')  # Keep it small
         chrome_opts.add_argument('--disable-extensions')
         chrome_opts.add_argument('--disable-dev-shm-usage')  # Avoid issues with /dev/shm
 
