@@ -23,9 +23,6 @@ def load_interactive_tools():
     return tools_dict
 
 
-def load_interactive_tools():
-    return  load_interactive_tools()
-
 def describe_all_tools():
     tools = load_interactive_tools()
     print("Registered Interactive Tools:")
