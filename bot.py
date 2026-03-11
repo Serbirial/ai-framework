@@ -5,7 +5,7 @@ import aiohttp
 import json
 import psutil
 import sqlite3
-from src import bot
+from src import agent as bot
 from src import static
 from utils.helpers import get_mem_tokens_n
 DB_PATH = static.DB_PATH
@@ -25,6 +25,10 @@ from src import scaling_concurrent_llama_instances
 from utils.concurrency import BackgroundThinkerProcess
 
 from flask import Flask, jsonify, request
+
+
+import sys
+#sys.stdout.reconfigure(encoding="utf-8")
 
 
 class DiscordBufferedUpdater:
@@ -171,7 +175,7 @@ def initialize_default_personality():
 
         # Insert default traits
         default_traits = [
-            'Curious',
+            'Responds more like a human, not an AI.',
             'Responds in a way that conveys the mood hint and current mood'
         ]
         for trait in default_traits:
@@ -202,10 +206,7 @@ def initialize_default_personality():
         # Insert default dislikes
         default_dislikes = [
             'rudeness or insults',
-            'people being mean',
-            'darkness',
-            'rubber ducks',
-            'dogs (I’m definitely more of a cat person)'
+            'dogs (definitely more of a cat person)'
         ]
         for dislike in default_dislikes:
             cursor.execute("""
@@ -811,8 +812,6 @@ class ChatBot(discord.Client):
         if flags["help"]:
             help_text = (
                 "**Available Command Flags:**\n"
-                "`!tiny           - Forces the bot to exclusively use tiny prompts. strip most functioanlity but speed things up drastically.`\n"
-
                 "`!orp data       - Forces the bot to exclusively use YOUR given prompt. this will use the RAW model and skip everything, use at your own peril.`\n"
                 "`!recursive [N]` - Forces the bot to use recursive reasoning (default depth = 3, or use a number).\n"
                 "`!depth N`       - Sets the recursion depth manually (used with or without !recursive).\n"
@@ -833,7 +832,6 @@ class ChatBot(discord.Client):
 
                 "`!view_tier`     - Shows your current tier (ai model limitations).\n"
                 "`!help`          - Shows this help message.\n"
-                "`![explain|whatareyou]` - What am i? Who am i? Are you confused? Run this!\n"
                 
                 "**YOU CAN USE MULTIPLE FLAGS AT THE SAME TIME!**"
             )
@@ -1128,48 +1126,6 @@ class ChatBot(discord.Client):
                 # Insert new personality profile
                 cursor.execute("INSERT INTO BOT_PROFILE (owner, name) VALUES (?, ?)", (message.author.id, new_name,))
 
-                if not personality_data:
-                    # Copy personality data from default if none supplied
-                    for table in ["BOT_GOALS", "BOT_TRAITS", "BOT_LIKES", "BOT_DISLIKES"]:
-                        try:
-                            cursor.execute(f"""
-                                INSERT INTO {table} (botname, {table[:-1].lower()})
-                                SELECT ?, {table[:-1].lower()} FROM {table} WHERE botname = 'default'
-                            """, (new_name,))
-                        except Exception as e:
-                            print(f"Error copying default data from {table}: {e}")
-                            raise
-                else:
-                    # Parse supplied personality data string
-                    parsed = parse_personality_data(personality_data)
-                    print(f"DEBUG: Parsed personality data: {parsed}")
-
-                    # Insert parsed data into DB tables
-                    for goal in parsed["goals"]:
-                        try:
-                            cursor.execute("INSERT INTO BOT_GOALS (botname, goal) VALUES (?, ?)", (new_name, goal))
-                        except Exception as e:
-                            print(f"Error inserting goal '{goal}': {e}")
-                            raise
-                    for trait in parsed["traits"]:
-                        try:
-                            cursor.execute("INSERT INTO BOT_TRAITS (botname, trait) VALUES (?, ?)", (new_name, trait))
-                        except Exception as e:
-                            print(f"Error inserting trait '{trait}': {e}")
-                            raise
-                    for like in parsed["likes"]:
-                        try:
-                            cursor.execute("INSERT INTO BOT_LIKES (botname, like) VALUES (?, ?)", (new_name, like))
-                        except Exception as e:
-                            print(f"Error inserting like '{like}': {e}")
-                            raise
-                    for dislike in parsed["dislikes"]:
-                        try:
-                            cursor.execute("INSERT INTO BOT_DISLIKES (botname, dislike) VALUES (?, ?)", (new_name, dislike))
-                        except Exception as e:
-                            print(f"Error inserting dislike '{dislike}': {e}")
-                            raise
-
                 conn.commit()
             except Exception as e:
                 conn.rollback()
@@ -1188,7 +1144,7 @@ class ChatBot(discord.Client):
                 conn.commit()
                 conn.close()
             except Exception as e:
-                await message.reply(f"Failed to set active personality: {e}")
+                await message.reply(f"Failed to set active personality (blank by default- need to fill in: {e}")
                 
                 
                 return
@@ -1381,8 +1337,7 @@ class ChatBot(discord.Client):
                             tiny_mode=flags["tinymode"],
                             debug=flags["debug"],
                             tier=tier,
-                            cnn_file_path=cnn_file_path,
-                            add_config_extras={"guild_id": message.guild.id, "channel_id": message.channel.id, "message_id": message.id},
+                            cnn_file_path=cnn_file_path
                         )
                         await msg_to_edit.delete()
                         await message.reply(response)
@@ -1520,16 +1475,16 @@ class ChatBot(discord.Client):
         if type(message) == type(list):
             toreturn = []
             for msg in message:
-                toreturn.append(msg.replace(f"<@1065772573331312650>", "ayokadeno"))
+                toreturn.append(msg.replace(f"<@1433916525537919089>", "@Elsie"))
             return toreturn
-        processed_input = message.replace(f"<@1065772573331312650>", "ayokadeno")
+        processed_input = message.replace(f"<@1433916525537919089>", "@Elsie")
         return processed_input
 
     def process_context(self, messagelist):
         """ Process the context """
         toreturn = []
         for msg in messagelist:
-            toreturn.append(msg.replace(f"<@1065772573331312650>", "ayokadeno"))
+            toreturn.append(msg.replace(f"<@1433916525537919089>", "@Elsie"))
         return toreturn
 
 

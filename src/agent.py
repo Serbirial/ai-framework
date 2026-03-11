@@ -94,7 +94,7 @@ def list_personality(userid):
 
 
 class AgentInstance:
-    def __init__(self, name="ayokdaeno", db_path=DB_PATH, model = None):
+    def __init__(self, name="Elsie", db_path=DB_PATH, model = None):
         self.name = name
         self.mood = "neutral"
         self.mood_sentence = "I feel neutral and composed at the moment."
@@ -120,13 +120,13 @@ class AgentInstance:
             self.model = Llama(
                 model_path=CONFIG_VAR.general["main_llm_path"],
                 n_ctx=16000,              # TODO use CTX setter 
-                n_threads=6,             # tune to setup
+                n_threads=9,             # tune to setup
                 use_mlock=False,          # locks model in RAM to avoid swap on Pi (turn off if not running from a Pi)
                 logits_all=False,
                 verbose=False,
                 use_mmap=True,
-                n_gpu_layers=32,
-                low_vram=False,
+                n_gpu_layers=6,
+                low_vram=True,
                 n_batch=64
                 #numa=False
             )
@@ -344,8 +344,8 @@ class AgentInstance:
             INSERT INTO HISTORY (owner, userid, message, timestamp) VALUES (?, ?, ?, ?)
             """,
             [
-                (owner, username, f"[{timestamp}] {user_input}", timestamp),
-                (owner, botname, f"[{timestamp}] {response}", timestamp),
+                (owner, username, f"{user_input}", timestamp),
+                (owner, botname, f"{response}", timestamp),
             ]
         )
 
@@ -422,7 +422,7 @@ class AgentInstance:
 
         return usertone, moods, mood, mood_sentence, persona_prompt, category
 
-    def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None, add_config_extras: dict[str, str] = None):
+    def chat(self, username, user_input, identifier, tier, max_new_tokens=None, temperature=0.7, top_p=0.9, context = None, debug=False, streamer = None, force_recursive=False, recursive_depth=3, category_override=None, tiny_mode=False, cnn_file_path=None):
         cnn_output = None
         cnn_output_formatted = None
 
@@ -503,10 +503,6 @@ class AgentInstance:
         log("ALLOWED TOOLS CHECK", f"found {len(found_tools)} allowed tools for category {category}")
         worker_config = WorkerConfig(found_tools, identifier, persona_prompt, tier_config, max_steps, prompt_reservation, category, usertone, include_reflection=False, context=context, streamer=streamer )
         
-        if add_config_extras:
-            for k, v in add_config_extras.items():
-                setattr(worker_config, k, v)
-
         if category == "instruction_memory":
             if streamer:
                 streamer.add_special(f"Trying to save to memory...")
