@@ -962,8 +962,7 @@ class ChatBot(discord.Client):
             history = context.get_context_text()
             
 
-        has_mentioned = any(str(mention) == f"{self.user.name}#{self.user.discriminator}" for mention in message.mentions)
-        if not has_mentioned:
+        if self.user not in message.mentions:
             return
         # --- Fetch user-selected profile from DB ---
         conn = sqlite3.connect(DB_PATH)
