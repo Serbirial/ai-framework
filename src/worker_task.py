@@ -229,7 +229,7 @@ class RecursiveWork: # TODO: check during steps if total tokens are reaching tok
             prompt_window = self.worker_config.prompt_reservation
             
             # TODO: add selenium back when not in colab
-            live_action_result = check_for_live_actions_and_run([self.discord_tool], response, self.worker_config, self.worker_config.streamer)
+            live_action_result = check_for_live_actions_and_run([], response, self.worker_config, self.worker_config.streamer)
             
             action_result = check_for_actions_and_run(self.worker_config.tools, self.bot.model, response, max_token_window=token_window, max_chat_window=chat_window, prompt_size=prompt_window)
             
